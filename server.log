@@ -1,0 +1,225 @@
+Error in sitecustomize; set PYTHONVERBOSE for traceback:
+ModuleNotFoundError: No module named 'wrapt'
+funasr version: 1.3.1.
+Fetching 29 files:   0%|          | 0/29 [00:00<?, ?it/s]Fetching 29 files: 100%|██████████| 29/29 [00:00<00:00, 20494.49it/s]
+WARNING:root:trust_remote_code: False
+* Running on local URL:  http://0.0.0.0:8808
+* Running on public URL: https://5e1aafced8c51c80c0.gradio.live
+
+This share link expires in 1 week. For free permanent hosting and GPU upgrades, run `gradio deploy` from the terminal in the working directory to deploy to Hugging Face Spaces (https://huggingface.co/spaces)
+Fetching 9 files:   0%|          | 0/9 [00:00<?, ?it/s]Fetching 9 files: 100%|██████████| 9/9 [00:00<00:00, 64749.12it/s]
+voxcpm_model_path: /root/.cache/huggingface/hub/models--openbmb--VoxCPM2/snapshots/bffb3df5a29440629464e5e839f4d214c8714c3d, zipenhancer_model_path: iic/speech_zipenhancer_ans_multiloss_16k_base, enable_denoiser: True
+Loading AudioVAE from pytorch: /root/.cache/huggingface/hub/models--openbmb--VoxCPM2/snapshots/bffb3df5a29440629464e5e839f4d214c8714c3d/audiovae.pth
+Running on device: cpu, dtype: bfloat16
+Loading model from safetensors: /root/.cache/huggingface/hub/models--openbmb--VoxCPM2/snapshots/bffb3df5a29440629464e5e839f4d214c8714c3d/model.safetensors
+Warning: torch.compile disabled - VoxCPMModel can only be optimized on CUDA device
+Loaded VoxCPM2Model
+Downloading [configuration.json]:   0%|          | 0.00/973 [00:00<?, ?B/s]Downloading [configuration.json]: 100%|██████████| 973/973 [00:00<00:00, 976B/s]Downloading [configuration.json]: 100%|██████████| 973/973 [00:00<00:00, 975B/s]
+Downloading Model from https://www.modelscope.cn to directory: /root/.cache/modelscope/hub/models/iic/speech_zipenhancer_ans_multiloss_16k_base
+2026-04-16 07:35:14,667 - modelscope - INFO - Got 9 files, start to download ...
+Processing 9 items:   0%|          | 0.00/9.00 [00:00<?, ?it/s]
+Downloading [description/block.jpg]:   0%|          | 0.00/89.5k [00:00<?, ?B/s][A
+
+Downloading [description/matrix.jpg]:   0%|          | 0.00/162k [00:00<?, ?B/s][A[A
+
+
+Downloading [description/matrix_voicebank.jpg]:   0%|          | 0.00/267k [00:00<?, ?B/s][A[A[A
+
+
+
+Downloading [description/model.jpg]:   0%|          | 0.00/94.9k [00:00<?, ?B/s][A[A[A[A
+
+
+
+
+Downloading [onnx_model.onnx]:   0%|          | 0.00/9.35M [00:00<?, ?B/s][A[A[A[A[A
+
+
+
+
+
+
+Downloading [examples/speech_with_noise.wav]:   0%|          | 0.00/75.0k [00:00<?, ?B/s][A[A[A[A[A[A[A
+
+
+
+
+
+Downloading [README.md]:   0%|          | 0.00/19.2k [00:00<?, ?B/s][A[A[A[A[A[A
+
+
+
+
+
+
+
+Downloading [pytorch_model.bin]:   0%|          | 0.00/8.03M [00:00<?, ?B/s][A[A[A[A[A[A[A[A
+
+
+
+
+
+Downloading [README.md]: 100%|██████████| 19.2k/19.2k [00:01<00:00, 16.6kB/s][A[A[A[A[A[ADownloading [README.md]: 100%|██████████| 19.2k/19.2k [00:01<00:00, 16.6kB/s]
+
+
+
+
+
+
+Downloading [examples/speech_with_noise1.wav]:   0%|          | 0.00/152k [00:00<?, ?B/s][A[A[A[A[A[AProcessing 9 items:  11%|█         | 1.00/9.00 [00:01<00:09, 1.20s/it]
+
+
+
+
+
+
+Downloading [examples/speech_with_noise.wav]: 100%|██████████| 75.0k/75.0k [00:01<00:00, 57.2kB/s][A[A[A[A[A[A[ADownloading [examples/speech_with_noise.wav]: 100%|██████████| 75.0k/75.0k [00:01<00:00, 57.2kB/s]
+Processing 9 items:  22%|██▏       | 2.00/9.00 [00:01<00:04, 1.70it/s]
+
+
+
+Downloading [description/model.jpg]: 100%|██████████| 94.9k/94.9k [00:01<00:00, 64.4kB/s][A[A[A[ADownloading [description/model.jpg]: 100%|██████████| 94.9k/94.9k [00:01<00:00, 64.4kB/s]
+Processing 9 items:  33%|███▎      | 3.00/9.00 [00:01<00:02, 2.54it/s]
+
+Downloading [description/matrix.jpg]: 100%|██████████| 162k/162k [00:01<00:00, 92.5kB/s][A[ADownloading [description/matrix.jpg]: 100%|██████████| 162k/162k [00:01<00:00, 92.4kB/s]
+Processing 9 items:  44%|████▍     | 4.00/9.00 [00:01<00:01, 2.87it/s]
+
+
+
+
+
+
+
+Downloading [pytorch_model.bin]:  12%|█▏        | 1.00M/8.03M [00:02<00:14, 520kB/s][A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+Downloading [pytorch_model.bin]:  25%|██▍       | 2.00M/8.03M [00:02<00:06, 908kB/s][A[A[A[A[A[A[A[A
+Downloading [description/block.jpg]: 100%|██████████| 89.5k/89.5k [00:02<00:00, 31.0kB/s][ADownloading [description/block.jpg]: 100%|██████████| 89.5k/89.5k [00:02<00:00, 31.0kB/s]
+Processing 9 items:  56%|█████▌    | 5.00/9.00 [00:02<00:02, 1.56it/s]
+
+
+
+
+
+
+
+Downloading [pytorch_model.bin]:  37%|███▋      | 3.00M/8.03M [00:03<00:04, 1.19MB/s][A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+Downloading [pytorch_model.bin]:  50%|████▉     | 4.00M/8.03M [00:03<00:03, 1.22MB/s][A[A[A[A[A[A[A[A
+
+
+
+
+
+Downloading [examples/speech_with_noise1.wav]: 100%|██████████| 152k/152k [00:03<00:00, 49.1kB/s][A[A[A[A[A[ADownloading [examples/speech_with_noise1.wav]: 100%|██████████| 152k/152k [00:03<00:00, 49.1kB/s]
+Processing 9 items:  67%|██████▋   | 6.00/9.00 [00:04<00:02, 1.10it/s]
+
+
+Downloading [description/matrix_voicebank.jpg]: 100%|██████████| 267k/267k [00:04<00:00, 60.6kB/s][A[A[ADownloading [description/matrix_voicebank.jpg]: 100%|██████████| 267k/267k [00:04<00:00, 60.5kB/s]
+Processing 9 items:  78%|███████▊  | 7.00/9.00 [00:04<00:01, 1.52it/s]
+
+
+
+
+
+
+
+Downloading [pytorch_model.bin]:  62%|██████▏   | 5.00M/8.03M [00:04<00:02, 1.24MB/s][A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+Downloading [pytorch_model.bin]:  75%|███████▍  | 6.00M/8.03M [00:05<00:01, 1.12MB/s][A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+Downloading [pytorch_model.bin]:  87%|████████▋ | 7.00M/8.03M [00:07<00:01, 900kB/s] [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+Downloading [pytorch_model.bin]: 100%|█████████▉| 8.00M/8.03M [00:08<00:00, 880kB/s][A[A[A[A[A[A[A[ADownloading [pytorch_model.bin]: 100%|██████████| 8.03M/8.03M [00:08<00:00, 961kB/s]
+Processing 9 items:  89%|████████▉ | 8.00/9.00 [00:08<00:01, 1.81s/it]
+
+
+
+
+Downloading [onnx_model.onnx]:  11%|█         | 1.00M/9.35M [00:10<01:26, 101kB/s][A[A[A[A[A
+
+
+
+
+Downloading [onnx_model.onnx]:  21%|██▏       | 2.00M/9.35M [00:13<00:42, 180kB/s][A[A[A[A[A
+
+
+
+
+Downloading [onnx_model.onnx]:  32%|███▏      | 3.00M/9.35M [00:15<00:27, 240kB/s][A[A[A[A[A
+
+
+
+
+Downloading [onnx_model.onnx]:  43%|████▎     | 4.00M/9.35M [00:18<00:19, 292kB/s][A[A[A[A[A
+
+
+
+
+Downloading [onnx_model.onnx]:  53%|█████▎    | 5.00M/9.35M [00:20<00:13, 341kB/s][A[A[A[A[A
+
+
+
+
+Downloading [onnx_model.onnx]:  64%|██████▍   | 6.00M/9.35M [00:22<00:09, 358kB/s][A[A[A[A[A
+
+
+
+
+Downloading [onnx_model.onnx]:  75%|███████▍  | 7.00M/9.35M [00:25<00:06, 370kB/s][A[A[A[A[A
+
+
+
+
+Downloading [onnx_model.onnx]:  86%|████████▌ | 8.00M/9.35M [00:28<00:03, 368kB/s][A[A[A[A[A
+
+
+
+
+Downloading [onnx_model.onnx]:  96%|█████████▌| 9.00M/9.35M [00:31<00:00, 376kB/s][A[A[A[A[A
+
+
+
+
+Downloading [onnx_model.onnx]: 100%|██████████| 9.35M/9.35M [00:31<00:00, 378kB/s][A[A[A[A[ADownloading [onnx_model.onnx]: 100%|██████████| 9.35M/9.35M [00:32<00:00, 306kB/s]
+Processing 9 items: 100%|██████████| 9.00/9.00 [00:32<00:00, 8.50s/it]Processing 9 items: 100%|██████████| 9.00/9.00 [00:32<00:00, 3.56s/it]
+2026-04-16 07:35:46,686 - modelscope - INFO - Download model 'iic/speech_zipenhancer_ans_multiloss_16k_base' successfully.
+2026-04-16 07:35:46,697 - modelscope - INFO - initiate model from /root/.cache/modelscope/hub/models/iic/speech_zipenhancer_ans_multiloss_16k_base
+2026-04-16 07:35:46,697 - modelscope - INFO - initiate model from location /root/.cache/modelscope/hub/models/iic/speech_zipenhancer_ans_multiloss_16k_base.
+2026-04-16 07:35:46,698 - modelscope - INFO - initialize model from /root/.cache/modelscope/hub/models/iic/speech_zipenhancer_ans_multiloss_16k_base
+2026-04-16 07:35:46,942 - modelscope - WARNING - No preprocessor field found in cfg.
+2026-04-16 07:35:46,943 - modelscope - WARNING - No val key and type key found in preprocessor domain of configuration.json file.
+2026-04-16 07:35:46,943 - modelscope - WARNING - Cannot find available config to build preprocessor at mode inference, current config: {'model_dir': '/root/.cache/modelscope/hub/models/iic/speech_zipenhancer_ans_multiloss_16k_base'}. trying to build by task and model information.
+2026-04-16 07:35:46,943 - modelscope - INFO - No preprocessor key ('speech_zipenhancer_ans_multiloss_16k_base', 'acoustic-noise-suppression') found in PREPROCESSOR_MAP, skip building preprocessor. If the pipeline runs normally, please ignore this log.
+Warm up VoxCPMModel...
+  0%|          | 0/10 [00:00<?, ?it/s] 10%|█         | 1/10 [00:04<00:36,  4.00s/it] 20%|██        | 2/10 [00:07<00:31,  3.98s/it] 30%|███       | 3/10 [00:11<00:27,  3.90s/it] 40%|████      | 4/10 [00:15<00:23,  3.85s/it] 50%|█████     | 5/10 [00:19<00:19,  3.83s/it] 60%|██████    | 6/10 [00:23<00:15,  3.82s/it] 70%|███████   | 7/10 [00:26<00:11,  3.80s/it] 80%|████████  | 8/10 [00:30<00:07,  3.86s/it] 90%|█████████ | 9/10 [00:34<00:03,  3.83s/it]100%|██████████| 10/10 [00:38<00:00,  3.88s/it]100%|██████████| 10/10 [00:38<00:00,  3.87s/it]
+  0%|          | 0/154 [00:00<?, ?it/s]  1%|          | 1/154 [00:03<09:47,  3.84s/it]  1%|▏         | 2/154 [00:07<09:48,  3.87s/it]  2%|▏         | 3/154 [00:11<09:40,  3.85s/it]  3%|▎         | 4/154 [00:15<09:36,  3.84s/it]  3%|▎         | 5/154 [00:19<09:39,  3.89s/it]  4%|▍         | 6/154 [00:23<09:32,  3.87s/it]  5%|▍         | 7/154 [00:27<09:30,  3.88s/it]  5%|▌         | 8/154 [00:30<09:21,  3.85s/it]  6%|▌         | 9/154 [00:34<09:14,  3.82s/it]  6%|▋         | 10/154 [00:38<09:09,  3.82s/it]  7%|▋         | 11/154 [00:42<09:02,  3.79s/it]  8%|▊         | 12/154 [00:46<09:08,  3.86s/it]  8%|▊         | 13/154 [00:50<09:04,  3.86s/it]  9%|▉         | 14/154 [00:54<09:07,  3.91s/it] 10%|▉         | 15/154 [00:57<08:59,  3.88s/it] 10%|█         | 16/154 [01:01<08:53,  3.86s/it] 11%|█         | 17/154 [01:05<08:47,  3.85s/it] 12%|█▏        | 18/154 [01:09<08:45,  3.86s/it] 12%|█▏        | 19/154 [01:13<08:40,  3.86s/it] 13%|█▎        | 20/154 [01:17<08:38,  3.87s/it] 14%|█▎        | 21/154 [01:20<08:31,  3.85s/it] 14%|█▍        | 22/154 [01:24<08:29,  3.86s/it] 15%|█▍        | 23/154 [01:28<08:28,  3.88s/it] 16%|█▌        | 24/154 [01:32<08:26,  3.90s/it] 16%|█▌        | 25/154 [01:36<08:27,  3.93s/it] 17%|█▋        | 26/154 [01:40<08:21,  3.92s/it] 18%|█▊        | 27/154 [01:44<08:14,  3.90s/it] 18%|█▊        | 28/154 [01:48<08:19,  3.97s/it] 19%|█▉        | 29/154 [01:52<08:12,  3.94s/it] 19%|█▉        | 30/154 [01:56<08:15,  4.00s/it] 20%|██        | 31/154 [02:00<08:06,  3.96s/it] 21%|██        | 32/154 [02:04<08:04,  3.97s/it] 21%|██▏       | 33/154 [02:08<08:04,  4.01s/it] 22%|██▏       | 34/154 [02:12<08:03,  4.03s/it] 23%|██▎       | 35/154 [02:16<07:58,  4.02s/it] 23%|██▎       | 36/154 [02:20<07:47,  3.96s/it] 24%|██▍       | 37/154 [02:24<07:44,  3.97s/it] 25%|██▍       | 38/154 [02:28<07:38,  3.95s/it] 25%|██▌       | 39/154 [02:32<07:32,  3.93s/it] 26%|██▌       | 40/154 [02:36<07:30,  3.95s/it] 27%|██▋       | 41/154 [02:40<07:25,  3.94s/it] 27%|██▋       | 42/154 [02:44<07:19,  3.93s/it] 28%|██▊       | 43/154 [02:48<07:20,  3.97s/it] 29%|██▊       | 44/154 [02:52<07:14,  3.95s/it] 29%|██▉       | 45/154 [02:56<07:13,  3.98s/it] 30%|██▉       | 46/154 [03:00<07:38,  4.25s/it] 31%|███       | 47/154 [03:06<08:10,  4.58s/it] 31%|███       | 48/154 [03:11<08:18,  4.70s/it] 32%|███▏      | 49/154 [03:17<08:54,  5.09s/it] 32%|███▏      | 50/154 [03:21<08:33,  4.94s/it] 33%|███▎      | 51/154 [03:25<07:53,  4.59s/it] 33%|███▎      | 51/154 [03:28<07:01,  4.09s/it]

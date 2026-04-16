@@ -220,7 +220,7 @@ _APP_THEME = gr.themes.Soft(
 
 class VoxCPMDemo:
     def __init__(self, model_id: str = "openbmb/VoxCPM2") -> None:
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = "cuda" if torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 7 else "cpu"
         logger.info(f"Running on device: {self.device}")
 
         self.asr_model_id = "FunAudioLLM/SenseVoiceSmall"
@@ -238,8 +238,8 @@ class VoxCPMDemo:
     def get_or_load_voxcpm(self) -> voxcpm.VoxCPM:
         if self.voxcpm_model is not None:
             return self.voxcpm_model
-        logger.info(f"Loading model: {self._model_id}")
-        self.voxcpm_model = voxcpm.VoxCPM.from_pretrained(self._model_id, optimize=True)
+        logger.info(f"Loading model: {self._model_id} on {self.device}")
+        self.voxcpm_model = voxcpm.VoxCPM.from_pretrained(self._model_id, optimize=True, device=self.device)
         logger.info("Model loaded successfully.")
         return self.voxcpm_model
 
@@ -491,6 +491,7 @@ def run_demo(
         server_name=server_name,
         server_port=server_port,
         show_error=show_error,
+        share=True,
         i18n=I18N,
         theme=_APP_THEME,
         css=_CUSTOM_CSS,

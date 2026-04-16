@@ -53,18 +53,18 @@ export async function generateSpeech(params: GenerateTTSParams): Promise<TTSResu
         // [text, control_instruction, reference_wav, show_prompt_text, prompt_text,
         //  cfg_value, DoNormalizeText, DoDenoisePromptAudio, dit_steps]
 
-        let refWavPayload: string | null = null;
+        let refWavPayload: any = null;
 
         if (params.referenceWav instanceof File) {
             // Upload via Gradio /upload first, then pass the server path
             const uploadedPath = await uploadFileToGradio(params.referenceWav);
             if (uploadedPath) {
-                refWavPayload = uploadedPath;
+                refWavPayload = { path: uploadedPath, meta: { _type: "gradio.FileData" } };
             } else {
                 return { error: "Failed to upload reference audio to backend." };
             }
         } else if (typeof params.referenceWav === "string" && params.referenceWav) {
-            refWavPayload = params.referenceWav;
+            refWavPayload = { path: params.referenceWav, meta: { _type: "gradio.FileData" } };
         }
 
         const payload = {

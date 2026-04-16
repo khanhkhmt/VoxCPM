@@ -154,12 +154,19 @@ class MiniCPMAttention(nn.Module):
         query_states = query_states.contiguous()
         key_states = key_states.contiguous()
         value_states = value_states.contiguous()
+        
+        if self.num_key_value_groups > 1:
+            key_states_exp = key_states.repeat_interleave(self.num_key_value_groups, dim=1)
+            value_states_exp = value_states.repeat_interleave(self.num_key_value_groups, dim=1)
+        else:
+            key_states_exp = key_states
+            value_states_exp = value_states
+
         attn_output = torch.nn.functional.scaled_dot_product_attention(
             query_states,
-            key_states,
-            value_states,
+            key_states_exp,
+            value_states_exp,
             is_causal=is_causal,
-            enable_gqa=True,
         )
 
         attn_output = attn_output.transpose(1, 2).contiguous()
@@ -205,12 +212,16 @@ class MiniCPMAttention(nn.Module):
         query_states = query_states.contiguous()
         key_cache = key_cache.contiguous()
         value_cache = value_cache.contiguous()
+        
+        if self.num_key_value_groups > 1:
+            key_cache = key_cache.repeat_interleave(self.num_key_value_groups, dim=1)
+            value_cache = value_cache.repeat_interleave(self.num_key_value_groups, dim=1)
+
         attn_output = torch.nn.functional.scaled_dot_product_attention(
             query_states,
             key_cache,
             value_cache,
             attn_mask=attn_mask,
-            enable_gqa=True,
         )
 
         attn_output = attn_output.transpose(1, 2).contiguous()

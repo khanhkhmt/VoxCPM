@@ -239,7 +239,7 @@ class VoxCPMDemo:
         if self.voxcpm_model is not None:
             return self.voxcpm_model
         logger.info(f"Loading model: {self._model_id} on {self.device}")
-        self.voxcpm_model = voxcpm.VoxCPM.from_pretrained(self._model_id, optimize=True, device=self.device)
+        self.voxcpm_model = voxcpm.VoxCPM.from_pretrained(self._model_id, optimize=False, device=self.device)
         logger.info("Model loaded successfully.")
         return self.voxcpm_model
 

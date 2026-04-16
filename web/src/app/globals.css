@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme {
+  --color-vox-bg: #14121F;
+  --color-vox-surface: #201E2C;
+  --color-vox-surface-high: #2B2836;
+  --color-vox-surface-highest: #363342;
+  --color-vox-primary: #7C3AED;
+  --color-vox-primary-dim: #D2BBFF;
+  --color-vox-secondary: #4CD7F6;
+  --color-vox-text: #E5E0F3;
+  --color-vox-text-dim: #CCC3D8;
+  --color-vox-outline: #4A4455;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --background: var(--color-vox-bg);
+    --foreground: var(--color-vox-text);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    @apply antialiased min-h-screen selection:bg-vox-primary selection:text-white;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-vox-surface/60 backdrop-blur-xl border border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.3)];
+  }
+  
+  .glass-card {
+    @apply bg-vox-surface-high/60 backdrop-blur-lg border-t-[0.5px] border-white/10 shadow-[0_4px_24px_rgba(0,0,0,0.2)] transition-all duration-300;
+  }
+  
+  .glass-card:hover {
+    @apply bg-vox-surface-highest/80 scale-[1.02] shadow-[0_8px_30px_rgba(124,58,237,0.15)];
+  }
+
+  .glow-primary {
+    @apply relative;
+  }
+  .glow-primary::before {
+    @apply content-[''] absolute inset-0 -z-10 bg-vox-primary/20 blur-2xl rounded-full;
+  }
+
+  /* Custom Scrollbar for dark theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-vox-bg);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-vox-surface-highest);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-vox-primary);
+  }
+}

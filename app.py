@@ -223,12 +223,13 @@ class VoxCPMDemo:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"Running on device: {self.device}")
 
-        self.asr_model_id = "iic/SenseVoiceSmall"
+        self.asr_model_id = "FunAudioLLM/SenseVoiceSmall"
         self.asr_model: Optional[AutoModel] = AutoModel(
             model=self.asr_model_id,
             disable_update=True,
             log_level="DEBUG",
             device="cuda:0" if self.device == "cuda" else "cpu",
+            hub="hf",
         )
 
         self.voxcpm_model: Optional[voxcpm.VoxCPM] = None

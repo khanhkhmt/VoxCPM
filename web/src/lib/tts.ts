@@ -1,4 +1,4 @@
-const GRADIO_BASE = "http://localhost:8808";
+const GRADIO_BASE = "";
 const GRADIO_API = `${GRADIO_BASE}/gradio_api`;
 
 export interface GenerateTTSParams {
@@ -94,62 +94,79 @@ export async function generateSpeech(params: GenerateTTSParams): Promise<TTSResu
 
         const { event_id } = await res.json();
 
-        // Stream the result via SSE
+        // Stream the result via SSE — Gradio sends:
+        //   event: complete
+        //   data: [{path, url, ...}]
+        // We use fetch + manual SSE parsing because EventSource.onmessage
+        // only fires for unnamed events, while Gradio sends named events.
         const streamUrl = `${GRADIO_API}/call/generate/${event_id}`;
 
-        return new Promise((resolve, reject) => {
-            const eventSource = new EventSource(streamUrl);
-            let settled = false;
+        const sseRes = await fetch(streamUrl);
+        if (!sseRes.ok || !sseRes.body) {
+            throw new Error(`SSE stream failed: ${sseRes.status}`);
+        }
 
-            const timeout = setTimeout(() => {
-                if (!settled) {
-                    settled = true;
-                    eventSource.close();
-                    reject(new Error("Generation timed out after 120s"));
-                }
-            }, 120_000);
+        const reader = sseRes.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
 
-            eventSource.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
+        const TIMEOUT_MS = 600_000; // 10 minutes for CPU generation
+        const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Generation timed out after 10 minutes")), TIMEOUT_MS)
+        );
 
-                    if (data.msg === "process_completed") {
-                        settled = true;
-                        clearTimeout(timeout);
-                        eventSource.close();
+        const parsePromise = (async (): Promise<TTSResult> => {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-                        if (data.success) {
-                            const audioData = data.output?.data?.[0];
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split("\n");
+                buffer = lines.pop() || "";
+
+                let currentEvent = "";
+                for (const line of lines) {
+                    if (line.startsWith("event: ")) {
+                        currentEvent = line.slice(7).trim();
+                    } else if (line.startsWith("data: ") && currentEvent === "complete") {
+                        const raw = line.slice(6);
+                        try {
+                            const data = JSON.parse(raw);
+                            // data is an array: [{path, url, orig_name, ...}]
+                            const audioData = Array.isArray(data) ? data[0] : data?.data?.[0];
                             if (!audioData) {
-                                resolve({ error: "No audio returned from backend." });
-                                return;
+                                return { error: "No audio returned from backend." };
                             }
-                            // Gradio audio output is usually {path, url, ...}
-                            const filePath = audioData.path || audioData.name || audioData.url;
-                            const url = filePath.startsWith("http")
-                                ? filePath
-                                : `${GRADIO_BASE}/gradio_api/file=${filePath}`;
-                            resolve({ audioUrl: url });
-                        } else {
-                            resolve({ error: data.error || "Synthesis failed on backend." });
+                            const filePath = audioData.url || audioData.path || audioData.name;
+                            // Always route through the Next.js proxy.
+                            // Gradio returns URLs like http://127.0.0.1:8808/gradio_api/file=...
+                            // We strip the origin and use the relative /gradio_api/... path.
+                            let url: string;
+                            if (filePath.includes("/gradio_api/")) {
+                                url = "/gradio_api/" + filePath.split("/gradio_api/").pop();
+                            } else if (filePath.startsWith("/")) {
+                                url = `/gradio_api/file=${filePath}`;
+                            } else {
+                                url = `/gradio_api/file=${filePath}`;
+                            }
+                            return { audioUrl: url };
+                        } catch {
+                            // ignore parse errors
                         }
+                    } else if (line.startsWith("data: ") && currentEvent === "error") {
+                        return { error: line.slice(6) };
                     }
-                } catch (parseErr) {
-                    // Ignore non-JSON heartbeat messages
                 }
-            };
+            }
+            return { error: "Stream ended without result." };
+        })();
 
-            eventSource.onerror = () => {
-                if (!settled) {
-                    settled = true;
-                    clearTimeout(timeout);
-                    eventSource.close();
-                    reject(new Error("Connection to generation stream lost."));
-                }
-            };
-        });
+        return await Promise.race([parsePromise, timeoutPromise]);
     } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : "Failed to generate speech";
+        let msg = error instanceof Error ? error.message : "Failed to generate speech";
+        if (msg.includes("Failed to fetch") || msg.includes("fetch")) {
+            msg = "Cannot connect to the TTS backend (port 8808). Please make sure the Gradio server is running: uv run python app.py --port 8808";
+        }
         console.error("TTS Generation Error:", error);
         return { error: msg };
     }

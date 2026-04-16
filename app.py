@@ -220,7 +220,7 @@ _APP_THEME = gr.themes.Soft(
 
 class VoxCPMDemo:
     def __init__(self, model_id: str = "openbmb/VoxCPM2") -> None:
-        self.device = "cuda" if torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 7 else "cpu"
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"Running on device: {self.device}")
 
         self.asr_model_id = "FunAudioLLM/SenseVoiceSmall"

@@ -22,7 +22,7 @@ export default function Home() {
             <div className="lg:col-span-7">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-vox-secondary/30 bg-vox-secondary/5 mb-6">
                 <Activity size={14} className="text-vox-secondary" />
-                <span className="text-xs font-semibold tracking-wider text-vox-secondary uppercase">Powered by VoxCPM2</span>
+                <span className="text-xs font-semibold tracking-wider text-vox-secondary uppercase">Powered by Oriagent AI</span>
               </div>
               <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.1]">
                 Transform Text Into <br />

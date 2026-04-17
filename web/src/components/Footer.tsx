@@ -9,7 +9,7 @@ export default function Footer() {
                     <div className="col-span-2 md:col-span-1">
                         <Logo className="mb-4" />
                         <p className="text-sm text-vox-text-dim mb-6 max-w-xs">
-                            Transforming the way software speaks, from prototype to production. Powered by VoxCPM technology.
+                            Transforming the way software speaks, from prototype to production. Powered by Oriagent AI technology.
                         </p>
                     </div>
 
@@ -45,7 +45,7 @@ export default function Footer() {
 
                 <div className="border-t border-vox-outline/20 pt-8 flex flex-col md:flex-row items-center justify-between">
                     <p className="text-xs text-vox-text-dim">
-                        &copy; {new Date().getFullYear()} Oriagent. All rights reserved. Powered by OpenBMB VoxCPM.
+                        &copy; {new Date().getFullYear()} Oriagent. All rights reserved.
                     </p>
                     <div className="flex gap-4 mt-4 md:mt-0">
                         {/* Social links placeholder */}

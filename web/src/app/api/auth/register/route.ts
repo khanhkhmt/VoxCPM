@@ -36,14 +36,14 @@ export async function POST(request: NextRequest) {
     // Validate
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) {
-        const firstError = parsed.error.errors[0];
+        const firstError = parsed.error.issues[0];
         return NextResponse.json(
             { ok: false, error: { code: "VALIDATION_ERROR", message: firstError?.message ?? "Validation failed" } },
             { status: 400 },
         );
     }
 
-    const { email, name, password, captchaId, captchaText } = parsed.data;
+    const { username, name, password, captchaId, captchaText } = parsed.data;
 
     // Verify captcha
     const captchaResult = await verifyCaptcha(captchaId, captchaText);
@@ -62,56 +62,65 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    // Check if registration is allowed
-    const userCount = await prisma.user.count();
-    const allowRegister = process.env.AUTH_ALLOW_REGISTER !== "false";
+    // -- Database operations (wrapped in try-catch for proper JSON errors) --
+    try {
+        // Check if registration is allowed
+        const userCount = await prisma.user.count();
+        const allowRegister = process.env.AUTH_ALLOW_REGISTER !== "false";
 
-    // First user is always allowed (bootstrap admin)
-    if (!allowRegister && userCount > 0) {
-        return NextResponse.json(
-            { ok: false, error: { code: "REGISTER_DISABLED", message: "Registration is currently disabled." } },
-            { status: 403 },
-        );
-    }
+        // First user is always allowed (bootstrap admin)
+        if (!allowRegister && userCount > 0) {
+            return NextResponse.json(
+                { ok: false, error: { code: "REGISTER_DISABLED", message: "Registration is currently disabled." } },
+                { status: 403 },
+            );
+        }
 
-    // Check email unique
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-        return NextResponse.json(
-            { ok: false, error: { code: "EMAIL_ALREADY_EXISTS", message: "An account with this email already exists." } },
-            { status: 409 },
-        );
-    }
+        // Check username unique
+        const existing = await prisma.user.findUnique({ where: { username } });
+        if (existing) {
+            return NextResponse.json(
+                { ok: false, error: { code: "USERNAME_ALREADY_EXISTS", message: "This username is already taken." } },
+                { status: 409 },
+            );
+        }
 
-    // Hash password
-    const passwordHash = await hashPassword(password);
+        // Hash password
+        const passwordHash = await hashPassword(password);
 
-    // First user auto = admin
-    const role = userCount === 0 ? "admin" : "user";
+        // First user auto = admin
+        const role = userCount === 0 ? "admin" : "user";
 
-    // Create user
-    const user = await prisma.user.create({
-        data: {
-            email,
-            name,
-            passwordHash,
-            role,
-        },
-    });
-
-    // Create session + set cookie
-    await createSessionAndSetCookie(user.id);
-
-    return NextResponse.json({
-        ok: true,
-        data: {
-            user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                avatarUrl: user.avatarUrl,
-                role: user.role,
+        // Create user
+        const user = await prisma.user.create({
+            data: {
+                username,
+                name,
+                passwordHash,
+                role,
             },
-        },
-    });
+        });
+
+        // (Optional) We intentionally don't create the session cookie here 
+        // so the user is forced to log in manually according to standard UX flows.
+
+        return NextResponse.json({
+            ok: true,
+            data: {
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    name: user.name,
+                    avatarUrl: user.avatarUrl,
+                    role: user.role,
+                },
+            },
+        });
+    } catch (err: unknown) {
+        console.error("Register DB error:", err);
+        return NextResponse.json(
+            { ok: false, error: { code: "INTERNAL_ERROR", message: "An internal server error occurred. Please try again." } },
+            { status: 500 },
+        );
+    }
 }

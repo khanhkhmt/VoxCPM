@@ -40,7 +40,7 @@ export default function Header() {
                                     <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-vox-surface transition-colors border border-transparent hover:border-white/5">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
-                                            src={user.avatarUrl || `https://api.dicebear.com/9.x/notionists/svg?seed=${user.email}`}
+                                            src={user.avatarUrl || `https://api.dicebear.com/9.x/notionists/svg?seed=${user.username}`}
                                             alt="Avatar"
                                             className="w-7 h-7 rounded-full bg-vox-surface-high ring-1 ring-vox-outline/50"
                                         />

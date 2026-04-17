@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
 
     const { text, svg } = generateCaptchaSvg();
     await storeCaptcha(uuid, text);
+    console.log(`[DEV] Generated captcha for ${uuid}: ${text}`);
 
     return new NextResponse(svg, {
         status: 200,

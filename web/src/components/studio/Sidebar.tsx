@@ -50,11 +50,11 @@ export default function Sidebar() {
             <div className="p-4 border-t border-vox-outline/20">
                 <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} bg-vox-surface rounded-xl p-2`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={user?.avatar} alt="Avatar" className="w-10 h-10 rounded-full bg-vox-surface-high border border-vox-outline/20" />
+                    <img src={user?.avatarUrl || `https://api.dicebear.com/9.x/notionists/svg?seed=${user?.username}`} alt="Avatar" className="w-10 h-10 rounded-full bg-vox-surface-high border border-vox-outline/20" />
                     {!collapsed && (
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-white truncate">{user?.name}</p>
-                            <p className="text-xs text-vox-text-dim truncate">{user?.email}</p>
+                            <p className="text-xs text-vox-text-dim truncate">{user?.username}</p>
                         </div>
                     )}
                 </div>

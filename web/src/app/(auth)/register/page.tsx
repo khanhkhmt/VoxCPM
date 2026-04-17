@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -16,20 +16,27 @@ export default function RegisterPage() {
     const router = useRouter();
 
     const [serverError, setServerError] = useState<string | null>(null);
-    const [captchaId, setCaptchaId] = useState(() => crypto.randomUUID());
-    const [captchaText, setCaptchaText] = useState("");
+    const [serverSuccess, setServerSuccess] = useState<string | null>(null);
+    const [captchaId, setCaptchaId] = useState("");
+
+    // Generate captchaId only on client to avoid SSR/client hydration mismatch
+    useEffect(() => {
+        setCaptchaId(crypto.randomUUID());
+    }, []);
     const [loading, setLoading] = useState(false);
     const [agreedTerms, setAgreedTerms] = useState(false);
 
     const {
         register: registerField,
         handleSubmit,
+        setValue,
+        watch,
         formState: { errors },
     } = useForm<RegisterInput>({
         resolver: zodResolver(registerSchema),
         defaultValues: {
             name: "",
-            email: "",
+            username: "",
             password: "",
             confirmPassword: "",
             captchaId: "",
@@ -37,10 +44,17 @@ export default function RegisterPage() {
         },
     });
 
+    const captchaText = watch("captchaText");
+
+    // Keep react-hook-form in sync with the captchaId state
+    useEffect(() => {
+        setValue("captchaId", captchaId);
+    }, [captchaId, setValue]);
+
     const regenerateCaptcha = useCallback(() => {
         setCaptchaId(crypto.randomUUID());
-        setCaptchaText("");
-    }, []);
+        setValue("captchaText", "");
+    }, [setValue]);
 
     const onSubmit = async (data: RegisterInput) => {
         if (!agreedTerms) {
@@ -57,14 +71,17 @@ export default function RegisterPage() {
                 captchaId,
                 captchaText,
             });
-            router.push("/studio");
+
+            setServerSuccess("Account created successfully! Redirecting to login...");
+            setTimeout(() => {
+                router.push("/login");
+            }, 1500);
         } catch (err: unknown) {
             const error = err as Error & { code?: string };
             setServerError(error.message);
 
-            if (error.code === "CAPTCHA_WRONG" || error.code === "CAPTCHA_EXPIRED") {
-                regenerateCaptcha();
-            }
+            // Auto-refresh captcha on any API error because the backend token is consumed
+            regenerateCaptcha();
         } finally {
             setLoading(false);
         }
@@ -89,6 +106,13 @@ export default function RegisterPage() {
                     </div>
                 )}
 
+                {serverSuccess && (
+                    <div className="mb-6 bg-green-500/10 border border-green-500/30 text-green-200 p-3 rounded-xl text-sm flex items-start gap-2">
+                        <UserPlus size={16} className="text-green-400 mt-0.5 shrink-0" />
+                        <p>{serverSuccess}</p>
+                    </div>
+                )}
+
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
                     <FormField label="Name" error={errors.name?.message}>
                         <TextInput
@@ -100,13 +124,13 @@ export default function RegisterPage() {
                         />
                     </FormField>
 
-                    <FormField label="Email" error={errors.email?.message}>
+                    <FormField label="Username" error={errors.username?.message}>
                         <TextInput
-                            type="email"
-                            placeholder="you@example.com"
-                            autoComplete="email"
-                            hasError={!!errors.email}
-                            {...registerField("email")}
+                            type="text"
+                            placeholder="Choose a username"
+                            autoComplete="username"
+                            hasError={!!errors.username}
+                            {...registerField("username")}
                         />
                     </FormField>
 
@@ -133,10 +157,10 @@ export default function RegisterPage() {
 
                     <CaptchaField
                         value={captchaText}
-                        onChange={setCaptchaText}
+                        onChange={(val) => setValue("captchaText", val, { shouldValidate: true })}
                         captchaId={captchaId}
                         onRegenerate={regenerateCaptcha}
-                        error={errors.captchaText?.message}
+                        error={errors.captchaText?.message || errors.captchaId?.message}
                     />
 
                     {/* Terms checkbox */}

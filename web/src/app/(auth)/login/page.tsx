@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -18,23 +18,36 @@ export default function LoginPage() {
     const next = searchParams.get("next") ?? "/studio";
 
     const [serverError, setServerError] = useState<string | null>(null);
-    const [captchaId, setCaptchaId] = useState(() => crypto.randomUUID());
-    const [captchaText, setCaptchaText] = useState("");
+    const [captchaId, setCaptchaId] = useState("");
+
+    // Generate captchaId only on client to avoid SSR/client hydration mismatch
+    useEffect(() => {
+        setCaptchaId(crypto.randomUUID());
+    }, []);
     const [loading, setLoading] = useState(false);
 
     const {
         register: registerField,
         handleSubmit,
+        setValue,
+        watch,
         formState: { errors },
     } = useForm<LoginInput>({
         resolver: zodResolver(loginSchema),
-        defaultValues: { email: "", password: "", captchaId: "", captchaText: "" },
+        defaultValues: { username: "", password: "", captchaId: "", captchaText: "" },
     });
+
+    const captchaText = watch("captchaText");
+
+    // Keep react-hook-form in sync with the captchaId state
+    useEffect(() => {
+        setValue("captchaId", captchaId);
+    }, [captchaId, setValue]);
 
     const regenerateCaptcha = useCallback(() => {
         setCaptchaId(crypto.randomUUID());
-        setCaptchaText("");
-    }, []);
+        setValue("captchaText", "");
+    }, [setValue]);
 
     const onSubmit = async (data: LoginInput) => {
         setServerError(null);
@@ -51,10 +64,8 @@ export default function LoginPage() {
             const error = err as Error & { code?: string };
             setServerError(error.message);
 
-            // Auto-refresh captcha on captcha errors
-            if (error.code === "CAPTCHA_WRONG" || error.code === "CAPTCHA_EXPIRED") {
-                regenerateCaptcha();
-            }
+            // Auto-refresh captcha on any API error because the backend token is consumed
+            regenerateCaptcha();
         } finally {
             setLoading(false);
         }
@@ -78,13 +89,13 @@ export default function LoginPage() {
                 )}
 
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-                    <FormField label="Email" error={errors.email?.message}>
+                    <FormField label="Username" error={errors.username?.message}>
                         <TextInput
-                            type="email"
-                            placeholder="you@example.com"
-                            autoComplete="email"
-                            hasError={!!errors.email}
-                            {...registerField("email")}
+                            type="text"
+                            placeholder="Enter your username"
+                            autoComplete="username"
+                            hasError={!!errors.username}
+                            {...registerField("username")}
                         />
                     </FormField>
 
@@ -99,10 +110,10 @@ export default function LoginPage() {
 
                     <CaptchaField
                         value={captchaText}
-                        onChange={setCaptchaText}
+                        onChange={(val) => setValue("captchaText", val, { shouldValidate: true })}
                         captchaId={captchaId}
                         onRegenerate={regenerateCaptcha}
-                        error={errors.captchaText?.message}
+                        error={errors.captchaText?.message || errors.captchaId?.message}
                     />
 
                     <SubmitButton loading={loading}>

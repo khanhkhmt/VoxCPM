@@ -74,7 +74,7 @@ export default function CaptchaField({
                     placeholder="Enter code"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="flex-1 bg-vox-surface-lowest border border-vox-outline/30 rounded-lg px-4 py-2.5 text-sm text-vox-text outline-none focus:border-vox-primary transition-colors tracking-widest uppercase"
+                    className="flex-1 bg-vox-surface-lowest border border-vox-outline/30 rounded-lg px-4 py-2.5 text-sm text-vox-text outline-none focus:border-vox-primary transition-colors tracking-widest"
                     maxLength={5}
                 />
             </div>

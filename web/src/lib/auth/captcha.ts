@@ -1,4 +1,16 @@
 import svgCaptcha from "svg-captcha";
+import path from "path";
+import fs from "fs";
+
+// Override font loading to fix Next.js Webpack __dirname path resolution errors
+try {
+    const fontPath = path.join(process.cwd(), "node_modules", "svg-captcha", "fonts", "Comismsh.ttf");
+    if (fs.existsSync(fontPath)) {
+        svgCaptcha.loadFont(fontPath);
+    }
+} catch (error) {
+    console.error("Failed to load svg-captcha font:", error);
+}
 
 // ---------------------------------------------------------------------------
 // CaptchaStore interface
@@ -69,21 +81,23 @@ class RedisCaptchaStore implements CaptchaStore {
 // ---------------------------------------------------------------------------
 // Factory
 // ---------------------------------------------------------------------------
-let storeInstance: CaptchaStore | null = null;
+const globalForCaptcha = globalThis as unknown as {
+    captchaStore: CaptchaStore | undefined;
+};
 
 export function getCaptchaStore(): CaptchaStore {
-    if (!storeInstance) {
+    if (!globalForCaptcha.captchaStore) {
         if (
             process.env.UPSTASH_REDIS_REST_URL &&
             process.env.UPSTASH_REDIS_REST_TOKEN
         ) {
-            storeInstance = new RedisCaptchaStore();
+            globalForCaptcha.captchaStore = new RedisCaptchaStore();
         } else {
             // dev-only: in-memory store — entries lost on server restart
-            storeInstance = new InMemoryCaptchaStore();
+            globalForCaptcha.captchaStore = new InMemoryCaptchaStore();
         }
     }
-    return storeInstance;
+    return globalForCaptcha.captchaStore;
 }
 
 // ---------------------------------------------------------------------------

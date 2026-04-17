@@ -8,14 +8,14 @@ import { useRouter } from "next/navigation";
 // ---------------------------------------------------------------------------
 export interface User {
     id: string;
-    email: string;
+    username: string;
     name: string;
     avatarUrl: string | null;
     role: "user" | "admin";
 }
 
 export interface LoginInput {
-    email: string;
+    username: string;
     password: string;
     captchaId: string;
     captchaText: string;
@@ -23,7 +23,7 @@ export interface LoginInput {
 
 export interface RegisterInput {
     name: string;
-    email: string;
+    username: string;
     password: string;
     confirmPassword: string;
     captchaId: string;

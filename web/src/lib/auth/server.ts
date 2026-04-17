@@ -101,7 +101,7 @@ export async function getCurrentUser() {
         const { user } = session;
         return {
             id: user.id,
-            email: user.email,
+            username: user.username,
             name: user.name,
             avatarUrl: user.avatarUrl,
             role: user.role as "user" | "admin",

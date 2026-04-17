@@ -15,6 +15,12 @@ export async function GET() {
 
     return NextResponse.json({
         ok: true,
-        data: { user },
+        data: {
+            user: {
+                id: user.id,
+                username: user.username,
+                name: user.name,
+            }
+        },
     });
 }

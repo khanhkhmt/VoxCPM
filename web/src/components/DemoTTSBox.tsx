@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { Play, Pause, Lock, Volume2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 const SAMPLE_VOICES = [
     { id: "sarah", name: "Sarah (Warm & Professional)", demoUrl: "" },
@@ -10,10 +11,11 @@ const SAMPLE_VOICES = [
     { id: "yuki", name: "Yuki (Energetic & Sweet)", demoUrl: "" },
 ];
 
-const SAMPLE_TEXT = "Welcome to Voxora. We transform your text into lifelike speech with incredible realism. Sign in now to generate your own custom voices.";
+const SAMPLE_TEXT = "Welcome to Oriagent. We transform your text into lifelike speech with incredible realism. Sign in now to generate your own custom voices.";
 
 export default function DemoTTSBox() {
-    const { isLoggedIn, login } = useAuth();
+    const { isLoggedIn } = useAuth();
+    const router = useRouter();
     const [isPlaying, setIsPlaying] = useState(false);
     const [activeVoice, setActiveVoice] = useState(SAMPLE_VOICES[0].id);
     const progressRef = useRef<HTMLDivElement>(null);
@@ -53,7 +55,7 @@ export default function DemoTTSBox() {
 
                         {/* Overlay showing login prompt for custom typing */}
                         <div className="absolute inset-0 bg-vox-bg/60 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <button onClick={login} className="flex items-center gap-2 bg-vox-surface-high border border-vox-outline/50 hover:border-vox-primary px-4 py-2 rounded-lg text-sm transition-all shadow-lg text-white">
+                            <button onClick={() => router.push("/login")} className="flex items-center gap-2 bg-vox-surface-high border border-vox-outline/50 hover:border-vox-primary px-4 py-2 rounded-lg text-sm transition-all shadow-lg text-white">
                                 <Lock size={14} className="text-vox-secondary" />
                                 Sign in to enter custom text
                             </button>
@@ -82,7 +84,7 @@ export default function DemoTTSBox() {
             {!isLoggedIn && (
                 <div className="bg-vox-primary/10 border-t border-vox-outline/20 p-4 text-center">
                     <p className="text-sm text-vox-text-dim">
-                        Want to try with your own text? <button onClick={login} className="text-vox-secondary hover:text-white transition-colors ml-1 font-medium underline underline-offset-4">Sign in with Google - It's Free</button>
+                        Want to try with your own text? <button onClick={() => router.push("/login")} className="text-vox-secondary hover:text-white transition-colors ml-1 font-medium underline underline-offset-4">Sign in to generate - It&apos;s Free</button>
                     </p>
                 </div>
             )}

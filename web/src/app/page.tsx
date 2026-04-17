@@ -66,7 +66,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-semibold mb-3">Voice Design</h3>
                 <p className="text-vox-text-dim text-sm leading-relaxed">
-                  Craft completely new, unique voices by just describing them. "A middle-aged man with a deep, rasping voice."
+                  Craft completely new, unique voices by just describing them. &quot;A middle-aged man with a deep, rasping voice.&quot;
                 </p>
               </GlassCard>
 

@@ -53,7 +53,7 @@ export async function generateSpeech(params: GenerateTTSParams): Promise<TTSResu
         // [text, control_instruction, reference_wav, show_prompt_text, prompt_text,
         //  cfg_value, DoNormalizeText, DoDenoisePromptAudio, dit_steps]
 
-        let refWavPayload: any = null;
+        let refWavPayload: Record<string, unknown> | null = null;
 
         if (params.referenceWav instanceof File) {
             // Upload via Gradio /upload first, then pass the server path

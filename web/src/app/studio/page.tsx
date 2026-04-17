@@ -1,8 +1,8 @@
 import Workspace from "@/components/studio/Workspace";
 
 export const metadata = {
-    title: "Studio | Voxora TTS",
-    description: "Generate lifelike speech using the Voxora TTS dashboard.",
+    title: "Studio | Oriagent TTS",
+    description: "Generate lifelike speech using the Oriagent TTS dashboard.",
 };
 
 export default function StudioPage() {

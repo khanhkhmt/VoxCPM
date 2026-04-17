@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Mic, LayoutDashboard, History, Settings, PanelLeftClose, PanelLeft, LogOut } from "lucide-react";
 import { useState } from "react";
+import Logo from "@/components/Logo";
 
 export default function Sidebar() {
     const { user, logout } = useAuth();
@@ -21,20 +22,9 @@ export default function Sidebar() {
     return (
         <div className={`h-screen flex flex-col bg-vox-surface-low border-r border-vox-outline/20 transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}>
             <div className="h-20 flex items-center justify-between px-4 border-b border-vox-outline/20">
-                {!collapsed && (
-                    <Link href="/" className="flex items-center gap-2 group">
-                        <div className="w-8 h-8 rounded-lg bg-vox-primary flex items-center justify-center glow-primary">
-                            <span className="text-white font-bold text-sm">V</span>
-                        </div>
-                        <span className="text-xl font-bold tracking-tight text-white">Voxora</span>
-                    </Link>
-                )}
-
-                {collapsed && (
-                    <div className="w-full flex justify-center w-8 h-8 rounded-lg bg-vox-primary items-center glow-primary mx-auto">
-                        <span className="text-white font-bold text-sm">V</span>
-                    </div>
-                )}
+                <div className="px-2 w-full flex justify-center md:block pt-1">
+                    <Logo iconOnly={collapsed} />
+                </div>
 
                 <button onClick={() => setCollapsed(!collapsed)} className="text-vox-text-dim hover:text-white p-1 rounded-md absolute -right-3 top-6 bg-vox-surface border border-vox-outline/30 z-10 hidden md:block">
                     {collapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}

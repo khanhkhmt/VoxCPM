@@ -6,17 +6,20 @@ import { useEffect } from "react";
 import Sidebar from "@/components/studio/Sidebar";
 
 export default function StudioLayout({ children }: { children: React.ReactNode }) {
-    const { isLoggedIn } = useAuth();
+    const { status } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-        // If we loaded and are definitely not logged in, redirect home
-        if (localStorage.getItem("voxora_mock_auth") === null && !isLoggedIn) {
-            router.push("/");
+        // Redirection should primarily be handled by middleware.ts,
+        // but as a fallback client-side check, we can push to login if unauthenticated.
+        if (status === "unauthenticated") {
+            router.push("/login?next=/studio");
         }
-    }, [isLoggedIn, router]);
+    }, [status, router]);
 
-    if (!isLoggedIn) return null; // Or a loading spinner
+    // Don't render studio content until fully authenticated 
+    // to prevent flash of content before redirect
+    if (status !== "authenticated") return null;
 
     return (
         <div className="flex h-screen bg-vox-bg overflow-hidden relative">

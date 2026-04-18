@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["svg-captcha", "@prisma/client", "prisma", "bcryptjs"],
   rewrites: async () => {
     return [
       {

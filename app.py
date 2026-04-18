@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 # ---------- Inline i18n (en + zh-CN only) ----------
 
 _USAGE_INSTRUCTIONS_EN = (
-    "**VoxCPM2 — Three Modes of Speech Generation:**\n\n"
+    "**Oriagent2 — Three Modes of Speech Generation:**\n\n"
     "🎨 **Voice Design** — Create a brand-new voice  \n"
     "No reference audio required. Describe the desired voice characteristics "
     "(gender, age, tone, emotion, pace …) in **Control Instruction**, and VoxCPM2 "
@@ -53,10 +53,10 @@ _EXAMPLES_FOOTER_EN = (
 )
 
 _USAGE_INSTRUCTIONS_ZH = (
-    "**VoxCPM2 — 三种语音生成方式：**\n\n"
+    "**Oriagent2 — 三种语音生成方式：**\n\n"
     "🎨 **声音设计（Voice Design）**  \n"
     "无需参考音频。在 **Control Instruction** 中描述目标音色特征"
-    "（性别、年龄、语气、情绪、语速等），VoxCPM2 即可为你从零创造独一无二的声音。\n\n"
+    "（性别、年龄、语气、情绪、语速等），Oriagent2 即可为你从零创造独一无二的声音。\n\n"
     "🎛️ **可控克隆（Controllable Cloning）**  \n"
     "上传参考音频，同时可选地使用 **Control Instruction** 来指定情绪、语速、风格等表达方式，"
     "在保留原始音色的基础上灵活控制说话风格。\n\n"
@@ -154,7 +154,7 @@ for _d in _I18N_TRANSLATIONS.values():
 I18N = gr.I18n(**_I18N_TRANSLATIONS)
 
 DEFAULT_TARGET_TEXT = (
-    "VoxCPM2 is a creative multilingual TTS model from ModelBest, "
+    "Oriagent2 is a creative multilingual TTS model from ModelBest, "
     "designed to generate highly realistic speech."
 )
 
@@ -375,7 +375,7 @@ def create_demo_interface(demo: VoxCPMDemo):
     with gr.Blocks() as interface:
         gr.HTML(
             '<div class="logo-container">'
-            '<img src="/gradio_api/file=assets/voxcpm_logo.png" alt="VoxCPM Logo">'
+            '<img src="/gradio_api/file=web/public/logo_oriagent.svg" alt="Oriagent Logo">'
             "</div>"
         )
 

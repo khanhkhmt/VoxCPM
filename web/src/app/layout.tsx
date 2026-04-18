@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Voxora | Transform text into lifelike speech",
-  description: "A premium SaaS Text-to-Speech platform running on VoxCPM.",
+  title: "Oriagent | Transform text into lifelike speech",
+  description: "A premium SaaS Text-to-Speech platform for lifelike AI voices.",
 };
 
 export default function RootLayout({

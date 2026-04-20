@@ -4,6 +4,24 @@ voxcpm.egg-info
 .DS_Store
 ./pretrained_models/
 app_local.py
-.env
 
+# Env files
+.env
+.env.*
+
+# Database files
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Logs and History
+*.log
+.history/
+.bash_history
+.python_history
+
+# Package locks
 web/package-lock.json

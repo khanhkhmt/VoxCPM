@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateCaptchaSvg, storeCaptcha } from "@/lib/auth/captcha";
-import { captchaLimiter } from "@/lib/auth/rate-limit";
+import { getOrCreateCaptcha } from "@/lib/auth/captcha";
 
 export const runtime = "nodejs";
 
@@ -14,20 +13,8 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    // Rate-limit by IP
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-        request.headers.get("x-real-ip") ?? "unknown";
-    const rateLimitResult = await captchaLimiter.limit(`captcha:${ip}`);
-    if (!rateLimitResult.success) {
-        return NextResponse.json(
-            { ok: false, error: { code: "RATE_LIMITED", message: "Too many captcha requests. Please wait." } },
-            { status: 429 },
-        );
-    }
-
-    const { text, svg } = generateCaptchaSvg();
-    await storeCaptcha(uuid, text);
-    console.log(`[DEV] Generated captcha for ${uuid}: ${text}`);
+    const { text, svg } = await getOrCreateCaptcha(uuid);
+    console.log(`[DEV] Captcha for ${uuid}: ${text}`);
 
     return new NextResponse(svg, {
         status: 200,

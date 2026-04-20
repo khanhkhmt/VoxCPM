@@ -3,25 +3,11 @@ import { registerSchema } from "@/lib/schemas/auth";
 import { verifyCaptcha } from "@/lib/auth/captcha";
 import { hashPassword } from "@/lib/auth/hash";
 import { createSessionAndSetCookie } from "@/lib/auth/server";
-import { registerLimiter } from "@/lib/auth/rate-limit";
 import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
-    // Rate-limit by IP
-    const ip =
-        request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-        request.headers.get("x-real-ip") ??
-        "unknown";
-    const rateLimitResult = await registerLimiter.limit(`register:${ip}`);
-    if (!rateLimitResult.success) {
-        return NextResponse.json(
-            { ok: false, error: { code: "RATE_LIMITED", message: "Too many registration attempts. Please try again later." } },
-            { status: 429 },
-        );
-    }
-
     // Parse body
     let body: unknown;
     try {

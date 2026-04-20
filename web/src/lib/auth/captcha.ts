@@ -16,65 +16,39 @@ try {
 // CaptchaStore interface
 // ---------------------------------------------------------------------------
 export interface CaptchaStore {
-    set(uuid: string, text: string, ttlSeconds: number): Promise<void>;
-    /** Atomic get + delete. Returns null if not found or expired. */
-    takeAndDelete(uuid: string): Promise<string | null>;
+    set(uuid: string, text: string, svg: string, ttlSeconds: number): Promise<void>;
+    /** Non-destructive read. Returns null if not found or expired. */
+    get(uuid: string): Promise<{ text: string; svg: string } | null>;
+    /** Delete entry. */
+    delete(uuid: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
 // In-memory implementation (dev-only)
 // ---------------------------------------------------------------------------
 class InMemoryCaptchaStore implements CaptchaStore {
-    private store = new Map<string, { text: string; expiresAt: number }>();
+    private store = new Map<string, { text: string; svg: string; expiresAt: number }>();
 
-    async set(uuid: string, text: string, ttlSeconds: number): Promise<void> {
+    async set(uuid: string, text: string, svg: string, ttlSeconds: number): Promise<void> {
         this.store.set(uuid, {
             text,
+            svg,
             expiresAt: Date.now() + ttlSeconds * 1000,
         });
     }
 
-    async takeAndDelete(uuid: string): Promise<string | null> {
+    async get(uuid: string): Promise<{ text: string; svg: string } | null> {
         const entry = this.store.get(uuid);
         if (!entry) return null;
-
-        // Always delete — one-time use
-        this.store.delete(uuid);
-
-        // Check expiry
-        if (entry.expiresAt < Date.now()) return null;
-
-        return entry.text;
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Redis implementation (production)
-// ---------------------------------------------------------------------------
-class RedisCaptchaStore implements CaptchaStore {
-    private redis: import("@upstash/redis").Redis | null = null;
-
-    private async getRedis() {
-        if (!this.redis) {
-            const { Redis } = await import("@upstash/redis");
-            this.redis = new Redis({
-                url: process.env.UPSTASH_REDIS_REST_URL!,
-                token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-            });
+        if (entry.expiresAt < Date.now()) {
+            this.store.delete(uuid);
+            return null;
         }
-        return this.redis;
+        return { text: entry.text, svg: entry.svg };
     }
 
-    async set(uuid: string, text: string, ttlSeconds: number): Promise<void> {
-        const redis = await this.getRedis();
-        await redis.set(`captcha:${uuid}`, text, { ex: ttlSeconds });
-    }
-
-    async takeAndDelete(uuid: string): Promise<string | null> {
-        const redis = await this.getRedis();
-        // GETDEL is atomic get + delete
-        const result = await redis.getdel<string>(`captcha:${uuid}`);
-        return result ?? null;
+    async delete(uuid: string): Promise<void> {
+        this.store.delete(uuid);
     }
 }
 
@@ -82,30 +56,37 @@ class RedisCaptchaStore implements CaptchaStore {
 // Factory
 // ---------------------------------------------------------------------------
 const globalForCaptcha = globalThis as unknown as {
-    captchaStore: CaptchaStore | undefined;
+    __captchaStore_v2__: CaptchaStore | undefined;
 };
 
 export function getCaptchaStore(): CaptchaStore {
-    if (!globalForCaptcha.captchaStore) {
-        if (
-            process.env.UPSTASH_REDIS_REST_URL &&
-            process.env.UPSTASH_REDIS_REST_TOKEN
-        ) {
-            globalForCaptcha.captchaStore = new RedisCaptchaStore();
-        } else {
-            // dev-only: in-memory store — entries lost on server restart
-            globalForCaptcha.captchaStore = new InMemoryCaptchaStore();
-        }
+    if (!globalForCaptcha.__captchaStore_v2__) {
+        // Always use in-memory for simplicity (no Redis needed)
+        globalForCaptcha.__captchaStore_v2__ = new InMemoryCaptchaStore();
     }
-    return globalForCaptcha.captchaStore;
+    return globalForCaptcha.__captchaStore_v2__;
 }
 
 // ---------------------------------------------------------------------------
-// Generate captcha SVG
+// Generate + store captcha (idempotent per UUID)
 // ---------------------------------------------------------------------------
 const CAPTCHA_TTL_SECONDS = 5 * 60; // 5 minutes
 
-export function generateCaptchaSvg(): { text: string; svg: string } {
+/**
+ * Get or create a captcha for the given UUID.
+ * If a captcha already exists for this UUID, return it (idempotent).
+ * This prevents React strict-mode double-fetches from invalidating the captcha.
+ */
+export async function getOrCreateCaptcha(uuid: string): Promise<{ text: string; svg: string }> {
+    const store = getCaptchaStore();
+
+    // Check if we already have one for this UUID
+    const existing = await store.get(uuid);
+    if (existing) {
+        return existing;
+    }
+
+    // Generate new
     const captcha = svgCaptcha.create({
         size: 5,
         noise: 2,
@@ -114,31 +95,32 @@ export function generateCaptchaSvg(): { text: string; svg: string } {
         ignoreChars: "0oO1iIl",
     });
 
-    return {
-        text: captcha.text.toLowerCase(),
-        svg: captcha.data,
-    };
+    const text = captcha.text.toLowerCase();
+    const svg = captcha.data;
+
+    await store.set(uuid, text, svg, CAPTCHA_TTL_SECONDS);
+    return { text, svg };
 }
 
-export async function storeCaptcha(uuid: string, text: string): Promise<void> {
-    const store = getCaptchaStore();
-    await store.set(uuid, text, CAPTCHA_TTL_SECONDS);
-}
-
+// ---------------------------------------------------------------------------
+// Verify captcha (non-destructive read, delete only on success)
+// ---------------------------------------------------------------------------
 export async function verifyCaptcha(
     uuid: string,
     userInput: string,
 ): Promise<{ ok: boolean; code?: string }> {
     const store = getCaptchaStore();
-    const storedText = await store.takeAndDelete(uuid);
+    const entry = await store.get(uuid);
 
-    if (storedText === null) {
+    if (entry === null) {
         return { ok: false, code: "CAPTCHA_EXPIRED" };
     }
 
-    if (userInput.toLowerCase() !== storedText) {
+    if (userInput.toLowerCase() !== entry.text) {
         return { ok: false, code: "CAPTCHA_WRONG" };
     }
 
+    // Delete only after successful verification
+    await store.delete(uuid);
     return { ok: true };
 }

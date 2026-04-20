@@ -3,7 +3,6 @@ import { loginSchema } from "@/lib/schemas/auth";
 import { verifyCaptcha } from "@/lib/auth/captcha";
 import { verifyPassword } from "@/lib/auth/hash";
 import { createSessionAndSetCookie } from "@/lib/auth/server";
-import { loginLimiter } from "@/lib/auth/rate-limit";
 import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -32,19 +31,6 @@ export async function POST(request: NextRequest) {
 
     const { username, password, captchaId, captchaText } = parsed.data;
 
-    // Rate-limit by IP + email
-    const ip =
-        request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-        request.headers.get("x-real-ip") ??
-        "unknown";
-    const rateLimitResult = await loginLimiter.limit(`login:${ip}:${username}`);
-    if (!rateLimitResult.success) {
-        return NextResponse.json(
-            { ok: false, error: { code: "RATE_LIMITED", message: "Too many login attempts. Please wait 5 minutes." } },
-            { status: 429 },
-        );
-    }
-
     // Verify captcha
     const captchaResult = await verifyCaptcha(captchaId, captchaText);
     if (!captchaResult.ok) {
@@ -62,9 +48,8 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    // -- Database operations (wrapped in try-catch for proper JSON errors) --
+    // -- Database operations --
     try {
-        // Find user by username
         const user = await prisma.user.findUnique({ where: { username } });
         if (!user || !user.isActive) {
             return NextResponse.json(
@@ -73,7 +58,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Verify password
         const valid = await verifyPassword(password, user.passwordHash);
         if (!valid) {
             return NextResponse.json(
@@ -82,7 +66,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Create session + set cookie
         await createSessionAndSetCookie(user.id);
 
         return NextResponse.json({

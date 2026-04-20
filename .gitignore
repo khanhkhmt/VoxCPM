@@ -5,3 +5,5 @@ voxcpm.egg-info
 ./pretrained_models/
 app_local.py
 .env
+
+web/package-lock.json

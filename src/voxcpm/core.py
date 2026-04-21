@@ -188,6 +188,7 @@ class VoxCPM:
         min_len: int = 2,
         max_len: int = 4096,
         normalize: bool = False,
+        normalize_lang: str = None,
         denoise: bool = False,
         retry_badcase: bool = True,
         retry_badcase_max_times: int = 3,
@@ -278,7 +279,7 @@ class VoxCPM:
                     from .utils.text_normalize import TextNormalizer
 
                     self.text_normalizer = TextNormalizer()
-                text = self.text_normalizer.normalize(text)
+                text = self.text_normalizer.normalize(text, lang=normalize_lang)
 
             generate_result = self.tts_model._generate_with_prompt_cache(
                 target_text=text,

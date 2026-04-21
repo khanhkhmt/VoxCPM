@@ -259,6 +259,7 @@ class VoxCPMDemo:
         do_normalize: bool,
         denoise: bool,
         inference_timesteps: int = 10,
+        normalize_lang: str = "auto",
     ) -> dict:
         generate_kwargs = dict(
             text=final_text,
@@ -266,6 +267,7 @@ class VoxCPMDemo:
             cfg_value=float(cfg_value_input),
             inference_timesteps=inference_timesteps,
             normalize=do_normalize,
+            normalize_lang=normalize_lang if normalize_lang != "auto" else None,
             denoise=denoise,
         )
         if prompt_text_clean and audio_path:
@@ -283,6 +285,7 @@ class VoxCPMDemo:
         do_normalize: bool = True,
         denoise: bool = True,
         inference_timesteps: int = 10,
+        normalize_lang: str = "auto",
     ) -> Tuple[int, np.ndarray]:
         current_model = self.get_or_load_voxcpm()
 
@@ -303,7 +306,7 @@ class VoxCPMDemo:
         else:
             logger.info(f"[Voice Design] control: {control[:50] if control else 'None'}...")
 
-        logger.info(f"Generating audio for text: '{final_text[:80]}...'")
+        logger.info(f"Generating audio for text: '{final_text[:80]}...' [lang={normalize_lang}]")
         generate_kwargs = self._build_generate_kwargs(
             final_text=final_text,
             audio_path=audio_path,
@@ -312,6 +315,7 @@ class VoxCPMDemo:
             do_normalize=do_normalize,
             denoise=denoise,
             inference_timesteps=inference_timesteps,
+            normalize_lang=normalize_lang,
         )
         wav = current_model.generate(**generate_kwargs)
         return (current_model.tts_model.sample_rate, wav)
@@ -332,6 +336,7 @@ def create_demo_interface(demo: VoxCPMDemo):
         do_normalize: bool,
         denoise: bool,
         dit_steps: int,
+        language: str,
     ):
         actual_prompt_text = prompt_text_value.strip() if use_prompt_text else ""
         actual_control = "" if use_prompt_text else control_instruction
@@ -344,6 +349,7 @@ def create_demo_interface(demo: VoxCPMDemo):
             do_normalize=do_normalize,
             denoise=denoise,
             inference_timesteps=int(dit_steps),
+            normalize_lang=language,
         )
         return (sr, wav_np)
 
@@ -442,6 +448,12 @@ def create_demo_interface(demo: VoxCPMDemo):
                         label=I18N("dit_steps_label"),
                         info=I18N("dit_steps_info"),
                     )
+                    language_select = gr.Dropdown(
+                        choices=["auto", "vi", "zh", "en"],
+                        value="auto",
+                        label="🌐 Language (for text normalization)",
+                        info="Select language for text normalization. Auto-detect works for most cases.",
+                    )
 
                 run_btn = gr.Button(I18N("generate_btn"), variant="primary", size="lg")
 
@@ -471,6 +483,7 @@ def create_demo_interface(demo: VoxCPMDemo):
                 DoNormalizeText,
                 DoDenoisePromptAudio,
                 dit_steps,
+                language_select,
             ],
             outputs=[audio_output],
             show_progress=True,

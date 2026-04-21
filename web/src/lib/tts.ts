@@ -11,6 +11,7 @@ export interface GenerateTTSParams {
     doNormalize: boolean;
     denoise: boolean;
     ditSteps: number;
+    language: string;
 }
 
 export interface TTSResult {
@@ -78,6 +79,7 @@ export async function generateSpeech(params: GenerateTTSParams): Promise<TTSResu
                 params.doNormalize,         // DoNormalizeText
                 params.denoise,             // DoDenoisePromptAudio
                 params.ditSteps,            // dit_steps
+                params.language,            // language
             ],
         };
 

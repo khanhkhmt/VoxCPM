@@ -167,11 +167,32 @@ class TextNormalizer:
         self.en_tn_model = Normalizer(lang="en", operator="tn")
         self.inflect_parser = inflect.engine()
 
-    def normalize(self, text, split=False):
+        # Vietnamese normalizer (lazy-loaded, no external dependencies)
+        self._vi_tn_model = None
+
+    def _get_vi_normalizer(self):
+        if self._vi_tn_model is None:
+            from .vi_text_normalize import VietnameseTextNormalizer
+            self._vi_tn_model = VietnameseTextNormalizer()
+        return self._vi_tn_model
+
+    def _detect_lang(self, text):
+        """Detect language: vi (Vietnamese), zh (Chinese), or en (English)."""
+        from .vi_text_normalize import contains_vietnamese
+        if contains_vietnamese(text):
+            return "vi"
+        if contains_chinese(text):
+            return "zh"
+        return "en"
+
+    def normalize(self, text, split=False, lang=None):
         # 去除 Markdown 语法，去除表情符号，去除换行符
-        lang = "zh" if contains_chinese(text) else "en"
+        if lang is None or lang == "auto":
+            lang = self._detect_lang(text)
         text = clean_text(text)
-        if lang == "zh":
+        if lang == "vi":
+            text = self._get_vi_normalizer().normalize(text)
+        elif lang == "zh":
             text = text.replace(
                 "=", "等于"
             )  # 修复 ”550 + 320 等于 870 千卡。“ 被错误正则为 ”五百五十加三百二十等于八七十千卡.“

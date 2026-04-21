@@ -63,8 +63,7 @@ export default function Workspace() {
     const [ultimateCloning, setUltimateCloning] = useState(false);
     const [promptText, setPromptText] = useState("");
 
-    // ---- Mock UI State (kept as-is) ----
-    const [voice, setVoice] = useState("V-1");
+    // ---- Language Selection (REAL) ----
     const [language, setLanguage] = useState("auto");
 
     // ---- App State ----
@@ -129,6 +128,7 @@ export default function Workspace() {
                 doNormalize,
                 denoise,
                 ditSteps,
+                language,
             });
 
             if (result.error) {
@@ -326,24 +326,18 @@ export default function Workspace() {
                         </div>
 
                         <div className="p-5 flex flex-col gap-6">
-                            {/* Voice & Lang (Mocked) */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-medium text-vox-text-dim mb-1.5 ml-1 uppercase tracking-wider">Voice (Mock)</label>
-                                    <select value={voice} onChange={(e) => setVoice(e.target.value)} className="w-full bg-vox-surface border border-vox-outline/30 rounded-lg px-3 py-2 text-sm text-vox-text outline-none focus:border-vox-primary">
-                                        <option value="V-1">Default (Auto)</option>
-                                        <option value="V-2">Female - Calm</option>
-                                        <option value="V-3">Male - Energetic</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-vox-text-dim mb-1.5 ml-1 uppercase tracking-wider">Language (Mock)</label>
-                                    <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full bg-vox-surface border border-vox-outline/30 rounded-lg px-3 py-2 text-sm text-vox-text outline-none focus:border-vox-primary">
-                                        <option value="auto">Auto-Detect</option>
-                                        <option value="en">English</option>
-                                        <option value="zh">Chinese</option>
-                                    </select>
-                                </div>
+                            {/* Language Selection */}
+                            <div>
+                                <label className="block text-xs font-medium text-vox-text-dim mb-1.5 ml-1 uppercase tracking-wider">🌐 Normalization Language</label>
+                                <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full bg-vox-surface border border-vox-outline/30 rounded-lg px-3 py-2 text-sm text-vox-text outline-none focus:border-vox-primary">
+                                    <option value="auto">Auto-Detect</option>
+                                    <option value="vi">Tiếng Việt</option>
+                                    <option value="zh">中文 (Chinese)</option>
+                                    <option value="en">English</option>
+                                </select>
+                                <p className="text-[10px] text-vox-text-dim mt-1 ml-1">
+                                    Selects which text normalizer to use (numbers, dates, currency → words). Enable &quot;Text Normalization&quot; below for this to take effect.
+                                </p>
                             </div>
 
                             <div className="w-full h-px bg-vox-outline/20" />

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { generateSpeech } from "@/lib/tts";
+import { useAuth } from "@/lib/auth";
 import { GlassCard } from "@/components/GlassCard";
 import {
     SlidersHorizontal, Type, Play, Mic, Waves, Download,
@@ -46,6 +47,11 @@ const EXAMPLES = [
 // Component
 // ---------------------------------------------------------------------------
 export default function Workspace() {
+    const { user } = useAuth();
+
+    // localStorage key riêng cho từng tài khoản
+    const historyKey = user ? `voxora_history_${user.id}` : null;
+
     // ---- TTS State (REAL) ----
     const [text, setText] = useState("");
     const [controlInstruction, setControlInstruction] = useState("");
@@ -74,13 +80,19 @@ export default function Workspace() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [showExamples, setShowExamples] = useState(false);
 
-    // Load history on mount
+    // Load history khi user thay đổi (đăng nhập/đăng xuất/đổi tài khoản)
     useEffect(() => {
-        const saved = localStorage.getItem("voxora_history");
-        if (saved) {
-            try { setHistory(JSON.parse(saved)); } catch { /* noop */ }
+        if (!historyKey) {
+            setHistory([]);
+            return;
         }
-    }, []);
+        const saved = localStorage.getItem(historyKey);
+        if (saved) {
+            try { setHistory(JSON.parse(saved)); } catch { setHistory([]); }
+        } else {
+            setHistory([]);
+        }
+    }, [historyKey]);
 
     // ---- Reference audio helpers ----
     const handleFileSelect = useCallback((file: File) => {
@@ -144,7 +156,7 @@ export default function Workspace() {
                 };
                 const newHistory = [newItem, ...history].slice(0, 10);
                 setHistory(newHistory);
-                localStorage.setItem("voxora_history", JSON.stringify(newHistory));
+                if (historyKey) localStorage.setItem(historyKey, JSON.stringify(newHistory));
             }
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "An unexpected error occurred.");
@@ -511,9 +523,22 @@ export default function Workspace() {
 
             {/* ========== HISTORY ========== */}
             <div className="mt-4">
-                <h3 className="text-sm font-semibold text-vox-text-dim uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <HistoryIcon size={16} /> Recent Generations
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-vox-text-dim uppercase tracking-wider flex items-center gap-2">
+                        <HistoryIcon size={16} /> Recent Generations
+                    </h3>
+                    {history.length > 0 && (
+                        <button
+                            onClick={() => {
+                                setHistory([]);
+                                if (historyKey) localStorage.removeItem(historyKey);
+                            }}
+                            className="text-xs text-vox-text-dim hover:text-red-400 transition-colors px-2 py-1 rounded-lg hover:bg-red-500/10"
+                        >
+                            🗑️ Clear all
+                        </button>
+                    )}
+                </div>
                 {history.length > 0 ? (
                     <div className="flex flex-col gap-3">
                         {history.map((item) => (

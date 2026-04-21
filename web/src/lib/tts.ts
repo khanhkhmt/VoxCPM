@@ -1,5 +1,8 @@
-const GRADIO_BASE = "";
-const GRADIO_API = `${GRADIO_BASE}/gradio_api`;
+const TTS_API = (process.env.NEXT_PUBLIC_TTS_API_BASE || "http://127.0.0.1:8808/api/tts").replace(/\/$/, "");
+
+function getApiOrigin(): string {
+    return TTS_API.replace(/\/api\/tts$/, "");
+}
 
 export interface GenerateTTSParams {
     text: string;
@@ -19,155 +22,70 @@ export interface TTSResult {
     error?: string;
 }
 
-/**
- * Upload a File to Gradio's /upload endpoint and return the server-side path.
- * Gradio 6 expects multipart/form-data with one or more files.
- * Returns the first uploaded file path string that Gradio can reference.
- */
-export async function uploadFileToGradio(file: File): Promise<string | null> {
+export async function generateSpeech(params: GenerateTTSParams): Promise<TTSResult> {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
-        const form = new FormData();
-        form.append("files", file);
-
-        const res = await fetch(`${GRADIO_API}/upload`, {
-            method: "POST",
-            body: form,
-        });
-
-        if (!res.ok) {
-            console.error("Gradio upload failed:", res.statusText);
-            return null;
+        // Fast fail if backend is offline.
+        const healthRes = await fetch(`${TTS_API}/health`, { method: "GET" });
+        if (!healthRes.ok) {
+            return { error: "TTS backend is unavailable. Please ensure FastAPI is running on port 8808." };
         }
 
-        // Gradio returns an array of uploaded file paths
-        const paths: string[] = await res.json();
-        return paths.length > 0 ? paths[0] : null;
-    } catch (err) {
-        console.error("File upload error:", err);
-        return null;
-    }
-}
-
-export async function generateSpeech(params: GenerateTTSParams): Promise<TTSResult> {
-    try {
-        // Gradio generate API inputs from app.py _generate():
-        // [text, control_instruction, reference_wav, show_prompt_text, prompt_text,
-        //  cfg_value, DoNormalizeText, DoDenoisePromptAudio, dit_steps]
-
-        let refWavPayload: Record<string, unknown> | null = null;
+        const form = new FormData();
+        form.append("text", params.text);
+        form.append("control_instruction", params.controlInstruction);
+        form.append("use_prompt_text", String(params.usePromptText));
+        form.append("prompt_text", params.promptText);
+        form.append("cfg_value", String(params.cfgValue));
+        form.append("do_normalize", String(params.doNormalize));
+        form.append("denoise", String(params.denoise));
+        form.append("dit_steps", String(params.ditSteps));
+        form.append("language", params.language);
 
         if (params.referenceWav instanceof File) {
-            // Upload via Gradio /upload first, then pass the server path
-            const uploadedPath = await uploadFileToGradio(params.referenceWav);
-            if (uploadedPath) {
-                refWavPayload = { path: uploadedPath, meta: { _type: "gradio.FileData" } };
-            } else {
-                return { error: "Failed to upload reference audio to backend." };
-            }
-        } else if (typeof params.referenceWav === "string" && params.referenceWav) {
-            refWavPayload = { path: params.referenceWav, meta: { _type: "gradio.FileData" } };
+            form.append("reference_wav", params.referenceWav);
         }
 
-        const payload = {
-            data: [
-                params.text,                // text
-                params.controlInstruction,  // control_instruction
-                refWavPayload,              // reference_wav (filepath on server)
-                params.usePromptText,       // show_prompt_text (ultimate cloning toggle)
-                params.promptText,          // prompt_text
-                params.cfgValue,            // cfg_value
-                params.doNormalize,         // DoNormalizeText
-                params.denoise,             // DoDenoisePromptAudio
-                params.ditSteps,            // dit_steps
-                params.language,            // language
-            ],
-        };
+        const controller = new AbortController();
+        timeout = setTimeout(() => controller.abort(), 600_000);
 
-        const res = await fetch(`${GRADIO_API}/call/generate`, {
+        const res = await fetch(`${TTS_API}/generate`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: form,
+            signal: controller.signal,
         });
+        clearTimeout(timeout);
+        timeout = undefined;
 
         if (!res.ok) {
-            const body = await res.text();
-            throw new Error(`Gradio API Error ${res.status}: ${body || res.statusText}`);
-        }
-
-        const { event_id } = await res.json();
-
-        // Stream the result via SSE — Gradio sends:
-        //   event: complete
-        //   data: [{path, url, ...}]
-        // We use fetch + manual SSE parsing because EventSource.onmessage
-        // only fires for unnamed events, while Gradio sends named events.
-        const streamUrl = `${GRADIO_API}/call/generate/${event_id}`;
-
-        const sseRes = await fetch(streamUrl);
-        if (!sseRes.ok || !sseRes.body) {
-            throw new Error(`SSE stream failed: ${sseRes.status}`);
-        }
-
-        const reader = sseRes.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        const TIMEOUT_MS = 600_000; // 10 minutes for CPU generation
-        const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("Generation timed out after 10 minutes")), TIMEOUT_MS)
-        );
-
-        const parsePromise = (async (): Promise<TTSResult> => {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split("\n");
-                buffer = lines.pop() || "";
-
-                let currentEvent = "";
-                for (const line of lines) {
-                    if (line.startsWith("event: ")) {
-                        currentEvent = line.slice(7).trim();
-                    } else if (line.startsWith("data: ") && currentEvent === "complete") {
-                        const raw = line.slice(6);
-                        try {
-                            const data = JSON.parse(raw);
-                            // data is an array: [{path, url, orig_name, ...}]
-                            const audioData = Array.isArray(data) ? data[0] : data?.data?.[0];
-                            if (!audioData) {
-                                return { error: "No audio returned from backend." };
-                            }
-                            const filePath = audioData.url || audioData.path || audioData.name;
-                            // Always route through the Next.js proxy.
-                            // Gradio returns URLs like http://127.0.0.1:8808/gradio_api/file=...
-                            // We strip the origin and use the relative /gradio_api/... path.
-                            let url: string;
-                            if (filePath.includes("/gradio_api/")) {
-                                url = "/gradio_api/" + filePath.split("/gradio_api/").pop();
-                            } else if (filePath.startsWith("/")) {
-                                url = `/gradio_api/file=${filePath}`;
-                            } else {
-                                url = `/gradio_api/file=${filePath}`;
-                            }
-                            return { audioUrl: url };
-                        } catch {
-                            // ignore parse errors
-                        }
-                    } else if (line.startsWith("data: ") && currentEvent === "error") {
-                        return { error: line.slice(6) };
-                    }
-                }
+            let detail = "";
+            try {
+                const body = await res.json();
+                detail = body?.detail ? String(body.detail) : "";
+            } catch {
+                detail = await res.text();
             }
-            return { error: "Stream ended without result." };
-        })();
+            throw new Error(`TTS API Error ${res.status}: ${detail || res.statusText || "Internal Server Error"}`);
+        }
 
-        return await Promise.race([parsePromise, timeoutPromise]);
+        const data = await res.json();
+        if (!data?.audio_url) {
+            return { error: "No audio returned from backend." };
+        }
+
+        const apiUrl = String(data.audio_url);
+        const audioUrl = apiUrl.startsWith("/api/tts/")
+            ? `${getApiOrigin()}${apiUrl}`
+            : apiUrl;
+
+        return { audioUrl };
     } catch (error: unknown) {
+        if (timeout) clearTimeout(timeout);
         let msg = error instanceof Error ? error.message : "Failed to generate speech";
-        if (msg.includes("Failed to fetch") || msg.includes("fetch")) {
-            msg = "Cannot connect to the TTS backend (port 8808). Please make sure the Gradio server is running: uv run python app.py --port 8808";
+        if (error instanceof Error && error.name === "AbortError") {
+            msg = "Generation timed out after 10 minutes";
+        } else if (msg.includes("Failed to fetch") || msg.includes("fetch")) {
+            msg = "Cannot connect to the TTS backend (port 8808). Please make sure the FastAPI server is running: python app.py --port 8808";
         }
         console.error("TTS Generation Error:", error);
         return { error: msg };

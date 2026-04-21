@@ -5,8 +5,8 @@ const nextConfig: NextConfig = {
   rewrites: async () => {
     return [
       {
-        source: '/gradio_api/:path*',
-        destination: 'http://127.0.0.1:8808/gradio_api/:path*'
+        source: '/tts_api/:path*',
+        destination: 'http://127.0.0.1:8808/api/tts/:path*'
       }
     ]
   }

@@ -1,10 +1,16 @@
 import os
 import sys
 import logging
+import uuid
 import numpy as np
+import soundfile as sf
 import torch
 import gradio as gr
+import uvicorn
 from typing import Optional, Tuple
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from funasr import AutoModel
 from pathlib import Path
 
@@ -321,198 +327,136 @@ class VoxCPMDemo:
         return (current_model.tts_model.sample_rate, wav)
 
 
-# ---------- UI ----------
+# ---------- FastAPI API ----------
 
-def create_demo_interface(demo: VoxCPMDemo):
-    gr.set_static_paths(paths=[Path.cwd().absolute() / "assets"])
+ROOT_DIR = Path(__file__).resolve().parent
+RUNTIME_DIR = ROOT_DIR / ".runtime"
+UPLOAD_DIR = RUNTIME_DIR / "uploads"
+OUTPUT_DIR = RUNTIME_DIR / "outputs"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    def _generate(
-        text: str,
-        control_instruction: str,
-        ref_wav: Optional[str],
-        use_prompt_text: bool,
-        prompt_text_value: str,
-        cfg_value: float,
-        do_normalize: bool,
-        denoise: bool,
-        dit_steps: int,
-        language: str,
-    ):
-        actual_prompt_text = prompt_text_value.strip() if use_prompt_text else ""
-        actual_control = "" if use_prompt_text else control_instruction
-        sr, wav_np = demo.generate_tts_audio(
+
+def _to_bool(value: str, default: bool = False) -> bool:
+    if value is None:
+        return default
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _save_upload(upload: UploadFile) -> Path:
+    suffix = Path(upload.filename or "").suffix or ".wav"
+    target = UPLOAD_DIR / f"{uuid.uuid4().hex}{suffix}"
+    with target.open("wb") as f:
+        f.write(upload.file.read())
+    return target
+
+
+app = FastAPI(title="VoxCPM FastAPI", version="1.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+_demo: Optional[VoxCPMDemo] = None
+
+
+def get_demo() -> VoxCPMDemo:
+    global _demo
+    if _demo is None:
+        model_id = os.environ.get("VOXCPM_MODEL_ID", "openbmb/VoxCPM2")
+        _demo = VoxCPMDemo(model_id=model_id)
+    return _demo
+
+
+@app.get("/")
+def root():
+    return {"message": "VoxCPM FastAPI is running", "docs": "/docs"}
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.get("/api/tts/health")
+def tts_health():
+    return {"status": "ok"}
+
+
+@app.post("/api/tts/asr")
+def asr(reference_wav: UploadFile = File(...)):
+    try:
+        saved = _save_upload(reference_wav)
+        text = get_demo().prompt_wav_recognition(str(saved))
+        return {"text": text}
+    except Exception as e:
+        logger.exception("ASR failed")
+        raise HTTPException(status_code=500, detail=f"ASR failed: {e}")
+
+
+@app.post("/api/tts/generate")
+def generate(
+    text: str = Form(...),
+    control_instruction: str = Form(""),
+    use_prompt_text: str = Form("false"),
+    prompt_text: str = Form(""),
+    cfg_value: float = Form(2.0),
+    do_normalize: str = Form("false"),
+    denoise: str = Form("false"),
+    dit_steps: int = Form(10),
+    language: str = Form("auto"),
+    reference_wav: Optional[UploadFile] = File(default=None),
+):
+    try:
+        ref_path: Optional[str] = None
+        if reference_wav is not None and reference_wav.filename:
+            ref_path = str(_save_upload(reference_wav))
+
+        ultimate = _to_bool(use_prompt_text, default=False)
+        actual_prompt_text = prompt_text.strip() if ultimate else ""
+        actual_control = "" if ultimate else (control_instruction or "")
+
+        sr, wav_np = get_demo().generate_tts_audio(
             text_input=text,
             control_instruction=actual_control,
-            reference_wav_path_input=ref_wav,
+            reference_wav_path_input=ref_path,
             prompt_text=actual_prompt_text,
-            cfg_value_input=cfg_value,
-            do_normalize=do_normalize,
-            denoise=denoise,
+            cfg_value_input=float(cfg_value),
+            do_normalize=_to_bool(do_normalize, default=False),
+            denoise=_to_bool(denoise, default=False),
             inference_timesteps=int(dit_steps),
             normalize_lang=language,
         )
-        return (sr, wav_np)
 
-    def _on_toggle_instant(checked):
-        """Instant UI toggle — no ASR, no blocking."""
-        if checked:
-            return (
-                gr.update(visible=True, value="", placeholder="Recognizing reference audio..."),
-                gr.update(visible=False),
-            )
-        return (
-            gr.update(visible=False),
-            gr.update(visible=True, interactive=True),
-        )
+        out_name = f"{uuid.uuid4().hex}.wav"
+        out_path = OUTPUT_DIR / out_name
+        sf.write(out_path, wav_np, sr)
 
-    def _run_asr_if_needed(checked, audio_path):
-        """Run ASR after the UI has updated. Only when toggled ON."""
-        if not checked or not audio_path:
-            return gr.update()
-        try:
-            logger.info("Running ASR on reference audio...")
-            asr_text = demo.prompt_wav_recognition(audio_path)
-            logger.info(f"ASR result: {asr_text[:60]}...")
-            return gr.update(value=asr_text)
-        except Exception as e:
-            logger.warning(f"ASR recognition failed: {e}")
-            return gr.update(value="")
+        return {
+            "audio_url": f"/api/tts/file/{out_name}",
+            "sample_rate": int(sr),
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("TTS generation failed")
+        raise HTTPException(status_code=500, detail=f"TTS generation failed: {e}")
 
-    with gr.Blocks() as interface:
-        gr.HTML(
-            '<div class="logo-container">'
-            '<img src="/gradio_api/file=web/public/logo_oriagent.svg" alt="Oriagent Logo">'
-            "</div>"
-        )
 
-        gr.Markdown(I18N("usage_instructions"))
-
-        with gr.Row():
-            with gr.Column():
-                reference_wav = gr.Audio(
-                    sources=["upload", "microphone"],
-                    type="filepath",
-                    label=I18N("reference_audio_label"),
-                )
-                show_prompt_text = gr.Checkbox(
-                    value=False,
-                    label=I18N("show_prompt_text_label"),
-                    info=I18N("show_prompt_text_info"),
-                    elem_classes=["switch-toggle"],
-                )
-                prompt_text = gr.Textbox(
-                    value="",
-                    label=I18N("prompt_text_label"),
-                    placeholder=I18N("prompt_text_placeholder"),
-                    lines=2,
-                    visible=False,
-                )
-                control_instruction = gr.Textbox(
-                    value="",
-                    label=I18N("control_label"),
-                    placeholder=I18N("control_placeholder"),
-                    lines=2,
-                )
-                text = gr.Textbox(
-                    value=DEFAULT_TARGET_TEXT,
-                    label=I18N("target_text_label"),
-                    lines=3,
-                )
-
-                with gr.Accordion(I18N("advanced_settings_title"), open=False):
-                    DoDenoisePromptAudio = gr.Checkbox(
-                        value=False,
-                        label=I18N("ref_denoise_label"),
-                        elem_classes=["switch-toggle"],
-                        info=I18N("ref_denoise_info"),
-                    )
-                    DoNormalizeText = gr.Checkbox(
-                        value=False,
-                        label=I18N("normalize_label"),
-                        elem_classes=["switch-toggle"],
-                        info=I18N("normalize_info"),
-                    )
-                    cfg_value = gr.Slider(
-                        minimum=1.0,
-                        maximum=3.0,
-                        value=2.0,
-                        step=0.1,
-                        label=I18N("cfg_label"),
-                        info=I18N("cfg_info"),
-                    )
-                    dit_steps = gr.Slider(
-                        minimum=1,
-                        maximum=50,
-                        value=10,
-                        step=1,
-                        label=I18N("dit_steps_label"),
-                        info=I18N("dit_steps_info"),
-                    )
-                    language_select = gr.Dropdown(
-                        choices=["auto", "vi", "zh", "en"],
-                        value="auto",
-                        label="🌐 Language (for text normalization)",
-                        info="Select language for text normalization. Auto-detect works for most cases.",
-                    )
-
-                run_btn = gr.Button(I18N("generate_btn"), variant="primary", size="lg")
-
-            with gr.Column():
-                audio_output = gr.Audio(label=I18N("generated_audio_label"))
-                gr.Markdown(I18N("examples_footer"))
-
-        show_prompt_text.change(
-            fn=_on_toggle_instant,
-            inputs=[show_prompt_text],
-            outputs=[prompt_text, control_instruction],
-        ).then(
-            fn=_run_asr_if_needed,
-            inputs=[show_prompt_text, reference_wav],
-            outputs=[prompt_text],
-        )
-
-        run_btn.click(
-            fn=_generate,
-            inputs=[
-                text,
-                control_instruction,
-                reference_wav,
-                show_prompt_text,
-                prompt_text,
-                cfg_value,
-                DoNormalizeText,
-                DoDenoisePromptAudio,
-                dit_steps,
-                language_select,
-            ],
-            outputs=[audio_output],
-            show_progress=True,
-            api_name="generate",
-        )
-
-    return interface
-
-def run_demo(
-    server_name: str = "0.0.0.0",
-    server_port: int = 8808,
-    show_error: bool = True,
-    model_id: str = "openbmb/VoxCPM2",
-):
-    demo = VoxCPMDemo(model_id=model_id)
-    interface = create_demo_interface(demo)
-    interface.queue(max_size=10, default_concurrency_limit=1).launch(
-        server_name=server_name,
-        server_port=server_port,
-        show_error=show_error,
-        share=True,
-        i18n=I18N,
-        theme=_APP_THEME,
-        css=_CUSTOM_CSS,
-    )
+@app.get("/api/tts/file/{file_name}")
+def tts_file(file_name: str):
+    file_path = OUTPUT_DIR / file_name
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(path=str(file_path), media_type="audio/wav", filename=file_name)
 
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--model-id", type=str, default="openbmb/VoxCPM2",
@@ -520,4 +464,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("--port", type=int, default=8808, help="Server port")
     args = parser.parse_args()
-    run_demo(model_id=args.model_id, server_port=args.port)
+
+    os.environ["VOXCPM_MODEL_ID"] = args.model_id
+    uvicorn.run("app:app", host="0.0.0.0", port=args.port, reload=False)

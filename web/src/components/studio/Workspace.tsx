@@ -50,7 +50,7 @@ export default function Workspace() {
     const [text, setText] = useState("");
     const [controlInstruction, setControlInstruction] = useState("");
     const [cfgValue, setCfgValue] = useState(2.0);
-    const [ditSteps, setDitSteps] = useState(10);
+    const [ditSteps, setDitSteps] = useState(6);
     const [doNormalize, setDoNormalize] = useState(false);
     const [denoise, setDenoise] = useState(false);
 

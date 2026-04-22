@@ -22,7 +22,7 @@ export default function LoginPage() {
 
     // Generate captchaId only on client to avoid SSR/client hydration mismatch
     useEffect(() => {
-        setCaptchaId(Date.now().toString(36) + Math.random().toString(36).substring(2));
+        setCaptchaId(crypto.randomUUID());
     }, []);
     const [loading, setLoading] = useState(false);
 
@@ -45,7 +45,7 @@ export default function LoginPage() {
     }, [captchaId, setValue]);
 
     const regenerateCaptcha = useCallback(() => {
-        setCaptchaId(Date.now().toString(36) + Math.random().toString(36).substring(2));
+        setCaptchaId(crypto.randomUUID());
         setValue("captchaText", "");
     }, [setValue]);
 

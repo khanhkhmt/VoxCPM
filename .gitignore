@@ -9,6 +9,7 @@ app_local.py
 # Env files
 .env
 .env.*
+!.env.example
 
 # Database files
 *.db
@@ -26,3 +27,19 @@ app_local.py
 
 # Package locks
 web/package-lock.json
+
+# Python
+*.pyc
+*.pyo
+dist/
+build/
+*.egg
+.venv/
+
+# Docker (optional local overrides)
+docker-compose.override.yml
+
+# IDE
+.vscode/
+.idea/
+

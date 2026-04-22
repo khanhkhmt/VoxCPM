@@ -40,15 +40,15 @@ export default function CaptchaField({
             <label className="text-sm font-medium text-vox-text">
                 Security Code
             </label>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-full min-w-0">
                 {/* Captcha image */}
-                <div className="relative h-[44px] w-[160px] rounded-lg overflow-hidden bg-gray-900 border border-vox-outline/30 shrink-0">
+                <div className="relative h-[44px] w-[140px] min-w-[140px] rounded-lg overflow-hidden bg-gray-900 border border-vox-outline/30 shrink-0">
                     {imgSrc ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                             src={imgSrc}
                             alt="Captcha"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-xs text-vox-text-dim">
@@ -74,7 +74,7 @@ export default function CaptchaField({
                     placeholder="Enter code"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="flex-1 bg-vox-surface-lowest border border-vox-outline/30 rounded-lg px-4 py-2.5 text-sm text-vox-text outline-none focus:border-vox-primary transition-colors tracking-widest"
+                    className="flex-1 min-w-0 bg-vox-surface-lowest border border-vox-outline/30 rounded-lg px-4 py-2.5 text-sm text-vox-text outline-none focus:border-vox-primary transition-colors tracking-widest"
                     maxLength={5}
                 />
             </div>

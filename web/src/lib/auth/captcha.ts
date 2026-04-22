@@ -92,7 +92,7 @@ export async function getOrCreateCaptcha(uuid: string): Promise<{ text: string; 
         noise: 2,
         color: true,
         background: "#111827",
-        ignoreChars: "0oO1iIl",
+        charPreset: "0123456789AHUWQMN",
     });
 
     const text = captcha.text.toLowerCase();

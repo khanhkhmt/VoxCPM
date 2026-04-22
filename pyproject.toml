@@ -33,12 +33,9 @@ dependencies = [
     "fastapi>=0.115.0",
     "uvicorn>=0.30.0",
     "python-multipart>=0.0.9",
-    "gradio>=6,<7",
     "inflect",
     "addict",
     "wetext",
-    "modelscope>=1.22.0",
-    "datasets>=3,<4",
     "huggingface-hub",
     "pydantic",
     "tqdm",
@@ -46,15 +43,19 @@ dependencies = [
     "sortedcontainers",
     "soundfile",
     "librosa",
-    "matplotlib",
     "funasr",
-    "spaces",
-    "argbind",
-    "safetensors"
-
+    "safetensors",
 ]
 
 [project.optional-dependencies]
+train = [
+    "gradio>=6,<7",
+    "spaces",
+    "datasets>=3,<4",
+    "modelscope>=1.22.0",
+    "matplotlib",
+    "argbind",
+]
 dev = [
     "pytest>=6.0",
     "pytest-cov>=2.0",

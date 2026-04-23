@@ -18,12 +18,25 @@ export default function DemoTTSBox() {
     const router = useRouter();
     const [isPlaying, setIsPlaying] = useState(false);
     const [activeVoice, setActiveVoice] = useState(SAMPLE_VOICES[0].id);
-    const progressRef = useRef<HTMLDivElement>(null);
+    const [progress, setProgress] = useState(0);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const audioRef = useRef<HTMLAudioElement>(null);
 
-    // Simulated playback
     const togglePlay = () => {
-        setIsPlaying(!isPlaying);
-        // In a real app this would play the HTML5 audio element
+        if (!audioRef.current) return;
+        if (isPlaying) {
+            audioRef.current.pause();
+        } else {
+            audioRef.current.play();
+        }
+    };
+
+    const formatTime = (time: number) => {
+        if (isNaN(time)) return "0:00";
+        const mins = Math.floor(time / 60);
+        const secs = Math.floor(time % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
     return (
@@ -64,6 +77,18 @@ export default function DemoTTSBox() {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    <audio
+                        ref={audioRef}
+                        src="/demo_voice.wav"
+                        onPlay={() => setIsPlaying(true)}
+                        onPause={() => setIsPlaying(false)}
+                        onEnded={() => setIsPlaying(false)}
+                        onTimeUpdate={(e) => {
+                            setCurrentTime(e.currentTarget.currentTime);
+                            setProgress((e.currentTarget.currentTime / e.currentTarget.duration) * 100 || 0);
+                        }}
+                        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+                    />
                     <button
                         onClick={togglePlay}
                         className="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full bg-vox-primary hover:bg-vox-primary/90 text-white transition-all shadow-[0_0_15px_rgba(124,58,237,0.4)]"
@@ -71,12 +96,18 @@ export default function DemoTTSBox() {
                         {isPlaying ? <Pause className="fill-white" /> : <Play className="fill-white ml-1" />}
                     </button>
 
-                    <div className="flex-grow h-1.5 bg-vox-surface-highest rounded-full overflow-hidden" ref={progressRef}>
-                        {/* Fake progress bar */}
-                        <div className={`h-full bg-vox-secondary transition-all ${isPlaying ? 'w-full duration-[5000ms] ease-linear' : 'w-[15%] duration-300'}`} />
+                    <div className="flex-grow h-1.5 bg-vox-surface-highest rounded-full overflow-hidden cursor-pointer" onClick={(e) => {
+                        if (audioRef.current && duration) {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const x = e.clientX - rect.left;
+                            const percentage = x / rect.width;
+                            audioRef.current.currentTime = percentage * duration;
+                        }
+                    }}>
+                        <div className="h-full bg-vox-secondary transition-all duration-75" style={{ width: `${progress}%` }} />
                     </div>
-                    <span className="text-xs text-vox-text-dim font-mono">
-                        {isPlaying ? "0:04" : "0:00"} / 0:08
+                    <span className="text-xs text-vox-text-dim font-mono min-w-[70px] text-right">
+                        {formatTime(currentTime)} / {formatTime(duration)}
                     </span>
                 </div>
             </div>

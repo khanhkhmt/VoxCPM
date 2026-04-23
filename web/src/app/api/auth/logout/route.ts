@@ -6,5 +6,18 @@ export const runtime = "nodejs";
 export async function POST() {
     await revokeCurrentSession();
 
-    return NextResponse.json({ ok: true });
+    const response = NextResponse.json({ ok: true });
+
+    // Explicitly clear cookie on the response to guarantee
+    // the browser removes it, even if revokeCurrentSession's
+    // cookies().delete() doesn't propagate properly.
+    response.cookies.set("voxora_session", "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 0,
+    });
+
+    return response;
 }

@@ -50,7 +50,8 @@ export async function setSessionCookie(token: string): Promise<void> {
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: SESSION_MAX_AGE,
+        // No maxAge — cookie expires when browser is closed (session cookie).
+        // The JWT inside still has its own expiration for security.
     });
 }
 

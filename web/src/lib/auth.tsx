@@ -67,6 +67,14 @@ async function authFetch<T = unknown>(
 
     if (!data.ok) {
         const err = data.error as ApiError;
+
+        // Defense: if server says 401, the session/user is invalid.
+        // Clear cookie client-side as a fallback so middleware won't
+        // see stale JWT on the next navigation.
+        if (res.status === 401 && typeof document !== "undefined") {
+            document.cookie = "voxora_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
+
         const error = new Error(err.message);
         (error as Error & { code: string }).code = err.code;
         throw error;
@@ -128,9 +136,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch {
             // Even if the API call fails, clear local state
         }
+        // Client-side fallback: force-clear cookie
+        document.cookie = "voxora_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         setUser(null);
         setStatus("unauthenticated");
-        router.replace("/");
+        router.replace("/login");
     }, [router]);
 
     return (

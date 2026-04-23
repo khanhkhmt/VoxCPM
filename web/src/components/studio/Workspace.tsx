@@ -183,15 +183,19 @@ export default function Workspace() {
                 }).then(async (res) => {
                     const json = await res.json();
                     console.log("[History Save]", res.status, json);
-                    // Cập nhật ID từ database vào localStorage để xóa đồng bộ
+                    // Cập nhật ID + audioUrl từ R2 vào localStorage
                     if (res.ok && json.data?.id) {
+                        const dbId = json.data.id;
+                        const r2Url = json.data.audioUrl;
                         setHistory(prev => {
                             const updated = prev.map(h =>
-                                h.id === tempId ? { ...h, id: json.data.id } : h
+                                h.id === tempId ? { ...h, id: dbId, audioUrl: r2Url || h.audioUrl } : h
                             );
                             if (historyKey) localStorage.setItem(historyKey, JSON.stringify(updated));
                             return updated;
                         });
+                        // Chuyển player sang R2 URL (không dùng local nữa)
+                        if (r2Url) setCurrentAudio(r2Url);
                     }
                 }).catch((err) => {
                     console.error("[History Save Error]", err);

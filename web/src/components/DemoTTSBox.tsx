@@ -6,9 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 
 const SAMPLE_VOICES = [
-    { id: "sarah", name: "Sarah (Warm & Professional)", demoUrl: "" },
-    { id: "marcus", name: "Marcus (Deep & Authoritative)", demoUrl: "" },
-    { id: "yuki", name: "Yuki (Energetic & Sweet)", demoUrl: "" },
+    { id: "demo", name: "Oriagent Demo Voice", demoUrl: "/demo_voice.wav" },
 ];
 
 const SAMPLE_TEXT = "Welcome to Oriagent. We transform your text into lifelike speech with incredible realism. Sign in now to generate your own custom voices.";
@@ -20,8 +18,10 @@ export default function DemoTTSBox() {
     const [activeVoice, setActiveVoice] = useState(SAMPLE_VOICES[0].id);
     const [progress, setProgress] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
+    const [duration, setDuration] = useState(5); // Default to 5 seconds
     const audioRef = useRef<HTMLAudioElement>(null);
+
+    const activeVoiceData = SAMPLE_VOICES.find(v => v.id === activeVoice) || SAMPLE_VOICES[0];
 
     const togglePlay = () => {
         if (!audioRef.current) return;
@@ -32,8 +32,22 @@ export default function DemoTTSBox() {
         }
     };
 
+    // Update audio source when voice changes
+    const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newVoiceId = e.target.value;
+        setActiveVoice(newVoiceId);
+        setIsPlaying(false);
+        setProgress(0);
+        setCurrentTime(0);
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+            // The src will update via React, we just need to reset state
+        }
+    };
+
     const formatTime = (time: number) => {
-        if (isNaN(time)) return "0:00";
+        if (isNaN(time) || !isFinite(time)) return "0:00";
         const mins = Math.floor(time / 60);
         const secs = Math.floor(time % 60);
         return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -54,7 +68,7 @@ export default function DemoTTSBox() {
                     <select
                         className="bg-vox-surface-highest border border-vox-outline/40 text-sm rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-vox-secondary transition-all"
                         value={activeVoice}
-                        onChange={(e) => setActiveVoice(e.target.value)}
+                        onChange={handleVoiceChange}
                     >
                         {SAMPLE_VOICES.map(v => (
                             <option key={v.id} value={v.id}>{v.name}</option>
@@ -79,7 +93,7 @@ export default function DemoTTSBox() {
                 <div className="flex items-center gap-4">
                     <audio
                         ref={audioRef}
-                        src="/demo_voice.wav"
+                        src={activeVoiceData.demoUrl}
                         onPlay={() => setIsPlaying(true)}
                         onPause={() => setIsPlaying(false)}
                         onEnded={() => setIsPlaying(false)}

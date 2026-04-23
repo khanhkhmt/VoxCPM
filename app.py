@@ -454,6 +454,16 @@ def tts_file(file_name: str):
     return FileResponse(path=str(file_path), media_type="audio/wav", filename=file_name)
 
 
+@app.delete("/api/tts/file/{file_name}")
+def delete_tts_file(file_name: str):
+    file_path = OUTPUT_DIR / file_name
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    file_path.unlink()
+    logger.info(f"Deleted audio file: {file_name}")
+    return {"ok": True}
+
+
 if __name__ == "__main__":
     import argparse
 

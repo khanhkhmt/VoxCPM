@@ -530,6 +530,13 @@ export default function Workspace() {
                     {history.length > 0 && (
                         <button
                             onClick={() => {
+                                // Xoá file audio trên server
+                                for (const item of history) {
+                                    const fileName = item.audioUrl.split("/").pop();
+                                    if (fileName) {
+                                        fetch(`/tts_api/file/${fileName}`, { method: "DELETE" }).catch(() => {});
+                                    }
+                                }
                                 setHistory([]);
                                 if (historyKey) localStorage.removeItem(historyKey);
                             }}

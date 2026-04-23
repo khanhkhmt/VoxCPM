@@ -8,7 +8,7 @@ import {
     SlidersHorizontal, Type, Play, Mic, Waves, Download,
     CheckCircle2, RotateCcw, History as HistoryIcon,
     Upload, X, FileAudio, ChevronDown, ChevronUp,
-    Lightbulb, AlertTriangle, Loader2,
+    Lightbulb, AlertTriangle, Loader2, Trash2,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -564,6 +564,21 @@ export default function Workspace() {
                                     <a href={item.audioUrl} download className="p-2 rounded-full text-vox-text-dim hover:text-vox-secondary transition-colors">
                                         <Download size={14} />
                                     </a>
+                                    <button
+                                        onClick={() => {
+                                            const fileName = item.audioUrl.split("/").pop();
+                                            if (fileName) {
+                                                fetch(`/tts_api/file/${fileName}`, { method: "DELETE" }).catch(() => {});
+                                            }
+                                            const newHistory = history.filter((h) => h.id !== item.id);
+                                            setHistory(newHistory);
+                                            if (historyKey) localStorage.setItem(historyKey, JSON.stringify(newHistory));
+                                        }}
+                                        className="p-2 rounded-full text-vox-text-dim hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                        title="Delete"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
                                 </div>
                             </div>
                         ))}

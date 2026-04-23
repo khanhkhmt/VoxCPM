@@ -98,6 +98,18 @@ export default function Workspace() {
     const handleFileSelect = useCallback((file: File) => {
         setRefAudioFile(file);
         setRefAudioPreview(URL.createObjectURL(file));
+
+        // --- 🆕 Auto-save to Voice Library (fire-and-forget) ---
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("name", file.name.replace(/\.[^.]+$/, ""));
+        formData.append("description", "Auto-saved from Studio");
+        fetch("/api/voices", { method: "POST", body: formData })
+            .then(async (res) => {
+                if (res.ok) console.log("[Voice Library] Auto-saved:", file.name);
+                else console.warn("[Voice Library] Save failed:", await res.text());
+            })
+            .catch(() => {});
     }, []);
 
     const handleFileDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -157,6 +169,33 @@ export default function Workspace() {
                 const newHistory = [newItem, ...history].slice(0, 10);
                 setHistory(newHistory);
                 if (historyKey) localStorage.setItem(historyKey, JSON.stringify(newHistory));
+
+                // --- 🆕 Persist to database (fire-and-forget, không block UI) ---
+                const tempId = newItem.id;
+                fetch("/api/history", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        text, controlInstruction: ultimateCloning ? "" : controlInstruction,
+                        audioUrl: result.audioUrl, language, cfgValue, ditSteps,
+                        doNormalize, denoise, usePromptText: ultimateCloning, promptText,
+                    }),
+                }).then(async (res) => {
+                    const json = await res.json();
+                    console.log("[History Save]", res.status, json);
+                    // Cập nhật ID từ database vào localStorage để xóa đồng bộ
+                    if (res.ok && json.data?.id) {
+                        setHistory(prev => {
+                            const updated = prev.map(h =>
+                                h.id === tempId ? { ...h, id: json.data.id } : h
+                            );
+                            if (historyKey) localStorage.setItem(historyKey, JSON.stringify(updated));
+                            return updated;
+                        });
+                    }
+                }).catch((err) => {
+                    console.error("[History Save Error]", err);
+                });
             }
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "An unexpected error occurred.");
@@ -537,6 +576,8 @@ export default function Workspace() {
                                         fetch(`/tts_api/file/${fileName}`, { method: "DELETE" }).catch(() => {});
                                     }
                                 }
+                                // 🆕 Xóa tất cả history trong database
+                                fetch("/api/history", { method: "DELETE" }).catch(() => {});
                                 setHistory([]);
                                 if (historyKey) localStorage.removeItem(historyKey);
                             }}
@@ -570,6 +611,8 @@ export default function Workspace() {
                                             if (fileName) {
                                                 fetch(`/tts_api/file/${fileName}`, { method: "DELETE" }).catch(() => {});
                                             }
+                                            // 🆕 Xóa khỏi database (tìm theo ID nếu có dạng cuid, hoặc xóa tất cả match)
+                                            fetch(`/api/history/${item.id}`, { method: "DELETE" }).catch(() => {});
                                             const newHistory = history.filter((h) => h.id !== item.id);
                                             setHistory(newHistory);
                                             if (historyKey) localStorage.setItem(historyKey, JSON.stringify(newHistory));

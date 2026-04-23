@@ -18,6 +18,8 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   sessions      Session[]
+  generations   TTSGeneration[]    // 🆕 History of generated audio
+  voiceProfiles VoiceProfile[]     // 🆕 Uploaded voice profiles
 }
 
 model Session {
@@ -29,6 +31,49 @@ model Session {
   expiresAt DateTime
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model TTSGeneration {
+  id                 String   @id @default(cuid())
+  userId             String
+  text               String
+  controlInstruction String   @default("")
+  audioUrl           String        // R2 public/signed URL
+  audioR2Key         String        // R2 object key (để xóa)
+  language           String   @default("auto")
+  cfgValue           Float    @default(2.0)
+  ditSteps           Int      @default(6)
+  doNormalize        Boolean  @default(false)
+  denoise            Boolean  @default(false)
+  usePromptText      Boolean  @default(false)
+  promptText         String   @default("")
+  voiceProfileId     String?
+  createdAt          DateTime @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voiceProfile VoiceProfile? @relation(fields: [voiceProfileId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model VoiceProfile {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  fileName    String
+  r2Key       String          // R2 object key
+  audioUrl    String          // R2 public/signed URL
+  fileSize    Int
+  mimeType    String   @default("audio/wav")
+  description String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generations TTSGeneration[]
 
   @@index([userId])
 }

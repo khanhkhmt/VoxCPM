@@ -16,8 +16,8 @@ export default function Sidebar() {
 
     const links = [
         { name: "Studio", href: "/studio", icon: LayoutDashboard },
-        { name: "Voice Library", href: "#", icon: Mic },
-        { name: "History", href: "#", icon: History },
+        { name: "Voice Library", href: "/studio/voices", icon: Mic },
+        { name: "History", href: "/studio/history", icon: History },
         { name: "Settings", href: "#", icon: Settings },
     ];
 

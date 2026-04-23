@@ -10,7 +10,7 @@ export default function StudioPage() {
         <div className="w-full h-full pb-20">
             <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">New Synthesis</h1>
+                    <h1 className="text-2xl font-bold text-vox-heading tracking-tight">New Synthesis</h1>
                     <p className="text-sm text-vox-text-dim mt-1">Design a voice or clone an existing one to generate studio-quality speech.</p>
                 </div>
             </div>

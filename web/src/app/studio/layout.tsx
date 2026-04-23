@@ -29,7 +29,7 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
                     <div className="flex items-center gap-2 text-sm">
                         <span className="text-vox-text-dim">Studio</span>
                         <span className="text-vox-text-dim">/</span>
-                        <span className="text-white font-medium">New Synthesis</span>
+                        <span className="text-vox-heading font-medium">New Synthesis</span>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="px-3 py-1 rounded-full bg-vox-surface text-xs font-mono text-vox-secondary border border-vox-secondary/20">

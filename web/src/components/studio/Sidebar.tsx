@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { Mic, LayoutDashboard, History, Settings, PanelLeftClose, PanelLeft, LogOut } from "lucide-react";
+import { useTheme } from "@/lib/theme";
+import { Mic, LayoutDashboard, History, Settings, PanelLeftClose, PanelLeft, LogOut, Sun, Moon } from "lucide-react";
 import { useState } from "react";
 import Logo from "@/components/Logo";
 
 export default function Sidebar() {
     const { user, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
 
@@ -26,7 +28,7 @@ export default function Sidebar() {
                     <Logo iconOnly={collapsed} />
                 </div>
 
-                <button onClick={() => setCollapsed(!collapsed)} className="text-vox-text-dim hover:text-white p-1 rounded-md absolute -right-3 top-6 bg-vox-surface border border-vox-outline/30 z-10 hidden md:block">
+                <button onClick={() => setCollapsed(!collapsed)} className="text-vox-text-dim hover:text-vox-heading p-1 rounded-md absolute -right-3 top-6 bg-vox-surface border border-vox-outline/30 z-10 hidden md:block">
                     {collapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
                 </button>
             </div>
@@ -38,7 +40,7 @@ export default function Sidebar() {
                         <Link
                             key={link.name}
                             href={link.href}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive ? 'bg-vox-primary/10 text-white' : 'text-vox-text-dim hover:bg-vox-surface hover:text-white'}`}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${isActive ? 'bg-vox-primary/10 text-vox-heading' : 'text-vox-text-dim hover:bg-vox-surface hover:text-vox-heading'}`}
                         >
                             <link.icon size={20} className={isActive ? 'text-vox-primary' : 'text-vox-text-dim group-hover:text-vox-secondary'} />
                             {!collapsed && <span className="font-medium text-sm">{link.name}</span>}
@@ -48,12 +50,22 @@ export default function Sidebar() {
             </div>
 
             <div className="p-4 border-t border-vox-outline/20">
+                {/* Theme Toggle */}
+                <button
+                    onClick={toggleTheme}
+                    className={`w-full flex items-center ${collapsed ? 'justify-center' : 'gap-3'} px-3 py-2 mb-3 text-sm text-vox-text-dim hover:text-vox-heading hover:bg-vox-surface rounded-lg transition-colors`}
+                    title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                >
+                    {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+                    {!collapsed && <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
+                </button>
+
                 <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} bg-vox-surface rounded-xl p-2`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={user?.avatarUrl || `https://api.dicebear.com/9.x/notionists/svg?seed=${user?.username}`} alt="Avatar" className="w-10 h-10 rounded-full bg-vox-surface-high border border-vox-outline/20" />
                     {!collapsed && (
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{user?.name}</p>
+                            <p className="text-sm font-medium text-vox-heading truncate">{user?.name}</p>
                             <p className="text-xs text-vox-text-dim truncate">{user?.username}</p>
                         </div>
                     )}

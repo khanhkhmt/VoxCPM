@@ -91,7 +91,7 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
             <div className="glass-panel rounded-2xl p-8">
                 <div className="text-center mb-8">
-                    <h1 className="text-2xl font-bold text-white mb-2">
+                    <h1 className="text-2xl font-bold text-vox-heading mb-2">
                         Create your account
                     </h1>
                     <p className="text-sm text-vox-text-dim">
@@ -193,7 +193,7 @@ export default function RegisterPage() {
                     Already have an account?{" "}
                     <Link
                         href="/login"
-                        className="text-vox-secondary hover:text-white transition-colors font-medium"
+                        className="text-vox-secondary hover:text-vox-heading transition-colors font-medium"
                     >
                         Sign in
                     </Link>

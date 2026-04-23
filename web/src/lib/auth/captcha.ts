@@ -77,7 +77,7 @@ const CAPTCHA_TTL_SECONDS = 5 * 60; // 5 minutes
  * If a captcha already exists for this UUID, return it (idempotent).
  * This prevents React strict-mode double-fetches from invalidating the captcha.
  */
-export async function getOrCreateCaptcha(uuid: string): Promise<{ text: string; svg: string }> {
+export async function getOrCreateCaptcha(uuid: string, background?: string): Promise<{ text: string; svg: string }> {
     const store = getCaptchaStore();
 
     // Check if we already have one for this UUID
@@ -91,7 +91,7 @@ export async function getOrCreateCaptcha(uuid: string): Promise<{ text: string; 
         size: 5,
         noise: 2,
         color: true,
-        background: "#111827",
+        background: background || "#111827",
         charPreset: "0123456789AHUWQMN",
     });
 

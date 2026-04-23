@@ -49,10 +49,10 @@ export default function Footer() {
                     </p>
                     <div className="flex gap-4 mt-4 md:mt-0">
                         {/* Social links placeholder */}
-                        <div className="w-8 h-8 rounded-full bg-vox-surface flex items-center justify-center text-vox-text-dim hover:text-white hover:bg-vox-surface-high transition-colors cursor-pointer">
+                        <div className="w-8 h-8 rounded-full bg-vox-surface flex items-center justify-center text-vox-text-dim hover:text-vox-heading hover:bg-vox-surface-high transition-colors cursor-pointer">
                             𝕏
                         </div>
-                        <div className="w-8 h-8 rounded-full bg-vox-surface flex items-center justify-center text-vox-text-dim hover:text-white hover:bg-vox-surface-high transition-colors cursor-pointer">
+                        <div className="w-8 h-8 rounded-full bg-vox-surface flex items-center justify-center text-vox-text-dim hover:text-vox-heading hover:bg-vox-surface-high transition-colors cursor-pointer">
                             in
                         </div>
                     </div>

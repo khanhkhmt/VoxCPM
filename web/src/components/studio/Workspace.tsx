@@ -430,7 +430,7 @@ export default function Workspace() {
                                         onClick={() => applyExample(ex)}
                                         className="w-full text-left p-3 bg-vox-surface border border-vox-outline/10 rounded-xl hover:border-vox-primary/40 transition-colors group"
                                     >
-                                        <p className="text-sm font-medium text-vox-text group-hover:text-white transition-colors">{ex.title}</p>
+                                        <p className="text-sm font-medium text-vox-text group-hover:text-vox-heading transition-colors">{ex.title}</p>
                                         <p className="text-xs text-vox-text-dim mt-1 line-clamp-1"><span className="text-vox-secondary">Control:</span> {ex.control}</p>
                                         <p className="text-xs text-vox-text-dim mt-0.5 line-clamp-1"><span className="text-vox-secondary">Text:</span> {ex.text}</p>
                                     </button>
@@ -454,7 +454,7 @@ export default function Workspace() {
 
             {/* ========== ACTION BAR ========== */}
             <div className="flex items-center justify-between bg-vox-surface/80 backdrop-blur-xl p-4 rounded-2xl border border-vox-outline/20 sticky bottom-6 shadow-2xl z-20">
-                <button onClick={handleClear} className="px-4 py-2 text-sm text-vox-text-dim hover:text-white flex items-center gap-2 transition-colors" disabled={isGenerating}>
+                <button onClick={handleClear} className="px-4 py-2 text-sm text-vox-text-dim hover:text-vox-heading flex items-center gap-2 transition-colors" disabled={isGenerating}>
                     <RotateCcw size={16} /> Clear
                 </button>
                 <button

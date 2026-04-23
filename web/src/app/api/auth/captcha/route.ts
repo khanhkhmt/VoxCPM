@@ -13,7 +13,10 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    const { text, svg } = await getOrCreateCaptcha(uuid);
+    const theme = request.nextUrl.searchParams.get("theme");
+    const background = theme === "light" ? "#F5F3FA" : "#111827";
+
+    const { text, svg } = await getOrCreateCaptcha(uuid, background);
     console.log(`[DEV] Captcha for ${uuid}: ${text}`);
 
     return new NextResponse(svg, {

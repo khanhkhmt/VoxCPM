@@ -2,6 +2,7 @@
 
 import { RotateCw } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
+import { useTheme } from "@/lib/theme";
 
 interface CaptchaFieldProps {
     value: string;
@@ -18,6 +19,7 @@ export default function CaptchaField({
     onRegenerate,
     error,
 }: CaptchaFieldProps) {
+    const { theme } = useTheme();
     const [timestamp, setTimestamp] = useState<number>(0);
 
     const refresh = useCallback(() => {
@@ -31,8 +33,16 @@ export default function CaptchaField({
         setTimestamp(Date.now());
     }, [captchaId]);
 
+    // Regenerate captcha when theme changes so the background matches
+    useEffect(() => {
+        if (captchaId) {
+            refresh();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [theme]);
+
     const imgSrc = captchaId
-        ? `/api/auth/captcha?uuid=${captchaId}&t=${timestamp}`
+        ? `/api/auth/captcha?uuid=${captchaId}&theme=${theme}&t=${timestamp}`
         : "";
 
     return (
@@ -42,7 +52,7 @@ export default function CaptchaField({
             </label>
             <div className="flex items-center gap-3 w-full min-w-0">
                 {/* Captcha image */}
-                <div className="relative h-[44px] w-[140px] min-w-[140px] rounded-lg overflow-hidden bg-gray-900 border border-vox-outline/30 shrink-0">
+                <div className="relative h-[44px] w-[140px] min-w-[140px] rounded-lg overflow-hidden bg-vox-surface-highest border border-vox-outline/30 shrink-0">
                     {imgSrc ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img

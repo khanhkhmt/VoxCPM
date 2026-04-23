@@ -75,7 +75,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
             <div className="glass-panel rounded-2xl p-8">
                 <div className="text-center mb-8">
-                    <h1 className="text-2xl font-bold text-white mb-2">Welcome back</h1>
+                    <h1 className="text-2xl font-bold text-vox-heading mb-2">Welcome back</h1>
                     <p className="text-sm text-vox-text-dim">
                         Sign in to your account to continue
                     </p>
@@ -126,7 +126,7 @@ export default function LoginPage() {
                     Don&apos;t have an account?{" "}
                     <Link
                         href="/register"
-                        className="text-vox-secondary hover:text-white transition-colors font-medium"
+                        className="text-vox-secondary hover:text-vox-heading transition-colors font-medium"
                     >
                         Create account
                     </Link>

@@ -82,7 +82,7 @@ export default function DemoTTSBox() {
 
                         {/* Overlay showing login prompt for custom typing */}
                         <div className="absolute inset-0 bg-vox-bg/60 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <button onClick={() => router.push("/login")} className="flex items-center gap-2 bg-vox-surface-high border border-vox-outline/50 hover:border-vox-primary px-4 py-2 rounded-lg text-sm transition-all shadow-lg text-white">
+                            <button onClick={() => router.push("/login")} className="flex items-center gap-2 bg-vox-surface-high border border-vox-outline/50 hover:border-vox-primary px-4 py-2 rounded-lg text-sm transition-all shadow-lg text-vox-heading">
                                 <Lock size={14} className="text-vox-secondary" />
                                 Sign in to enter custom text
                             </button>
@@ -129,7 +129,7 @@ export default function DemoTTSBox() {
             {!isLoggedIn && (
                 <div className="bg-vox-primary/10 border-t border-vox-outline/20 p-4 text-center">
                     <p className="text-sm text-vox-text-dim">
-                        Want to try with your own text? <button onClick={() => router.push("/login")} className="text-vox-secondary hover:text-white transition-colors ml-1 font-medium underline underline-offset-4">Sign in to generate - It&apos;s Free</button>
+                        Want to try with your own text? <button onClick={() => router.push("/login")} className="text-vox-secondary hover:text-vox-heading transition-colors ml-1 font-medium underline underline-offset-4">Sign in to generate - It&apos;s Free</button>
                     </p>
                 </div>
             )}

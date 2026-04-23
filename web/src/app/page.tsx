@@ -24,7 +24,7 @@ export default function Home() {
                 <Activity size={14} className="text-vox-secondary" />
                 <span className="text-xs font-semibold tracking-wider text-vox-secondary uppercase">Powered by Oriagent AI</span>
               </div>
-              <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.1]">
+              <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-vox-heading mb-6 leading-[1.1]">
                 Transform Text Into <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-vox-primary-dim to-vox-secondary">Lifelike Speech</span>
               </h1>
@@ -38,7 +38,7 @@ export default function Home() {
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-vox-primary to-vox-secondary opacity-0 group-hover:opacity-100 transition-opacity z-0" />
                 </Link>
-                <Link href="#demo" className="px-8 py-3.5 rounded-xl font-medium text-vox-text hover:text-white border border-vox-outline/50 hover:bg-vox-surface transition-all">
+                <Link href="#demo" className="px-8 py-3.5 rounded-xl font-medium text-vox-text hover:text-vox-heading border border-vox-outline/50 hover:bg-vox-surface transition-all">
                   Try Demo
                 </Link>
               </div>
@@ -55,7 +55,7 @@ export default function Home() {
           {/* Features Grid */}
           <div className="mb-32" id="features">
             <div className="text-center mb-16">
-              <h2 className="text-3xl lg:text-4xl font-bold mb-4">Unprecedented Control</h2>
+              <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-vox-heading">Unprecedented Control</h2>
               <p className="text-vox-text-dim max-w-2xl mx-auto">Our advanced flow-matching architecture gives you complete mastery over every aspect of generated speech.</p>
             </div>
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useTheme } from "@/lib/theme";
 
 interface LogoProps {
     className?: string;
@@ -9,6 +10,8 @@ interface LogoProps {
 }
 
 export default function Logo({ className = "", iconOnly = false }: LogoProps) {
+    const { theme } = useTheme();
+
     return (
         <Link href="/" className={`flex items-center group ${className}`}>
             {!iconOnly ? (
@@ -17,7 +20,7 @@ export default function Logo({ className = "", iconOnly = false }: LogoProps) {
                         src="/logo_oriagent.svg"
                         alt="Oriagent"
                         fill
-                        className="object-contain hover:scale-105 transition-all duration-300"
+                        className={`object-contain hover:scale-105 transition-all duration-300 ${theme === "light" ? "brightness-0" : ""}`}
                         unoptimized
                     />
                 </div>
@@ -28,7 +31,7 @@ export default function Logo({ className = "", iconOnly = false }: LogoProps) {
                         alt="Oriagent"
                         width={32}
                         height={32}
-                        className="object-contain"
+                        className={`object-contain ${theme === "light" ? "brightness-0" : ""}`}
                         unoptimized
                     />
                 </div>

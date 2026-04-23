@@ -61,7 +61,14 @@ Mở trình duyệt:
 http://localhost:3000
 ```
 
----
+
+nếu chưa cài Node.js thì chạy lệnh sau:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
 
 ## 4) Luồng chạy đúng
 

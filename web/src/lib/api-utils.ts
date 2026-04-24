@@ -28,3 +28,17 @@ export function jsonError(code: string, message: string, status = 400) {
     { status },
   );
 }
+
+// ---------------------------------------------------------------------------
+// Admin helper — returns current user with admin role or throws 403 response
+// ---------------------------------------------------------------------------
+export async function requireAdmin() {
+  const user = await requireAuth();
+  if (user.role !== "admin") {
+    throw NextResponse.json(
+      { ok: false, error: { code: "FORBIDDEN", message: "Admin access required" } },
+      { status: 403 },
+    );
+  }
+  return user;
+}

@@ -17,13 +17,9 @@ Di chuyển vào thư mục gốc của dự án và thực hiện các bước 
 
 ### Cài đặt thư viện:
 ```bash
-pip install -e .
+pip install -e . && python3 app.py --port 8808
 ```
 
-### Chạy Backend:
-```bash
-python3 app.py --port 8808
-```
 *Lưu ý: Backend mặc định phải chạy ở cổng `8808` để Frontend có thể kết nối.*
 
 ---
@@ -36,37 +32,30 @@ cd web
 ```
 
 ### Bước 1: Tạo file cấu hình `.env.local`
-Tạo file `.env.local` trong thư mục `web/` và dán nội dung sau:
+Tạo file `.env.local` trong thư mục `web/` và dán nội dung sau đó chạy frontend: 
 
-```env
-# === Database ===
-DATABASE_URL="file:./prisma/dev.db"
-
-# === Authentication ===
-AUTH_JWT_SECRET="dev-secret-CHANGE-ME-in-production-please"
-
-# === Cloudflare R2 Storage (Lưu trữ file Audio) ===
-R2_ACCOUNT_ID="c6c72de2b009a468b58754f84c9cd020"
-R2_ACCESS_KEY_ID="c1785f7092e927d595d8e66e2a939a77"
-R2_SECRET_ACCESS_KEY="6c59feadad5162ec3540c8c04707b0219433e368c781c2ebc781cc3ab43fefcd"
-R2_BUCKET_NAME="voxcpm-audio"
-R2_PUBLIC_URL="https://pub-f6e9530ed8ce419993e861523e143b35.r2.dev"
-```
-
-### Bước 2: Cài đặt và Khởi tạo Database
 ```bash
-npm install
-npx prisma generate
-npx prisma db push
-```
-
-### Bước 3: Chạy Frontend
-```bash
+cd web && \
+cat > .env.local <<'EOF' && \
+npm install && \
+npx prisma generate && \
+npx prisma db push && \
 npm run dev -- -p 3000
-```
-Truy cập giao diện tại: `http://localhost:3000`
+
+DATABASE_URL="file:./prisma/dev.db" 
+AUTH_JWT_SECRET="dev-secret-CHANGE-ME-in-production-please" R2_ACCOUNT_ID="c6c72de2b009a468b58754f84c9cd020" 
+R2_ACCESS_KEY_ID="c1785f7092e927d595d8e66e2a939a77" R2_SECRET_ACCESS_KEY="6c59feadad5162ec3540c8c04707b0219433e368c781c2ebc781cc3ab43fefcd" R2_BUCKET_NAME="voxcpm-audio" 
+R2_PUBLIC_URL="https://pub-f6e9530ed8ce419993e861523e143b35.r2.dev"
+EOF
 
 ---
+
+Nếu chưa cài Node.js thì chạy lệnh sau:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
 
 ## 4. Xử lý lỗi thường gặp (Troubleshooting)
 

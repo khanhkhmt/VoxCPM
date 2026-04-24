@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { useTheme } from "@/lib/theme";
+import { useState, useEffect, useCallback } from "react";
 import {
     BarChart3,
     Users,
@@ -17,6 +17,7 @@ import {
 
 // ---------------------------------------------------------------------------
 // AdminSidebar — Isolated sidebar for admin panel (does NOT touch studio Sidebar)
+// Theme toggle is self-contained — no dependency on @/lib/theme
 // ---------------------------------------------------------------------------
 const NAV_LINKS = [
     { name: "Dashboard", href: "/admin", icon: BarChart3 },
@@ -24,9 +25,36 @@ const NAV_LINKS = [
     { name: "TTS History", href: "/admin/history", icon: History },
 ] as const;
 
+function useLocalTheme() {
+    const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+    useEffect(() => {
+        const isDark = !document.documentElement.classList.contains("light");
+        setTheme(isDark ? "dark" : "light");
+    }, []);
+
+    const toggleTheme = useCallback(() => {
+        setTheme((prev) => {
+            const next = prev === "dark" ? "light" : "dark";
+            const root = document.documentElement;
+            if (next === "light") {
+                root.classList.add("light");
+                root.classList.remove("dark");
+            } else {
+                root.classList.add("dark");
+                root.classList.remove("light");
+            }
+            localStorage.setItem("vox-theme", next);
+            return next;
+        });
+    }, []);
+
+    return { theme, toggleTheme };
+}
+
 export default function AdminSidebar() {
     const { user, logout } = useAuth();
-    const { theme, toggleTheme } = useTheme();
+    const { theme, toggleTheme } = useLocalTheme();
     const pathname = usePathname();
 
     return (

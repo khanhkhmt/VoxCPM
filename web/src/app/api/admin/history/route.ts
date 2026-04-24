@@ -47,6 +47,8 @@ export async function GET(request: NextRequest) {
           doNormalize: true,
           denoise: true,
           createdAt: true,
+          voiceProfileId: true,
+          voiceProfile: { select: { id: true, name: true } },
           user: {
             select: {
               id: true,

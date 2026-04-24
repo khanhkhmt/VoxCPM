@@ -60,9 +60,9 @@ export default function Workspace() {
     const [doNormalize, setDoNormalize] = useState(false);
     const [denoise, setDenoise] = useState(false);
 
-    // ---- Reference audio (REAL) ----
     const [refAudioFile, setRefAudioFile] = useState<File | null>(null);
     const [refAudioPreview, setRefAudioPreview] = useState<string | null>(null);
+    const [activeVoiceProfileId, setActiveVoiceProfileId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // ---- Ultimate Cloning (REAL) ----
@@ -106,7 +106,11 @@ export default function Workspace() {
         formData.append("description", "Auto-saved from Studio");
         fetch("/api/voices", { method: "POST", body: formData })
             .then(async (res) => {
-                if (res.ok) console.log("[Voice Library] Auto-saved:", file.name);
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.data?.id) setActiveVoiceProfileId(json.data.id);
+                    console.log("[Voice Library] Auto-saved:", file.name);
+                }
                 else console.warn("[Voice Library] Save failed:", await res.text());
             })
             .catch(() => {});
@@ -124,6 +128,7 @@ export default function Workspace() {
         setRefAudioFile(null);
         if (refAudioPreview) URL.revokeObjectURL(refAudioPreview);
         setRefAudioPreview(null);
+        setActiveVoiceProfileId(null);
         if (ultimateCloning) {
             setUltimateCloning(false);
             setPromptText("");
@@ -179,6 +184,7 @@ export default function Workspace() {
                         text, controlInstruction: ultimateCloning ? "" : controlInstruction,
                         audioUrl: result.audioUrl, language, cfgValue, ditSteps,
                         doNormalize, denoise, usePromptText: ultimateCloning, promptText,
+                        voiceProfileId: activeVoiceProfileId,
                     }),
                 }).then(async (res) => {
                     const json = await res.json();

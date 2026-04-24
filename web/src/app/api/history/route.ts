@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
           promptText: true,
           voiceProfileId: true,
           createdAt: true,
+          voiceProfile: { select: { id: true, name: true } },
         },
       }),
       prisma.tTSGeneration.count({ where: { userId: user.id } }),
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
       denoise = false,
       usePromptText = false,
       promptText = "",
+      voiceProfileId = null,
     } = body;
 
     if (!text || !audioUrl) {
@@ -116,6 +118,7 @@ export async function POST(request: NextRequest) {
         denoise,
         usePromptText,
         promptText,
+        voiceProfileId,
       },
     });
 

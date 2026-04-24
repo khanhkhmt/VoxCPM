@@ -22,6 +22,7 @@ interface HistoryItem {
   denoise: boolean;
   usePromptText: boolean;
   promptText: string;
+  voiceProfile?: { id: string; name: string } | null;
   createdAt: string;
 }
 
@@ -215,6 +216,11 @@ export default function HistoryList() {
                     <span className="text-xs text-vox-text-dim flex items-center gap-1 max-w-[250px] truncate">
                       <SlidersHorizontal size={10} className="text-vox-secondary shrink-0" />
                       {item.controlInstruction}
+                    </span>
+                  )}
+                  {item.voiceProfile && (
+                    <span className="text-xs text-vox-primary flex items-center gap-1 max-w-[200px] truncate bg-vox-primary/10 px-1.5 py-0.5 rounded border border-vox-primary/20">
+                      🎤 {item.voiceProfile.name}
                     </span>
                   )}
                   <span className="text-xs text-vox-text-dim flex items-center gap-1">

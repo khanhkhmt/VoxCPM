@@ -16,6 +16,7 @@ export interface AdminHistoryItem {
     doNormalize: boolean;
     denoise: boolean;
     createdAt: string;
+    voiceProfile?: { id: string; name: string } | null;
     user: { id: string; username: string; name: string };
 }
 
@@ -84,6 +85,11 @@ export default function AdminHistoryList({
                                         <p className="text-vox-text-dim truncate max-w-[180px]" title={item.controlInstruction}>
                                             {item.controlInstruction || "—"}
                                         </p>
+                                        {item.voiceProfile && (
+                                            <p className="text-xs text-vox-primary mt-1 truncate max-w-[180px]">
+                                                🎤 {item.voiceProfile.name}
+                                            </p>
+                                        )}
                                     </td>
                                     <td className="py-3 px-4 text-center">
                                         <span className="text-xs bg-vox-surface-high px-2 py-0.5 rounded-full text-vox-text-dim">{item.language}</span>

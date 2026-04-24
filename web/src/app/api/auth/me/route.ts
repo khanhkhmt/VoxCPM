@@ -20,6 +20,8 @@ export async function GET() {
                 id: user.id,
                 username: user.username,
                 name: user.name,
+                avatarUrl: user.avatarUrl,
+                role: user.role,
             }
         },
     });

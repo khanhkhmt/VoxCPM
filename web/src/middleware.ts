@@ -7,7 +7,7 @@ const JWT_SECRET = new TextEncoder().encode(
 const SESSION_COOKIE = "voxora_session";
 
 // Paths that require authentication
-const PROTECTED_PATHS = ["/studio"];
+const PROTECTED_PATHS = ["/studio", "/admin"];
 // Paths that should redirect to /studio if already logged in
 const AUTH_PATHS = ["/login", "/register"];
 
@@ -45,5 +45,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/studio/:path*", "/login", "/register"],
+    matcher: ["/studio/:path*", "/admin/:path*", "/login", "/register"],
 };

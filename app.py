@@ -7,12 +7,19 @@ import soundfile as sf
 import torch
 import gradio as gr
 import uvicorn
-from typing import Optional, Tuple
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from typing import Optional, Tuple, Generator
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from funasr import AutoModel
 from pathlib import Path
+import threading
+import queue
+import asyncio
+import base64
+import tempfile
+import json
+import time
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -326,6 +333,50 @@ class VoxCPMDemo:
         wav = current_model.generate(**generate_kwargs)
         return (current_model.tts_model.sample_rate, wav)
 
+    def generate_streaming_tts_audio(
+        self,
+        text_input: str,
+        control_instruction: str = "",
+        reference_wav_path_input: Optional[str] = None,
+        prompt_text: str = "",
+        cfg_value_input: float = 2.0,
+        do_normalize: bool = True,
+        denoise: bool = True,
+        inference_timesteps: int = 10,
+        normalize_lang: str = "auto",
+    ) -> Generator[np.ndarray, None, None]:
+        current_model = self.get_or_load_voxcpm()
+
+        text = (text_input or "").strip()
+        if len(text) == 0:
+            raise ValueError("Please input text to synthesize.")
+
+        control = (control_instruction or "").strip()
+        final_text = f"({control}){text}" if control else text
+
+        audio_path = reference_wav_path_input if reference_wav_path_input else None
+        prompt_text_clean = (prompt_text or "").strip() or None
+
+        if audio_path and prompt_text_clean:
+            logger.info(f"[Voice Cloning Streaming] prompt_wav + prompt_text + reference_wav")
+        elif audio_path:
+            logger.info(f"[Voice Control Streaming] reference_wav only")
+        else:
+            logger.info(f"[Voice Design Streaming] control: {control[:50] if control else 'None'}...")
+
+        logger.info(f"Streaming audio for text: '{final_text[:80]}...' [lang={normalize_lang}]")
+        generate_kwargs = self._build_generate_kwargs(
+            final_text=final_text,
+            audio_path=audio_path,
+            prompt_text_clean=prompt_text_clean,
+            cfg_value_input=cfg_value_input,
+            do_normalize=do_normalize,
+            denoise=denoise,
+            inference_timesteps=inference_timesteps,
+            normalize_lang=normalize_lang,
+        )
+        return current_model.generate_streaming(**generate_kwargs)
+
 
 # ---------- FastAPI API ----------
 
@@ -462,6 +513,163 @@ def delete_tts_file(file_name: str):
     file_path.unlink()
     logger.info(f"Deleted audio file: {file_name}")
     return {"ok": True}
+
+
+def float32_to_pcm16_bytes(audio_np: np.ndarray) -> bytes:
+    pcm16 = np.clip(audio_np, -1.0, 1.0) * 32767
+    return pcm16.astype(np.int16).tobytes()
+
+@app.websocket("/ws/tts/stream")
+async def websocket_tts_stream(websocket: WebSocket):
+    await websocket.accept()
+    cancel_event = threading.Event()
+    q = queue.Queue()
+    temp_wav_path = None
+    thread = None
+
+    try:
+        # Nhận tin nhắn cấu hình ban đầu
+        data = await websocket.receive_json()
+        if data.get("type") != "start":
+            await websocket.send_json({"type": "error", "message": "Expected 'start' message."})
+            await websocket.close()
+            return
+
+        text = data.get("text", "")
+        control_instruction = data.get("control_instruction", "")
+        use_prompt_text = data.get("use_prompt_text", False)
+        prompt_text = data.get("prompt_text", "")
+        cfg_value = float(data.get("cfg_value", 2.0))
+        do_normalize = data.get("do_normalize", False)
+        denoise = data.get("denoise", False)
+        dit_steps = int(data.get("dit_steps", 10))
+        language = data.get("language", "auto")
+        reference_wav_base64 = data.get("reference_wav_base64", None)
+
+        if reference_wav_base64:
+            if len(reference_wav_base64) > 5 * 1024 * 1024:
+                await websocket.send_json({"type": "error", "message": "Reference audio base64 too large."})
+                await websocket.close()
+                return
+            audio_bytes = base64.b64decode(reference_wav_base64)
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+            tmp.write(audio_bytes)
+            tmp.close()
+            temp_wav_path = tmp.name
+
+        ultimate = use_prompt_text
+        actual_prompt_text = prompt_text.strip() if ultimate else ""
+        actual_control = "" if ultimate else (control_instruction or "")
+
+        demo = get_demo()
+        # Đảm bảo model được load để lấy sample_rate
+        demo.get_or_load_voxcpm()
+        sample_rate = demo.voxcpm_model.tts_model.sample_rate
+
+        # Gửi thông báo bắt đầu
+        await websocket.send_json({
+            "type": "start",
+            "sample_rate": sample_rate,
+            "format": "pcm16",
+            "channels": 1
+        })
+
+        def run_generation():
+            start_time = time.time()
+            first_chunk_time = None
+            chunks_count = 0
+            all_chunks = []
+            
+            try:
+                generator = demo.generate_streaming_tts_audio(
+                    text_input=text,
+                    control_instruction=actual_control,
+                    reference_wav_path_input=temp_wav_path,
+                    prompt_text=actual_prompt_text,
+                    cfg_value_input=cfg_value,
+                    do_normalize=do_normalize,
+                    denoise=denoise,
+                    inference_timesteps=dit_steps,
+                    normalize_lang=language,
+                )
+                
+                for chunk in generator:
+                    if cancel_event.is_set():
+                        q.put(("cancelled", None))
+                        return
+                    if first_chunk_time is None:
+                        first_chunk_time = time.time()
+                    
+                    q.put(("chunk", chunk))
+                    all_chunks.append(chunk)
+                    chunks_count += 1
+                
+                if len(all_chunks) > 0:
+                    final_wav_np = np.concatenate(all_chunks)
+                    out_name = f"{uuid.uuid4().hex}.wav"
+                    out_path = OUTPUT_DIR / out_name
+                    sf.write(out_path, final_wav_np, sample_rate)
+                    
+                    ttfb_ms = int((first_chunk_time - start_time) * 1000) if first_chunk_time else 0
+                    duration_ms = int(len(final_wav_np) / sample_rate * 1000)
+                    
+                    metadata = {
+                        "type": "done",
+                        "audio_url": f"/api/tts/file/{out_name}",
+                        "chunks": chunks_count,
+                        "ttfb_ms": ttfb_ms,
+                        "duration_ms": duration_ms
+                    }
+                    q.put(("done", metadata))
+                else:
+                    q.put(("error", "No audio generated."))
+                    
+            except Exception as e:
+                logger.exception("Streaming generation failed")
+                q.put(("error", str(e)))
+
+        thread = threading.Thread(target=run_generation)
+        thread.start()
+
+        while True:
+            item_type, payload = await asyncio.to_thread(q.get)
+            
+            if item_type == "chunk":
+                pcm16_bytes = float32_to_pcm16_bytes(payload)
+                await websocket.send_bytes(pcm16_bytes)
+            elif item_type == "done":
+                await websocket.send_json(payload)
+                break
+            elif item_type == "error":
+                await websocket.send_json({"type": "error", "message": payload})
+                break
+            elif item_type == "cancelled":
+                try:
+                    await websocket.send_json({"type": "cancelled"})
+                except Exception:
+                    pass
+                break
+
+    except WebSocketDisconnect:
+        logger.info("WebSocket disconnected by client.")
+        cancel_event.set()
+    except Exception as e:
+        logger.exception("WebSocket stream error")
+        try:
+            await websocket.send_json({"type": "error", "message": str(e)})
+        except Exception:
+            pass
+        cancel_event.set()
+    finally:
+        if temp_wav_path and os.path.exists(temp_wav_path):
+            try:
+                os.unlink(temp_wav_path)
+            except OSError:
+                pass
+        try:
+            await websocket.close()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

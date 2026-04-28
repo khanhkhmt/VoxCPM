@@ -1,5 +1,4 @@
 launch.json
-__pycache__
 voxcpm.egg-info
 .DS_Store
 ./pretrained_models/
@@ -9,6 +8,10 @@ app_local.py
 # Env files
 .env
 .env.*
+!.env.example
+web/.env
+web/.env.*
+!web/.env.example
 
 # Database files
 *.db
@@ -18,11 +21,26 @@ app_local.py
 *.sqlite
 *.sqlite3
 
-# Logs and History
+# Logs
 *.log
+server.log
 .history/
 .bash_history
 .python_history
 
-# Package locks
-web/package-lock.json
+# Audio & temp files
+*.wav
+*.mp3
+*.raw
+tmp/
+temp/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Frontend build/cache
+node_modules/
+.next/
+dist/
+build/

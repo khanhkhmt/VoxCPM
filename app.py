@@ -579,6 +579,7 @@ async def websocket_tts_stream(websocket: WebSocket):
             first_chunk_time = None
             chunks_count = 0
             all_chunks = []
+            last_chunk_time = None
             
             try:
                 generator = demo.generate_streaming_tts_audio(
@@ -594,11 +595,17 @@ async def websocket_tts_stream(websocket: WebSocket):
                 )
                 
                 for chunk in generator:
+                    now = time.time()
                     if cancel_event.is_set():
                         q.put(("cancelled", None))
                         return
                     if first_chunk_time is None:
-                        first_chunk_time = time.time()
+                        first_chunk_time = now
+                    
+                    last_chunk_time = now
+                    
+                    chunk_len = len(chunk)
+                    chunk_duration = chunk_len / sample_rate
                     
                     q.put(("chunk", chunk))
                     all_chunks.append(chunk)

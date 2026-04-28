@@ -1,5 +1,6 @@
 export interface StreamingAudioPlayerOptions {
   preBufferSeconds?: number;
+  minBufferedSecondsBeforePlay?: number;
 }
 
 export interface StreamingAudioMetadata {
@@ -28,10 +29,15 @@ export class StreamingAudioPlayer {
   private chunksQueued: number = 0;
   private chunksPlayed: number = 0;
   private sourceNodes: AudioBufferSourceNode[] = [];
+  
+  private pendingBuffers: AudioBuffer[] = [];
+  private totalPendingDuration: number = 0;
+  private hasStartedPlayback: boolean = false;
 
   constructor(options?: StreamingAudioPlayerOptions) {
     this.options = {
-      preBufferSeconds: 0.1, // default pre-buffer 100ms
+      preBufferSeconds: 0.8,
+      minBufferedSecondsBeforePlay: 0.8,
       ...options,
     };
   }
@@ -91,6 +97,33 @@ export class StreamingAudioPlayer {
     // Copy to channel 0 (mono)
     audioBuffer.copyToChannel(float32Array, 0);
 
+    if (!this.hasStartedPlayback) {
+      this.pendingBuffers.push(audioBuffer);
+      this.totalPendingDuration += audioBuffer.duration;
+      
+      const minBuffer = this.options.minBufferedSecondsBeforePlay || 0.8;
+      if (this.totalPendingDuration >= minBuffer) {
+        this.hasStartedPlayback = true;
+        this.nextStartTime = this.audioContext.currentTime + (this.options.preBufferSeconds || 0.8);
+        for (const buf of this.pendingBuffers) {
+          this.scheduleBuffer(buf);
+        }
+        this.pendingBuffers = [];
+      }
+    } else {
+      const currentTime = this.audioContext.currentTime;
+      if (this.nextStartTime < currentTime) {
+        this.nextStartTime = currentTime + (this.options.preBufferSeconds || 0.8);
+      }
+      this.scheduleBuffer(audioBuffer);
+    }
+    
+    this.chunksQueued++;
+  }
+
+  private scheduleBuffer(audioBuffer: AudioBuffer): void {
+    if (!this.audioContext) return;
+    
     // Create Source Node
     const sourceNode = this.audioContext.createBufferSource();
     sourceNode.buffer = audioBuffer;
@@ -108,22 +141,8 @@ export class StreamingAudioPlayer {
       }
     };
 
-    // Schedule playback
-    const currentTime = this.audioContext.currentTime;
-    
-    if (this.nextStartTime === 0) {
-      // First chunk: add pre-buffer to give network a head start
-      this.nextStartTime = currentTime + (this.options.preBufferSeconds || 0.1);
-    } else {
-      // Ensure we don't schedule in the past if network lagged
-      this.nextStartTime = Math.max(currentTime, this.nextStartTime);
-    }
-
     sourceNode.start(this.nextStartTime);
-    
-    // Increment nextStartTime by the exact duration of this chunk
     this.nextStartTime += audioBuffer.duration;
-    this.chunksQueued++;
   }
 
   public stop(): void {
@@ -178,5 +197,8 @@ export class StreamingAudioPlayer {
     this.chunksQueued = 0;
     this.chunksPlayed = 0;
     this.nextStartTime = 0;
+    this.pendingBuffers = [];
+    this.totalPendingDuration = 0;
+    this.hasStartedPlayback = false;
   }
 }

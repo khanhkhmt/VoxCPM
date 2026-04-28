@@ -130,7 +130,10 @@ export function StreamingTTSPanel({
     if (playerRef.current) {
       await playerRef.current.close();
     }
-    playerRef.current = new StreamingAudioPlayer({ preBufferSeconds: 0.2 });
+    playerRef.current = new StreamingAudioPlayer({
+      preBufferSeconds: 0.8,
+      minBufferedSecondsBeforePlay: 0.8
+    });
 
     // Handle reference audio
     let base64: string | null = null;
@@ -161,7 +164,7 @@ export function StreamingTTSPanel({
       cfg_value: cfgValue,
       do_normalize: doNormalize,
       denoise,
-      dit_steps: ditSteps,
+      dit_steps: Math.min(ditSteps, 4),
       language,
       reference_wav_base64: base64,
     };
@@ -269,6 +272,10 @@ export function StreamingTTSPanel({
         >
           {status}
         </span>
+      </div>
+      
+      <div className="text-[11px] text-gray-500 font-medium -mt-2">
+        Streaming Mode is optimized with lower steps for smoother real-time playback.
       </div>
 
       <div className="flex gap-3">

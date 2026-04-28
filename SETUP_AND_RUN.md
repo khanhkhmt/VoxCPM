@@ -36,19 +36,23 @@ Tạo file `.env.local` trong thư mục `web/` và dán nội dung sau đó ch�
 
 ```bash
 cd web && \
-cat > .env.local <<'EOF' && \
+cat > .env.local <<'EOF'
+DATABASE_URL="file:./prisma/dev.db"
+AUTH_JWT_SECRET="dev-secret-CHANGE-ME-in-production-please"
+
+R2_ACCOUNT_ID="c6c72de2b009a468b58754f84c9cd020"
+R2_ACCESS_KEY_ID="c1785f7092e927d595d8e66e2a939a77"
+R2_SECRET_ACCESS_KEY="6c59feadad5162ec3540c8c04707b0219433e368c781c2ebc781cc3ab43fefcd"
+R2_BUCKET_NAME="voxcpm-audio"
+R2_PUBLIC_URL="https://pub-f6e9530ed8ce419993e861523e143b35.r2.dev"
+EOF
+
 npm install && \
 npx prisma generate && \
 npx prisma db push && \
 npm run dev -- -p 3000
 
-DATABASE_URL="file:./prisma/dev.db" 
-AUTH_JWT_SECRET="dev-secret-CHANGE-ME-in-production-please" R2_ACCOUNT_ID="c6c72de2b009a468b58754f84c9cd020" 
-R2_ACCESS_KEY_ID="c1785f7092e927d595d8e66e2a939a77" R2_SECRET_ACCESS_KEY="6c59feadad5162ec3540c8c04707b0219433e368c781c2ebc781cc3ab43fefcd" R2_BUCKET_NAME="voxcpm-audio" 
-R2_PUBLIC_URL="https://pub-f6e9530ed8ce419993e861523e143b35.r2.dev"
-EOF
-
----
+```
 
 Nếu chưa cài Node.js thì chạy lệnh sau:
 

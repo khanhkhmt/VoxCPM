@@ -1,5 +1,6 @@
 export interface TTSStreamRequest {
   type: "start";
+  streaming_mode?: "stable" | "fast";
   text: string;
   control_instruction: string;
   use_prompt_text: boolean;
@@ -14,14 +15,30 @@ export interface TTSStreamRequest {
 
 export interface TTSStreamStartMetadata {
   type: "start";
+  mode?: "stable" | "fast";
+  segments?: number;
   sample_rate: number;
   format: "pcm16";
   channels: number;
 }
 
+export interface TTSStreamSegmentStartPayload {
+  type: "segment_start";
+  index: number;
+  text: string;
+}
+
+export interface TTSStreamSegmentDonePayload {
+  type: "segment_done";
+  index: number;
+  duration_ms?: number;
+}
+
 export interface TTSStreamDonePayload {
   type: "done";
+  mode?: "stable" | "fast";
   audio_url: string;
+  segments?: number;
   chunks: number;
   ttfb_ms: number;
   duration_ms: number;
@@ -30,6 +47,8 @@ export interface TTSStreamDonePayload {
 export interface TTSStreamCallbacks {
   onOpen?: () => void;
   onStart?: (metadata: TTSStreamStartMetadata) => void;
+  onSegmentStart?: (payload: TTSStreamSegmentStartPayload) => void;
+  onSegmentDone?: (payload: TTSStreamSegmentDonePayload) => void;
   onAudioChunk?: (arrayBuffer: ArrayBuffer) => void;
   onDone?: (payload: TTSStreamDonePayload) => void;
   onError?: (message: string) => void;
@@ -90,6 +109,12 @@ export class TTSStreamingClient {
           switch (data.type) {
             case "start":
               this.callbacks.onStart?.(data as TTSStreamStartMetadata);
+              break;
+            case "segment_start":
+              this.callbacks.onSegmentStart?.(data as TTSStreamSegmentStartPayload);
+              break;
+            case "segment_done":
+              this.callbacks.onSegmentDone?.(data as TTSStreamSegmentDonePayload);
               break;
             case "done":
               this.callbacks.onDone?.(data as TTSStreamDonePayload);

@@ -70,6 +70,11 @@ export function StreamingTTSPanel({
   const [ttfbMs, setTtfbMs] = useState<number>(0);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [finalAudioUrl, setFinalAudioUrl] = useState<string | null>(null);
+  
+  const [strategy, setStrategy] = useState<"stable" | "fast">("stable");
+  const [currentSegmentIndex, setCurrentSegmentIndex] = useState<number>(0);
+  const [totalSegments, setTotalSegments] = useState<number>(0);
+  const [currentSegmentText, setCurrentSegmentText] = useState<string>("");
 
   useEffect(() => {
     if (externalFinalAudioUrl) {
@@ -118,6 +123,9 @@ export function StreamingTTSPanel({
     setTtfbMs(0);
     setElapsedTime(0);
     setFinalAudioUrl(null);
+    setCurrentSegmentIndex(0);
+    setTotalSegments(0);
+    setCurrentSegmentText("");
     startTimeRef.current = Date.now();
 
     // Start timer
@@ -157,6 +165,7 @@ export function StreamingTTSPanel({
 
     const request: TTSStreamRequest = {
       type: "start",
+      streaming_mode: strategy,
       text,
       control_instruction: controlInstruction,
       use_prompt_text: usePromptText,
@@ -176,6 +185,9 @@ export function StreamingTTSPanel({
       onStart: async (metadata: TTSStreamStartMetadata) => {
         setStatus("playing");
         setTtfbMs(Date.now() - startTimeRef.current);
+        if (metadata.segments) {
+          setTotalSegments(metadata.segments);
+        }
         if (playerRef.current) {
           try {
             await playerRef.current.start({
@@ -189,6 +201,10 @@ export function StreamingTTSPanel({
             setStatus("error");
           }
         }
+      },
+      onSegmentStart: (payload) => {
+        setCurrentSegmentIndex(payload.index + 1);
+        setCurrentSegmentText(payload.text);
       },
       onAudioChunk: (arrayBuffer: ArrayBuffer) => {
         if (playerRef.current) {
@@ -278,6 +294,25 @@ export function StreamingTTSPanel({
         Streaming Mode is optimized with lower steps for smoother real-time playback.
       </div>
 
+      <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl mt-1 mb-1">
+        <button
+          onClick={() => setStrategy("stable")}
+          disabled={status !== "idle" && status !== "done" && status !== "error" && status !== "cancelled"}
+          className={`flex-1 flex flex-col items-center justify-center p-2 rounded-lg transition-all ${strategy === "stable" ? "bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600" : "hover:bg-gray-200 dark:hover:bg-gray-700/50"} disabled:opacity-50 disabled:cursor-not-allowed`}
+        >
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Stable / Smooth</span>
+          <span className="text-[10px] text-gray-500">More stable, sends audio by sentence</span>
+        </button>
+        <button
+          onClick={() => setStrategy("fast")}
+          disabled={status !== "idle" && status !== "done" && status !== "error" && status !== "cancelled"}
+          className={`flex-1 flex flex-col items-center justify-center p-2 rounded-lg transition-all ${strategy === "fast" ? "bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600" : "hover:bg-gray-200 dark:hover:bg-gray-700/50"} disabled:opacity-50 disabled:cursor-not-allowed`}
+        >
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Fast / Low-latency</span>
+          <span className="text-[10px] text-gray-500">Starts earlier, may stutter on weak GPU</span>
+        </button>
+      </div>
+
       <div className="flex gap-3">
         <button
           onClick={handleStart}
@@ -319,12 +354,20 @@ export function StreamingTTSPanel({
           </span>
         </div>
         <div className="flex flex-col bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
-          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Chunks</span>
+          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+            {strategy === "stable" ? "Segments" : "Chunks"}
+          </span>
           <span className="font-mono text-lg text-gray-700 dark:text-gray-200">
-            {chunksReceived}
+            {strategy === "stable" && totalSegments > 0 ? `${currentSegmentIndex} / ${totalSegments}` : chunksReceived}
           </span>
         </div>
       </div>
+      
+      {status === "playing" && strategy === "stable" && currentSegmentText && (
+        <div className="text-xs text-gray-500 italic text-center animate-pulse px-2 line-clamp-2">
+          Generating: &quot;{currentSegmentText}&quot;
+        </div>
+      )}
 
       {status === "error" && errorMsg && (
         <div className="text-sm text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800/30 flex items-start gap-2">

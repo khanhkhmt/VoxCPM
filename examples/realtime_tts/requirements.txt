@@ -1,0 +1,5 @@
+# Extra dependencies for the RealtimeTTS integration example.
+# Install on top of the VoxCPM base requirements with:
+#     pip install -r examples/realtime_tts/requirements.txt
+RealtimeTTS>=0.5.7
+stream2sentence>=0.2

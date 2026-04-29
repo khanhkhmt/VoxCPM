@@ -242,7 +242,7 @@ export function StreamingTTSPanel({
     });
 
     try {
-      clientRef.current.connect(request);
+      await clientRef.current.connect(request);
     } catch (err: unknown) {
       setStatus("error");
       setErrorMsg("Failed to connect: " + (err instanceof Error ? err.message : String(err)));

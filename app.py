@@ -8,9 +8,9 @@ import torch
 import gradio as gr
 import uvicorn
 from typing import Optional, Tuple, Generator
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from funasr import AutoModel
 from pathlib import Path
 import threading
@@ -21,6 +21,7 @@ import tempfile
 import json
 import time
 import re
+import jwt
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -404,13 +405,29 @@ def _save_upload(upload: UploadFile) -> Path:
 
 
 app = FastAPI(title="VoxCPM FastAPI", version="1.0.0")
+
+allowed_origins_str = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+allowed_origins = [o.strip() for o in allowed_origins_str.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+TTS_INTERNAL_SECRET = os.environ.get("TTS_INTERNAL_SECRET")
+
+@app.middleware("http")
+async def require_internal_secret(request: Request, call_next):
+    path = request.url.path
+    if path.startswith("/api/tts/") and not path.startswith("/api/tts/health") and not path.startswith("/api/tts/file/"):
+        secret = request.headers.get("X-Internal-Secret")
+        if not TTS_INTERNAL_SECRET or secret != TTS_INTERNAL_SECRET:
+            logger.warning(f"Unauthorized access attempt to {path}")
+            return JSONResponse(status_code=401, content={"detail": "Unauthorized: Invalid or missing X-Internal-Secret"})
+    return await call_next(request)
 
 _demo: Optional[VoxCPMDemo] = None
 
@@ -463,6 +480,13 @@ def generate(
     reference_wav: Optional[UploadFile] = File(default=None),
 ):
     try:
+        if len(text) > 10000:
+            raise ValueError("Text length exceeds maximum allowed (10000 characters).")
+        if not (1 <= int(dit_steps) <= 50):
+            raise ValueError("dit_steps must be between 1 and 50.")
+        if not (0.1 <= float(cfg_value) <= 10.0):
+            raise ValueError("cfg_value must be between 0.1 and 10.0.")
+
         ref_path: Optional[str] = None
         if reference_wav is not None and reference_wav.filename:
             ref_path = str(_save_upload(reference_wav))
@@ -578,6 +602,22 @@ def split_text_into_segments(text: str, min_words: int = 4, max_words: int = 25)
 @app.websocket("/ws/tts/stream")
 async def websocket_tts_stream(websocket: WebSocket):
     await websocket.accept()
+    
+    # Authenticate via ?token= query parameter before proceeding
+    token = websocket.query_params.get("token")
+    if not token or not TTS_INTERNAL_SECRET:
+        await websocket.send_json({"type": "error", "message": "Unauthorized: Missing token"})
+        await websocket.close(code=4401)
+        return
+        
+    try:
+        payload = jwt.decode(token, TTS_INTERNAL_SECRET, algorithms=["HS256"])
+        max_length = payload.get("max_length", 10000)
+    except jwt.PyJWTError as e:
+        await websocket.send_json({"type": "error", "message": f"Unauthorized: Invalid token ({str(e)})"})
+        await websocket.close(code=4401)
+        return
+
     cancel_event = threading.Event()
     q = queue.Queue()
     temp_wav_path = None
@@ -592,13 +632,27 @@ async def websocket_tts_stream(websocket: WebSocket):
             return
 
         text = data.get("text", "")
+        if len(text) > max_length:
+            await websocket.send_json({"type": "error", "message": f"Text length exceeds maximum allowed for this token ({max_length} characters)."})
+            await websocket.close()
+            return
+            
+        cfg_value = float(data.get("cfg_value", 2.0))
+        dit_steps = int(data.get("dit_steps", 10))
+        if not (1 <= dit_steps <= 50):
+            await websocket.send_json({"type": "error", "message": "dit_steps must be between 1 and 50."})
+            await websocket.close()
+            return
+        if not (0.1 <= cfg_value <= 10.0):
+            await websocket.send_json({"type": "error", "message": "cfg_value must be between 0.1 and 10.0."})
+            await websocket.close()
+            return
+
         control_instruction = data.get("control_instruction", "")
         use_prompt_text = data.get("use_prompt_text", False)
         prompt_text = data.get("prompt_text", "")
-        cfg_value = float(data.get("cfg_value", 2.0))
         do_normalize = data.get("do_normalize", False)
         denoise = data.get("denoise", False)
-        dit_steps = int(data.get("dit_steps", 10))
         language = data.get("language", "auto")
         reference_wav_base64 = data.get("reference_wav_base64", None)
         streaming_mode = data.get("streaming_mode", "stable")

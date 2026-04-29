@@ -87,13 +87,29 @@ export class TTSStreamingClient {
     this.callbacks = callbacks;
   }
 
-  public connect(request: TTSStreamRequest, baseUrl?: string): void {
+  public async connect(request: TTSStreamRequest): Promise<void> {
     if (this.ws) {
       this.stop();
     }
 
-    const wsUrl = buildStreamingWsUrl(baseUrl);
-    this.ws = new WebSocket(wsUrl);
+    let token = "";
+    let wsUrl = "";
+
+    try {
+      const tokenRes = await fetch("/api/tts/stream-token", { method: "POST" });
+      if (!tokenRes.ok) {
+        const err = await tokenRes.json().catch(() => ({}));
+        throw new Error(err.detail || "Failed to get stream token");
+      }
+      const tokenData = await tokenRes.json();
+      token = tokenData.stream_token;
+      wsUrl = tokenData.ws_url;
+    } catch (e: any) {
+      this.callbacks.onError?.(e.message || "Failed to connect to stream");
+      return;
+    }
+
+    this.ws = new WebSocket(`${wsUrl}?token=${token}`);
 
     this.ws.onopen = () => {
       this.callbacks.onOpen?.();

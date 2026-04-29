@@ -4,6 +4,33 @@ import { uploadToR2, deleteFromR2 } from "@/lib/r2";
 import { requireAuth, jsonOk, jsonError } from "@/lib/api-utils";
 
 // ---------------------------------------------------------------------------
+// Internal helpers for server-to-server communication with FastAPI
+// ---------------------------------------------------------------------------
+const BACKEND_ORIGIN = (process.env.NEXT_PUBLIC_TTS_API_BASE || "http://127.0.0.1:8808/api/tts")
+  .replace(/\/api\/tts\/?$/, "");
+const INTERNAL_SECRET = process.env.TTS_INTERNAL_SECRET || "";
+
+/**
+ * Normalize any audioUrl variant into an absolute FastAPI URL.
+ *  - "/tts_api/file/xxx.wav"          → "http://127.0.0.1:8808/api/tts/file/xxx.wav"
+ *  - "/api/tts/file/xxx.wav"          → "http://127.0.0.1:8808/api/tts/file/xxx.wav"
+ *  - "http://127.0.0.1:8808/..."      → pass-through
+ */
+function resolveBackendAudioUrl(audioUrl: string): string {
+  if (audioUrl.startsWith("/tts_api/")) {
+    return `${BACKEND_ORIGIN}/api/tts/${audioUrl.slice("/tts_api/".length)}`;
+  }
+  if (audioUrl.startsWith("/api/tts/")) {
+    return `${BACKEND_ORIGIN}${audioUrl}`;
+  }
+  if (audioUrl.startsWith("http")) {
+    return audioUrl;
+  }
+  // Fallback: treat as relative path on backend
+  return `${BACKEND_ORIGIN}${audioUrl.startsWith("/") ? "" : "/"}${audioUrl}`;
+}
+
+// ---------------------------------------------------------------------------
 // GET /api/history?page=1&limit=20 — List user's TTS generations
 // ---------------------------------------------------------------------------
 export async function GET(request: NextRequest) {
@@ -82,19 +109,23 @@ export async function POST(request: NextRequest) {
     }
 
     // --- Download audio from FastAPI local URL ---
+    const resolvedAudioUrl = resolveBackendAudioUrl(audioUrl);
     let audioBuffer: Buffer;
     let contentType = "audio/wav";
     try {
-      // audioUrl looks like: http://127.0.0.1:8808/api/tts/file/xxx.wav
-      const audioRes = await fetch(audioUrl);
+      console.log("[history] Fetching audio from:", resolvedAudioUrl);
+      const audioRes = await fetch(resolvedAudioUrl, {
+        headers: { "X-Internal-Secret": INTERNAL_SECRET },
+      });
       if (!audioRes.ok) {
+        console.error("[history] Audio fetch failed:", resolvedAudioUrl, audioRes.status);
         return jsonError("AUDIO_FETCH_FAILED", `Failed to fetch audio: ${audioRes.status}`, 500);
       }
       contentType = audioRes.headers.get("content-type") || "audio/wav";
       const arrayBuffer = await audioRes.arrayBuffer();
       audioBuffer = Buffer.from(arrayBuffer);
     } catch (err) {
-      console.error("[history] Audio fetch error:", err);
+      console.error("[history] Audio fetch error:", resolvedAudioUrl, err);
       return jsonError("AUDIO_FETCH_FAILED", "Could not download audio from TTS backend", 500);
     }
 
@@ -124,9 +155,12 @@ export async function POST(request: NextRequest) {
 
     // --- (Optional) Delete local file on FastAPI ---
     try {
-      const fileName = audioUrl.split("/").pop();
+      const fileName = resolvedAudioUrl.split("/").pop();
       if (fileName) {
-        fetch(`http://127.0.0.1:8808/api/tts/file/${fileName}`, { method: "DELETE" }).catch(() => {});
+        fetch(`${BACKEND_ORIGIN}/api/tts/file/${fileName}`, {
+          method: "DELETE",
+          headers: { "X-Internal-Secret": INTERNAL_SECRET },
+        }).catch(() => {});
       }
     } catch {
       // Silent fail — not critical

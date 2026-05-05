@@ -258,11 +258,14 @@ def _normalize_currency(text: str) -> str:
         def _make_suffix_replacer(currency_sym):
             def _replace(m):
                 num_str = m.group(1).replace(".", "").replace(",", "")
+                if not num_str.isdigit():
+                    return m.group(0)
                 num = int(num_str)
                 cur_name = _CURRENCY.get(currency_sym, currency_sym)
                 return f"{number_to_vietnamese(num)} {cur_name}"
             return _replace
-        pattern = r"([\d.,]+)\s*" + re.escape(sym)
+        # Require the number to START with a digit (prevent matching lone "." or ",")
+        pattern = r"(\d[\d.,]*)\s*" + re.escape(sym)
         text = re.sub(pattern, _make_suffix_replacer(sym), text, flags=re.IGNORECASE)
 
     # Currency symbol before number: $50, €100
@@ -271,11 +274,13 @@ def _normalize_currency(text: str) -> str:
         def _make_prefix_replacer(currency_sym):
             def _replace(m):
                 num_str = m.group(1).replace(".", "").replace(",", "")
+                if not num_str.isdigit():
+                    return m.group(0)
                 num = int(num_str)
                 cur_name = _CURRENCY.get(currency_sym, currency_sym)
                 return f"{number_to_vietnamese(num)} {cur_name}"
             return _replace
-        pattern = re.escape(sym) + r"\s*([\d.,]+)"
+        pattern = re.escape(sym) + r"\s*(\d[\d.,]*)"
         text = re.sub(pattern, _make_prefix_replacer(sym), text, flags=re.IGNORECASE)
 
     return text
@@ -289,10 +294,15 @@ def _normalize_percentage(text: str) -> str:
             # Decimal percentage
             sep = "," if "," in num_str else "."
             parts = num_str.split(sep, 1)
+            if not parts[0].isdigit() or not parts[1].isdigit():
+                return m.group(0)
             return _decimal_to_vietnamese(parts[0], parts[1]) + " phần trăm"
         else:
+            if not num_str.isdigit():
+                return m.group(0)
             return number_to_vietnamese(int(num_str)) + " phần trăm"
-    text = re.sub(r"([\d.,]+)\s*%", _replace_pct, text)
+    # Require digit at start (prevent matching lone "." or ",")
+    text = re.sub(r"(\d[\d.,]*)\s*%", _replace_pct, text)
     return text
 
 

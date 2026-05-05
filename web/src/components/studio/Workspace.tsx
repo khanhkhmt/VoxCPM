@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { generateSpeech } from "@/lib/tts";
 import { useAuth } from "@/lib/auth";
 import { GlassCard } from "@/components/GlassCard";
+import { StreamingTTSPanel } from "@/components/studio/StreamingTTSPanel";
 import {
     SlidersHorizontal, Type, Play, Mic, Waves, Download,
     CheckCircle2, RotateCcw, History as HistoryIcon,
@@ -73,11 +74,13 @@ export default function Workspace() {
     const [language, setLanguage] = useState("auto");
 
     // ---- App State ----
+    const [isStreamingMode, setIsStreamingMode] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [currentAudio, setCurrentAudio] = useState<string | null>(null);
-    const audioRef = useRef<HTMLAudioElement>(null);
+    const [streamingFinalUrl, setStreamingFinalUrl] = useState<string | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
     const [showExamples, setShowExamples] = useState(false);
 
     // Load history khi user thay đổi (đăng nhập/đăng xuất/đổi tài khoản)
@@ -213,6 +216,48 @@ export default function Workspace() {
             setIsGenerating(false);
         }
     };
+
+    const handleStreamingDone = useCallback((audioUrl: string) => {
+        const newItem: HistoryItem = {
+            id: Date.now().toString(),
+            text: text.substring(0, 120),
+            audioUrl: audioUrl,
+            date: new Date().toLocaleTimeString(),
+            controlInstruction: controlInstruction.substring(0, 60),
+        };
+        const newHistory = [newItem, ...history].slice(0, 10);
+        setHistory(newHistory);
+        if (historyKey) localStorage.setItem(historyKey, JSON.stringify(newHistory));
+
+        const tempId = newItem.id;
+        fetch("/api/history", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                text, controlInstruction: ultimateCloning ? "" : controlInstruction,
+                audioUrl: audioUrl, language, cfgValue, ditSteps,
+                doNormalize, denoise, usePromptText: ultimateCloning, promptText,
+                voiceProfileId: activeVoiceProfileId,
+            }),
+        }).then(async (res) => {
+            const json = await res.json();
+            if (res.ok && json.data?.id) {
+                const dbId = json.data.id;
+                const r2Url = json.data.audioUrl;
+                setHistory(prev => {
+                    const updated = prev.map(h =>
+                        h.id === tempId ? { ...h, id: dbId, audioUrl: r2Url || h.audioUrl } : h
+                    );
+                    if (historyKey) localStorage.setItem(historyKey, JSON.stringify(updated));
+                    return updated;
+                });
+                // Chuyển player sang R2 URL (tránh bị 404 do file local bị xoá)
+                if (r2Url) setStreamingFinalUrl(r2Url);
+            }
+        }).catch((err) => {
+            console.error("[Streaming History Save Error]", err);
+        });
+    }, [text, controlInstruction, ultimateCloning, promptText, language, cfgValue, ditSteps, doNormalize, denoise, activeVoiceProfileId, history, historyKey]);
 
     const handleClear = () => {
         setText("");
@@ -411,7 +456,7 @@ export default function Workspace() {
                                         <label className="text-sm font-medium text-vox-text">Guidance Scale (CFG)</label>
                                         <span className="text-xs font-mono text-vox-secondary bg-vox-surface px-2 py-0.5 rounded">{cfgValue.toFixed(1)}</span>
                                     </div>
-                                    <input type="range" min="1.0" max="3.0" step="0.1" value={cfgValue} onChange={(e) => setCfgValue(parseFloat(e.target.value))} className="w-full accent-vox-primary h-1.5 bg-vox-surface-high rounded-full appearance-none outline-none cursor-pointer" />
+                                    <input type="range" min="1.0" max="3.0" step="0.1" value={cfgValue} onChange={(e) => { const v = parseFloat(e.target.value); if (Number.isFinite(v)) setCfgValue(v); }} className="w-full accent-vox-primary h-1.5 bg-vox-surface-high rounded-full appearance-none outline-none cursor-pointer" />
                                     <div className="flex justify-between text-[10px] text-vox-text-dim mt-1">
                                         <span>Creative</span><span>Accurate</span>
                                     </div>
@@ -423,7 +468,7 @@ export default function Workspace() {
                                         <label className="text-sm font-medium text-vox-text">Inference Steps</label>
                                         <span className="text-xs font-mono text-vox-secondary bg-vox-surface px-2 py-0.5 rounded">{ditSteps}</span>
                                     </div>
-                                    <input type="range" min="1" max="50" step="1" value={ditSteps} onChange={(e) => setDitSteps(parseInt(e.target.value))} className="w-full accent-vox-primary h-1.5 bg-vox-surface-high rounded-full appearance-none outline-none cursor-pointer" />
+                                    <input type="range" min="1" max="50" step="1" value={ditSteps} onChange={(e) => { const v = parseInt(e.target.value, 10); if (Number.isFinite(v)) setDitSteps(v); }} className="w-full accent-vox-primary h-1.5 bg-vox-surface-high rounded-full appearance-none outline-none cursor-pointer" />
                                     <div className="flex justify-between text-[10px] text-vox-text-dim mt-1">
                                         <span>Faster</span><span>Higher quality</span>
                                     </div>
@@ -501,8 +546,26 @@ export default function Workspace() {
                 </div>
             )}
 
-            {/* ========== ACTION BAR ========== */}
-            <div className="flex items-center justify-between bg-vox-surface/80 backdrop-blur-xl p-4 rounded-2xl border border-vox-outline/20 sticky bottom-6 shadow-2xl z-20">
+            {/* ========== MODE TOGGLE ========== */}
+            <div className="flex items-center justify-center gap-2 mb-2 mt-4">
+                <button
+                    onClick={() => setIsStreamingMode(false)}
+                    className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${!isStreamingMode ? "bg-vox-primary text-white shadow-lg" : "bg-vox-surface-high text-vox-text-dim hover:text-vox-text hover:bg-vox-surface-highest"}`}
+                >
+                    Batch Mode
+                </button>
+                <button
+                    onClick={() => setIsStreamingMode(true)}
+                    className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${isStreamingMode ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg" : "bg-vox-surface-high text-vox-text-dim hover:text-vox-text hover:bg-vox-surface-highest"}`}
+                >
+                    Streaming Mode ⚡
+                </button>
+            </div>
+
+            {!isStreamingMode ? (
+                <>
+                {/* ========== ACTION BAR ========== */}
+                <div className="flex items-center justify-between bg-vox-surface/80 backdrop-blur-xl p-4 rounded-2xl border border-vox-outline/20 sticky bottom-6 shadow-2xl z-20">
                 <button onClick={handleClear} className="px-4 py-2 text-sm text-vox-text-dim hover:text-vox-heading flex items-center gap-2 transition-colors" disabled={isGenerating}>
                     <RotateCcw size={16} /> Clear
                 </button>
@@ -569,6 +632,24 @@ export default function Workspace() {
                     </div>
                 )}
             </GlassCard>
+            </>
+            ) : (
+                <StreamingTTSPanel
+                    text={text}
+                    controlInstruction={ultimateCloning ? "" : controlInstruction}
+                    usePromptText={ultimateCloning}
+                    promptText={ultimateCloning ? promptText : ""}
+                    cfgValue={cfgValue}
+                    doNormalize={doNormalize}
+                    denoise={denoise}
+                    ditSteps={ditSteps}
+                    language={language}
+                    referenceAudioFile={refAudioFile}
+                    activeVoiceProfileId={activeVoiceProfileId}
+                    finalAudioUrl={streamingFinalUrl}
+                    onDone={handleStreamingDone}
+                />
+            )}
 
             {/* ========== HISTORY ========== */}
             <div className="mt-4">

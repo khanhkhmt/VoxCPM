@@ -18,8 +18,12 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   sessions      Session[]
-  generations   TTSGeneration[]    // 🆕 History of generated audio
-  voiceProfiles VoiceProfile[]     // 🆕 Uploaded voice profiles
+  generations     TTSGeneration[]
+  voiceProfiles   VoiceProfile[]
+  apiKeys         ApiKey[]
+  quotaCharsMonth Int      @default(500000)
+  usageCharsMonth Int      @default(0)
+  lastQuotaReset  DateTime @default(now())
 }
 
 model Session {
@@ -74,6 +78,27 @@ model VoiceProfile {
 
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   generations TTSGeneration[]
+
+  @@index([userId])
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  prefix      String    // "vox_sk_test" or "vox_sk_live"
+  keyHash     String    @unique // SHA-256
+  lastFour    String
+  scopes      String
+  environment String    // "test" or "live"
+  isActive    Boolean   @default(true)
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }

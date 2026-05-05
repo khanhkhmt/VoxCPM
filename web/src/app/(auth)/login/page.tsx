@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth";
 import { FormField, TextInput, PasswordInput, SubmitButton } from "@/components/auth/AuthForm";
 import CaptchaField from "@/components/auth/CaptchaField";
 import { AlertTriangle, LogIn } from "lucide-react";
+import { generateId } from "@/lib/utils";
 
 export default function LoginPage() {
     const { login } = useAuth();
@@ -22,7 +23,7 @@ export default function LoginPage() {
 
     // Generate captchaId only on client to avoid SSR/client hydration mismatch
     useEffect(() => {
-        setCaptchaId(crypto.randomUUID());
+        setCaptchaId(generateId());
     }, []);
     const [loading, setLoading] = useState(false);
 
@@ -45,7 +46,7 @@ export default function LoginPage() {
     }, [captchaId, setValue]);
 
     const regenerateCaptcha = useCallback(() => {
-        setCaptchaId(crypto.randomUUID());
+        setCaptchaId(generateId());
         setValue("captchaText", "");
     }, [setValue]);
 

@@ -1,8 +1,5 @@
-const TTS_API = (process.env.NEXT_PUBLIC_TTS_API_BASE || "http://127.0.0.1:8808/api/tts").replace(/\/$/, "");
-
-function getApiOrigin(): string {
-    return TTS_API.replace(/\/api\/tts$/, "");
-}
+const PROXY_API = "/api/tts";
+const TTS_FILE_BASE = "/tts_api/file"; // via next.config.ts rewrite
 
 export interface GenerateTTSParams {
     text: string;
@@ -25,22 +22,20 @@ export interface TTSResult {
 export async function generateSpeech(params: GenerateTTSParams): Promise<TTSResult> {
     let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
-        // Fast fail if backend is offline.
-        const healthRes = await fetch(`${TTS_API}/health`, { method: "GET" });
-        if (!healthRes.ok) {
-            return { error: "TTS backend is unavailable. Please ensure FastAPI is running on port 8808." };
-        }
+        // Fast fail check removed since we are proxying via Next.js
 
         const form = new FormData();
         form.append("text", params.text);
         form.append("control_instruction", params.controlInstruction);
         form.append("use_prompt_text", String(params.usePromptText));
         form.append("prompt_text", params.promptText);
-        form.append("cfg_value", String(params.cfgValue));
+        const safeCfg = Number.isFinite(params.cfgValue) ? params.cfgValue : 2.0;
+        const safeDit = Number.isFinite(params.ditSteps) ? params.ditSteps : 10;
+        form.append("cfg_value", String(safeCfg));
         form.append("do_normalize", String(params.doNormalize));
         form.append("denoise", String(params.denoise));
-        form.append("dit_steps", String(params.ditSteps));
-        form.append("language", params.language);
+        form.append("dit_steps", String(safeDit));
+        form.append("language", params.language || "auto");
 
         if (params.referenceWav instanceof File) {
             form.append("reference_wav", params.referenceWav);
@@ -49,7 +44,7 @@ export async function generateSpeech(params: GenerateTTSParams): Promise<TTSResu
         const controller = new AbortController();
         timeout = setTimeout(() => controller.abort(), 600_000);
 
-        const res = await fetch(`${TTS_API}/generate`, {
+        const res = await fetch(`${PROXY_API}/generate`, {
             method: "POST",
             body: form,
             signal: controller.signal,
@@ -73,10 +68,9 @@ export async function generateSpeech(params: GenerateTTSParams): Promise<TTSResu
             return { error: "No audio returned from backend." };
         }
 
-        const apiUrl = String(data.audio_url);
-        const audioUrl = apiUrl.startsWith("/api/tts/")
-            ? `${getApiOrigin()}${apiUrl}`
-            : apiUrl;
+        const apiUrl = String(data.audio_url); // usually /api/tts/file/xxx.wav
+        // Convert the backend path to our Next.js rewrite path
+        const audioUrl = apiUrl.replace("/api/tts/file", TTS_FILE_BASE);
 
         return { audioUrl };
     } catch (error: unknown) {

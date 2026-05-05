@@ -18,7 +18,7 @@ export default function Sidebar() {
         { name: "Studio", href: "/studio", icon: LayoutDashboard },
         { name: "Voice Library", href: "/studio/voices", icon: Mic },
         { name: "History", href: "/studio/history", icon: History },
-        { name: "Settings", href: "#", icon: Settings },
+        { name: "Settings", href: "/studio/settings", icon: Settings },
     ];
 
     return (

@@ -29,11 +29,13 @@ export async function generateSpeech(params: GenerateTTSParams): Promise<TTSResu
         form.append("control_instruction", params.controlInstruction);
         form.append("use_prompt_text", String(params.usePromptText));
         form.append("prompt_text", params.promptText);
-        form.append("cfg_value", String(params.cfgValue));
+        const safeCfg = Number.isFinite(params.cfgValue) ? params.cfgValue : 2.0;
+        const safeDit = Number.isFinite(params.ditSteps) ? params.ditSteps : 10;
+        form.append("cfg_value", String(safeCfg));
         form.append("do_normalize", String(params.doNormalize));
         form.append("denoise", String(params.denoise));
-        form.append("dit_steps", String(params.ditSteps));
-        form.append("language", params.language);
+        form.append("dit_steps", String(safeDit));
+        form.append("language", params.language || "auto");
 
         if (params.referenceWav instanceof File) {
             form.append("reference_wav", params.referenceWav);

@@ -472,19 +472,36 @@ def generate(
     control_instruction: str = Form(""),
     use_prompt_text: str = Form("false"),
     prompt_text: str = Form(""),
-    cfg_value: float = Form(2.0),
+    cfg_value: str = Form("2.0"),
     do_normalize: str = Form("false"),
     denoise: str = Form("false"),
-    dit_steps: int = Form(10),
+    dit_steps: str = Form("10"),
     language: str = Form("auto"),
     reference_wav: Optional[UploadFile] = File(default=None),
 ):
+    logger.info(
+        f"[/api/tts/generate] received: text_len={len(text)}, cfg_value={cfg_value!r}, "
+        f"dit_steps={dit_steps!r}, do_normalize={do_normalize!r}, denoise={denoise!r}, "
+        f"use_prompt_text={use_prompt_text!r}, language={language!r}, "
+        f"has_ref={reference_wav is not None and bool(reference_wav.filename)}"
+    )
     try:
         if len(text) > 10000:
             raise ValueError("Text length exceeds maximum allowed (10000 characters).")
-        if not (1 <= int(dit_steps) <= 50):
+
+        # Defensive parsing: chấp nhận empty/invalid và fallback về default
+        try:
+            dit_steps_int = int(str(dit_steps).strip()) if str(dit_steps).strip() else 10
+        except (ValueError, TypeError):
+            dit_steps_int = 10
+        try:
+            cfg_value_f = float(str(cfg_value).strip()) if str(cfg_value).strip() else 2.0
+        except (ValueError, TypeError):
+            cfg_value_f = 2.0
+
+        if not (1 <= dit_steps_int <= 50):
             raise ValueError("dit_steps must be between 1 and 50.")
-        if not (0.1 <= float(cfg_value) <= 10.0):
+        if not (0.1 <= cfg_value_f <= 10.0):
             raise ValueError("cfg_value must be between 0.1 and 10.0.")
 
         ref_path: Optional[str] = None
@@ -500,10 +517,10 @@ def generate(
             control_instruction=actual_control,
             reference_wav_path_input=ref_path,
             prompt_text=actual_prompt_text,
-            cfg_value_input=float(cfg_value),
+            cfg_value_input=cfg_value_f,
             do_normalize=_to_bool(do_normalize, default=False),
             denoise=_to_bool(denoise, default=False),
-            inference_timesteps=int(dit_steps),
+            inference_timesteps=dit_steps_int,
             normalize_lang=language,
         )
 
@@ -516,6 +533,7 @@ def generate(
             "sample_rate": int(sr),
         }
     except ValueError as e:
+        logger.exception("TTS generation ValueError (returning 400)")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("TTS generation failed")

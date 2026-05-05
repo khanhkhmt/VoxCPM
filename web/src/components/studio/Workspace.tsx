@@ -456,7 +456,7 @@ export default function Workspace() {
                                         <label className="text-sm font-medium text-vox-text">Guidance Scale (CFG)</label>
                                         <span className="text-xs font-mono text-vox-secondary bg-vox-surface px-2 py-0.5 rounded">{cfgValue.toFixed(1)}</span>
                                     </div>
-                                    <input type="range" min="1.0" max="3.0" step="0.1" value={cfgValue} onChange={(e) => setCfgValue(parseFloat(e.target.value))} className="w-full accent-vox-primary h-1.5 bg-vox-surface-high rounded-full appearance-none outline-none cursor-pointer" />
+                                    <input type="range" min="1.0" max="3.0" step="0.1" value={cfgValue} onChange={(e) => { const v = parseFloat(e.target.value); if (Number.isFinite(v)) setCfgValue(v); }} className="w-full accent-vox-primary h-1.5 bg-vox-surface-high rounded-full appearance-none outline-none cursor-pointer" />
                                     <div className="flex justify-between text-[10px] text-vox-text-dim mt-1">
                                         <span>Creative</span><span>Accurate</span>
                                     </div>
@@ -468,7 +468,7 @@ export default function Workspace() {
                                         <label className="text-sm font-medium text-vox-text">Inference Steps</label>
                                         <span className="text-xs font-mono text-vox-secondary bg-vox-surface px-2 py-0.5 rounded">{ditSteps}</span>
                                     </div>
-                                    <input type="range" min="1" max="50" step="1" value={ditSteps} onChange={(e) => setDitSteps(parseInt(e.target.value))} className="w-full accent-vox-primary h-1.5 bg-vox-surface-high rounded-full appearance-none outline-none cursor-pointer" />
+                                    <input type="range" min="1" max="50" step="1" value={ditSteps} onChange={(e) => { const v = parseInt(e.target.value, 10); if (Number.isFinite(v)) setDitSteps(v); }} className="w-full accent-vox-primary h-1.5 bg-vox-surface-high rounded-full appearance-none outline-none cursor-pointer" />
                                     <div className="flex justify-between text-[10px] text-vox-text-dim mt-1">
                                         <span>Faster</span><span>Higher quality</span>
                                     </div>

@@ -9,7 +9,15 @@ export async function POST(req: NextRequest) {
         }
 
         const formData = await req.formData();
-        
+
+        if (process.env.NODE_ENV !== "production") {
+            const debug: Record<string, string> = {};
+            formData.forEach((v, k) => {
+                debug[k] = v instanceof File ? `<File ${v.name} ${v.size}B>` : String(v);
+            });
+            console.log("[/api/tts/generate] forwarding fields:", debug);
+        }
+
         const internalSecret = process.env.TTS_INTERNAL_SECRET;
         if (!internalSecret) {
             console.error("Missing TTS_INTERNAL_SECRET env var");

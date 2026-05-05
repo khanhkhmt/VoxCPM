@@ -1,189 +1,102 @@
-# Hướng dẫn chạy VoxCPM (FastAPI + Next.js)
+# Hướng dẫn Cài đặt & Chạy Dự án VoxCPM Studio (Cập nhật mới nhất)
 
-Tài liệu này mô tả cách chạy project theo kiến trúc hiện tại:
-- Backend TTS: FastAPI (cổng `8808`)
-- Frontend Web: Next.js (cổng `3000`)
+Tài liệu này hướng dẫn chi tiết cách thiết lập môi trường, cài đặt và chạy toàn bộ dự án bao gồm Backend AI (Python) và Frontend Web (Next.js).
 
 ---
 
-## 1) Yêu cầu môi trường
-
-- Python `>=3.10, <3.13`
-- Node.js `>=18`
-- npm
-- Khuyến nghị GPU + CUDA để inference nhanh hơn
+## 1. Yêu cầu hệ thống
+- **Hệ điều hành**: Linux (Ubuntu được khuyến nghị)
+- **Python**: 3.10+
+- **Node.js**: 20.x trở lên (Bắt buộc để chạy Next.js 15+)
 
 ---
 
-## 2) Chạy Backend FastAPI (TTS)
+## 2. Thiết lập Backend AI (Python)
 
-Tại thư mục gốc project:
+Di chuyển vào thư mục gốc của dự án và thực hiện các bước sau:
 
+### Cài đặt thư viện:
 ```bash
-cd /root/VoxCPM
-pip install -e .
-python app.py --port 8808
+pip install . && export TTS_INTERNAL_SECRET="dev-internal-secret-change-me" python3 app. && py --port 8808
 ```
 
-Kiểm tra backend sống:
-
-```bash
-curl http://127.0.0.1:8808/api/tts/health
-```
-
-Kỳ vọng trả về:
-
-```json
-{"status":"ok"}
-```
-
-Lưu ý:
-- Lần chạy đầu có thể tải model, mất vài phút.
-- Request generate đầu tiên thường chậm hơn do warm-up.
+*Lưu ý: Backend mặc định phải chạy ở cổng `8808` để Frontend có thể kết nối.*
 
 ---
 
-## 3) Chạy Frontend Next.js
+## 3. Thiết lập Frontend Web (Next.js)
 
-Mở terminal khác:
+Di chuyển vào thư mục `web/`:
+```bash
+cd web
+```
+
+### Bước 1: Tạo file cấu hình `.env.local`
+Tạo file `.env.local` trong thư mục `web/` và dán nội dung sau đó chạy frontend: 
 
 ```bash
-cd /root/VoxCPM/web
-npm install
-npx prisma generate
-npx prisma db push
+cd web && \
+cat > .env.local <<'EOF'
+DATABASE_URL="file:./prisma/dev.db"
+AUTH_JWT_SECRET="dev-secret-CHANGE-ME-in-production-please"
+NEXT_PUBLIC_TTS_API_BASE="http://127.0.0.1:8808/api/tts"
+TTS_INTERNAL_SECRET="dev-internal-secret-change-me"
+R2_ACCOUNT_ID="c6c72de2b009a468b58754f84c9cd020"
+R2_ACCESS_KEY_ID="c1785f7092e927d595d8e66e2a939a77"
+R2_SECRET_ACCESS_KEY="6c59feadad5162ec3540c8c04707b0219433e368c781c2ebc781cc3ab43fefcd"
+R2_BUCKET_NAME="voxcpm-audio"
+R2_PUBLIC_URL="https://pub-f6e9530ed8ce419993e861523e143b35.r2.dev"
+EOF
+
+npm install && \
+npx prisma generate && \
+npx prisma db push && \
 npm run dev -- -p 3000
+
 ```
 
-Mở trình duyệt:
-
-```text
-http://localhost:3000
-```
-
-
-nếu chưa cài Node.js thì chạy lệnh sau:
+Nếu chưa cài Node.js thì chạy lệnh sau:
 
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 ```
 
+## 4. Xử lý lỗi thường gặp (Troubleshooting)
 
-## 4) Luồng chạy đúng
-
-1. Chạy backend trước (`8808`)
-2. Chạy frontend sau (`3000`)
-3. Generate ở Studio
-
-Frontend hiện gọi trực tiếp FastAPI qua `http://127.0.0.1:8808/api/tts`.
-
----
-
-## 5) Các lỗi thường gặp và cách xử lý
-
-### Lỗi A: `Generation Failed` / `TTS API Error 500`
-
-Nguyên nhân phổ biến:
-- Backend chưa chạy hoặc vừa crash
-- Model chưa load xong nhưng đã bấm Generate
-- Thiếu dependency (`fastapi`, `uvicorn`, `python-multipart`, ...)
-
-Cách xử lý:
-1. Kiểm tra health backend:
-   ```bash
-   curl http://127.0.0.1:8808/api/tts/health
-   ```
-2. Xem log backend (terminal chạy `app.py`)
-3. Cài lại dependency:
-   ```bash
-   cd /root/VoxCPM
-   pip install -e .
-   ```
-4. Khởi động lại backend rồi thử lại
-
----
-
-### Lỗi B: `Cannot connect to the TTS backend (port 8808)`
-
-Nguyên nhân:
-- Cổng `8808` không có tiến trình lắng nghe
-- Chạy sai host/port
-
-Cách xử lý:
+### Lỗi 1: Phiên bản Node.js quá cũ (v12 hoặc v14)
+**Dấu hiệu**: Khi chạy `npm install` gặp lỗi `SyntaxError: Unexpected token '?'` hoặc thông báo yêu cầu Node.js >= 18.
+**Cách khắc phục**: Cài đặt Node.js 20 từ NodeSource:
 ```bash
-ss -ltnp | grep 8808
-python app.py --port 8808
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
 ```
 
----
-
-### Lỗi C: `Address already in use` (port 3000 hoặc 8808)
-
-Nguyên nhân: cổng đã bị chiếm.
-
-Cách xử lý:
+### Lỗi 2: Xung đột gói `libnode-dev` khi nâng cấp Node.js
+**Dấu hiệu**: Lỗi `trying to overwrite '/usr/include/node/common.gypi', which is also in package libnode-dev`.
+**Cách khắc phục**: Gỡ bỏ gói xung đột trước khi cài đặt lại:
 ```bash
-ss -ltnp | grep 3000
-ss -ltnp | grep 8808
-kill <PID>
+apt-get remove -y libnode-dev
+apt-get install -y nodejs
 ```
 
----
+### Lỗi 3: Backend không phản hồi
+**Dấu hiệu**: Frontend báo lỗi khi nhấn "Generate" hoặc không tải được mẫu giọng.
+**Cách khắc phục**: 
+- Kiểm tra xem Backend đã chạy chưa bằng lệnh: `curl http://localhost:8808/health`. Nếu nhận được `{"status":"ok"}` là bình thường.
+- Đảm bảo bạn đã cài đặt đúng phiên bản `voxcpm` bằng lệnh `pip install -e .`.
 
-### Lỗi D: Login/Register báo lỗi DB (Prisma)
-
-Nguyên nhân: chưa sync schema database.
-
-Cách xử lý:
+### Lỗi 4: Không tạo được Database
+**Dấu hiệu**: Lỗi liên quan đến Prisma hoặc không tìm thấy file `dev.db`.
+**Cách khắc phục**: Xóa file `prisma/dev.db` (nếu có) và chạy lại:
 ```bash
-cd /root/VoxCPM/web
-npx prisma generate
 npx prisma db push
 ```
 
 ---
 
-### Lỗi E: OOM GPU / hết VRAM
+## 5. Quy trình chạy nhanh (Dành cho Dev)
+Mở 2 terminal riêng biệt:
+- **Terminal 1 (Backend)**: `python3 app.py --port 8808`
+- **Terminal 2 (Frontend)**: `cd web && npm run dev -- -p 3000`
 
-Nguyên nhân: model lớn, VRAM không đủ.
-
-Cách xử lý:
-- Đóng tiến trình AI khác
-- Giảm `Inference Steps`
-- Dùng CPU (chậm hơn) nếu cần
-
----
-
-### Lỗi F: Generate rất chậm
-
-Nguyên nhân:
-- Lần đầu tải model/warm-up
-- Chạy CPU
-- `Inference Steps` cao
-
-Khuyến nghị:
-- Để `Inference Steps` ở mức thấp trước (mặc định UI đang là `6`)
-- Chờ request đầu hoàn tất rồi test lại
-
----
-
-## 6) Lệnh dừng nhanh
-
-```bash
-# dừng backend FastAPI
-pkill -f "python app.py --port 8808"
-
-# dừng frontend Next.js dev
-pkill -f "next dev -H 0.0.0.0 -p 3000"
-```
-
----
-
-## 7) Checklist nhanh khi không chạy được
-
-- [ ] `curl http://127.0.0.1:8808/api/tts/health` trả `{"status":"ok"}`
-- [ ] `http://localhost:3000` mở được
-- [ ] Đã chạy `prisma db push`
-- [ ] Không bị trùng cổng 3000/8808
-- [ ] Backend log không có traceback mới

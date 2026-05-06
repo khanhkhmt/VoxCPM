@@ -564,14 +564,17 @@ def float32_to_pcm16_bytes(audio_np: np.ndarray) -> bytes:
     pcm16 = np.clip(audio_np, -1.0, 1.0) * 32767
     return pcm16.astype(np.int16).tobytes()
 
+_CJK_RE = re.compile(r'[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]')
+
+
 def _count_text_units(s: str) -> int:
     """Count text units in a language-aware way.
-    For CJK characters, each character counts as ~2 units (since they carry
-    more information per character than Latin words).
+    For CJK characters, every ~2 characters counts as 1 unit (since CJK
+    characters are denser than Latin words, fewer chars = same content).
     For Latin/other scripts, count whitespace-separated words.
     """
-    cjk_count = len(re.findall(r'[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]', s))
-    non_cjk = re.sub(r'[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]', ' ', s)
+    cjk_count = len(_CJK_RE.findall(s))
+    non_cjk = _CJK_RE.sub(' ', s)
     word_count = len(re.findall(r'\w+', non_cjk))
     return word_count + (cjk_count + 1) // 2
 
@@ -614,15 +617,24 @@ def split_text_into_segments(text: str, min_words: int = 4, max_words: int = 25)
     absolute_final = []
     for seg in final_segments:
         if _count_text_units(seg) > max_words + 10:
-            words = seg.split()
-            chunk = []
-            for w in words:
-                chunk.append(w)
-                if len(chunk) >= max_words:
+            cjk_ratio = len(_CJK_RE.findall(seg)) / max(len(seg), 1)
+            if cjk_ratio > 0.5:
+                # CJK-dominant: split by character count
+                max_chars = max_words * 2
+                for start in range(0, len(seg), max_chars):
+                    part = seg[start:start + max_chars].strip()
+                    if part:
+                        absolute_final.append(part)
+            else:
+                words = seg.split()
+                chunk = []
+                for w in words:
+                    chunk.append(w)
+                    if len(chunk) >= max_words:
+                        absolute_final.append(" ".join(chunk))
+                        chunk = []
+                if chunk:
                     absolute_final.append(" ".join(chunk))
-                    chunk = []
-            if chunk:
-                absolute_final.append(" ".join(chunk))
         else:
             absolute_final.append(seg)
 
@@ -788,10 +800,6 @@ async def websocket_tts_stream(websocket: WebSocket):
                 # across segments so the frontend can still show per-segment
                 # progress.
                 try:
-                    # Notify all segments upfront
-                    for i, seg_text in enumerate(segments_list):
-                        q.put(("segment_start", {"type": "segment_start", "index": i, "text": seg_text}))
-
                     if cancel_event.is_set():
                         q.put(("cancelled", None))
                         return
@@ -831,6 +839,7 @@ async def websocket_tts_stream(websocket: WebSocket):
                             seg_wav = full_wav_np[offset:offset + chunk_samples]
                             offset += chunk_samples
 
+                            q.put(("segment_start", {"type": "segment_start", "index": i, "text": segments_list[i]}))
                             q.put(("chunk", seg_wav))
                             duration_ms = int(len(seg_wav) / sample_rate * 1000)
                             q.put(("segment_done", {"type": "segment_done", "index": i, "duration_ms": duration_ms}))

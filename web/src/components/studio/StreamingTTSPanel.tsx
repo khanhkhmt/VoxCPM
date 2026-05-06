@@ -86,6 +86,7 @@ export function StreamingTTSPanel({
   const playerRef = useRef<StreamingAudioPlayer | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
+  const ttfbRecordedRef = useRef<boolean>(false);
 
   const stopAndCleanup = () => {
     if (clientRef.current) {
@@ -122,6 +123,7 @@ export function StreamingTTSPanel({
     setChunksReceived(0);
     setTtfbMs(0);
     setElapsedTime(0);
+    ttfbRecordedRef.current = false;
     setFinalAudioUrl(null);
     setCurrentSegmentIndex(0);
     setTotalSegments(0);
@@ -173,7 +175,7 @@ export function StreamingTTSPanel({
       cfg_value: cfgValue,
       do_normalize: doNormalize,
       denoise,
-      dit_steps: Math.min(ditSteps, 4),
+      dit_steps: ditSteps > 4 ? 4 : ditSteps,
       language,
       reference_wav_base64: base64,
     };
@@ -184,7 +186,6 @@ export function StreamingTTSPanel({
       },
       onStart: async (metadata: TTSStreamStartMetadata) => {
         setStatus("playing");
-        setTtfbMs(Date.now() - startTimeRef.current);
         if (metadata.segments) {
           setTotalSegments(metadata.segments);
         }
@@ -207,6 +208,10 @@ export function StreamingTTSPanel({
         setCurrentSegmentText(payload.text);
       },
       onAudioChunk: (arrayBuffer: ArrayBuffer) => {
+        if (!ttfbRecordedRef.current) {
+          setTtfbMs(Date.now() - startTimeRef.current);
+          ttfbRecordedRef.current = true;
+        }
         if (playerRef.current) {
           playerRef.current.pushChunk(arrayBuffer);
         }
@@ -214,6 +219,10 @@ export function StreamingTTSPanel({
       },
       onDone: (payload: TTSStreamDonePayload) => {
         setStatus("done");
+        // Use backend-measured TTFB if available (more accurate than client-side)
+        if (payload.ttfb_ms && payload.ttfb_ms > 0) {
+          setTtfbMs(payload.ttfb_ms);
+        }
         const fullAudioUrl = buildFullHttpUrl(payload.audio_url);
         setFinalAudioUrl(fullAudioUrl);
         if (timerRef.current) {
@@ -292,6 +301,11 @@ export function StreamingTTSPanel({
       
       <div className="text-[11px] text-gray-500 font-medium -mt-2">
         Streaming Mode is optimized with lower steps for smoother real-time playback.
+        {ditSteps > 4 && (
+          <span className="ml-1 text-amber-600 dark:text-amber-400">
+            (LocDiT steps capped from {ditSteps} to 4 for streaming)
+          </span>
+        )}
       </div>
 
       <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl mt-1 mb-1">

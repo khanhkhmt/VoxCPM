@@ -430,6 +430,7 @@ async def require_internal_secret(request: Request, call_next):
     return await call_next(request)
 
 _demo: Optional[VoxCPMDemo] = None
+_inference_lock = threading.Lock()
 
 
 def get_demo() -> VoxCPMDemo:
@@ -512,17 +513,18 @@ def generate(
         actual_prompt_text = prompt_text.strip() if ultimate else ""
         actual_control = "" if ultimate else (control_instruction or "")
 
-        sr, wav_np = get_demo().generate_tts_audio(
-            text_input=text,
-            control_instruction=actual_control,
-            reference_wav_path_input=ref_path,
-            prompt_text=actual_prompt_text,
-            cfg_value_input=cfg_value_f,
-            do_normalize=_to_bool(do_normalize, default=False),
-            denoise=_to_bool(denoise, default=False),
-            inference_timesteps=dit_steps_int,
-            normalize_lang=language,
-        )
+        with _inference_lock:
+            sr, wav_np = get_demo().generate_tts_audio(
+                text_input=text,
+                control_instruction=actual_control,
+                reference_wav_path_input=ref_path,
+                prompt_text=actual_prompt_text,
+                cfg_value_input=cfg_value_f,
+                do_normalize=_to_bool(do_normalize, default=False),
+                denoise=_to_bool(denoise, default=False),
+                inference_timesteps=dit_steps_int,
+                normalize_lang=language,
+            )
 
         out_name = f"{uuid.uuid4().hex}.wav"
         out_path = OUTPUT_DIR / out_name
@@ -562,6 +564,18 @@ def float32_to_pcm16_bytes(audio_np: np.ndarray) -> bytes:
     pcm16 = np.clip(audio_np, -1.0, 1.0) * 32767
     return pcm16.astype(np.int16).tobytes()
 
+def _count_text_units(s: str) -> int:
+    """Count text units in a language-aware way.
+    For CJK characters, each character counts as ~2 units (since they carry
+    more information per character than Latin words).
+    For Latin/other scripts, count whitespace-separated words.
+    """
+    cjk_count = len(re.findall(r'[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]', s))
+    non_cjk = re.sub(r'[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]', ' ', s)
+    word_count = len(re.findall(r'\w+', non_cjk))
+    return word_count + (cjk_count + 1) // 2
+
+
 def split_text_into_segments(text: str, min_words: int = 4, max_words: int = 25) -> list[str]:
     if not text:
         return []
@@ -570,13 +584,10 @@ def split_text_into_segments(text: str, min_words: int = 4, max_words: int = 25)
         text = text.replace(delim, delim + "|||")
         
     raw_segments = [s.strip() for s in text.split("|||") if s.strip()]
-    
-    def count_words(s):
-        return len(re.findall(r'\w+', s))
 
     refined_segments = []
     for seg in raw_segments:
-        if count_words(seg) > max_words:
+        if _count_text_units(seg) > max_words:
             temp_seg = seg
             for delim in [",", ";", ":", "，", "、"]:
                 temp_seg = temp_seg.replace(delim, delim + "###")
@@ -591,7 +602,7 @@ def split_text_into_segments(text: str, min_words: int = 4, max_words: int = 25)
         if not current_seg:
             current_seg = seg
         else:
-            if count_words(current_seg) < min_words and count_words(current_seg + " " + seg) <= max_words:
+            if _count_text_units(current_seg) < min_words and _count_text_units(current_seg + " " + seg) <= max_words:
                 current_seg += " " + seg
             else:
                 final_segments.append(current_seg)
@@ -602,7 +613,7 @@ def split_text_into_segments(text: str, min_words: int = 4, max_words: int = 25)
         
     absolute_final = []
     for seg in final_segments:
-        if count_words(seg) > max_words + 10:
+        if _count_text_units(seg) > max_words + 10:
             words = seg.split()
             chunk = []
             for w in words:
@@ -723,28 +734,29 @@ async def websocket_tts_stream(websocket: WebSocket):
                 all_chunks = []
                 
                 try:
-                    generator = demo.generate_streaming_tts_audio(
-                        text_input=text,
-                        control_instruction=actual_control,
-                        reference_wav_path_input=temp_wav_path,
-                        prompt_text=actual_prompt_text,
-                        cfg_value_input=cfg_value,
-                        do_normalize=do_normalize,
-                        denoise=denoise,
-                        inference_timesteps=dit_steps,
-                        normalize_lang=language,
-                    )
-                    
-                    for chunk in generator:
-                        if cancel_event.is_set():
-                            q.put(("cancelled", None))
-                            return
-                        if first_chunk_time is None:
-                            first_chunk_time = time.time()
+                    with _inference_lock:
+                        generator = demo.generate_streaming_tts_audio(
+                            text_input=text,
+                            control_instruction=actual_control,
+                            reference_wav_path_input=temp_wav_path,
+                            prompt_text=actual_prompt_text,
+                            cfg_value_input=cfg_value,
+                            do_normalize=do_normalize,
+                            denoise=denoise,
+                            inference_timesteps=dit_steps,
+                            normalize_lang=language,
+                        )
                         
-                        q.put(("chunk", chunk))
-                        all_chunks.append(chunk)
-                        chunks_count += 1
+                        for chunk in generator:
+                            if cancel_event.is_set():
+                                q.put(("cancelled", None))
+                                return
+                            if first_chunk_time is None:
+                                first_chunk_time = time.time()
+                            
+                            q.put(("chunk", chunk))
+                            all_chunks.append(chunk)
+                            chunks_count += 1
                     
                     if len(all_chunks) > 0:
                         final_wav_np = np.concatenate(all_chunks)
@@ -771,21 +783,22 @@ async def websocket_tts_stream(websocket: WebSocket):
                     logger.exception("Streaming generation failed")
                     q.put(("error", str(e)))
             else:
-                # Stable Mode
-                all_chunks = []
-                first_segment_time = None
+                # Stable Mode — generate the full text as one piece for voice
+                # consistency, then split the resulting audio proportionally
+                # across segments so the frontend can still show per-segment
+                # progress.
                 try:
+                    # Notify all segments upfront
                     for i, seg_text in enumerate(segments_list):
-                        if cancel_event.is_set():
-                            q.put(("cancelled", None))
-                            return
-                            
-                        # Notify segment start
                         q.put(("segment_start", {"type": "segment_start", "index": i, "text": seg_text}))
-                        
-                        # Generate segment audio
-                        _, seg_wav_np = demo.generate_tts_audio(
-                            text_input=seg_text,
+
+                    if cancel_event.is_set():
+                        q.put(("cancelled", None))
+                        return
+
+                    with _inference_lock:
+                        _, full_wav_np = demo.generate_tts_audio(
+                            text_input=text,
                             control_instruction=actual_control,
                             reference_wav_path_input=temp_wav_path,
                             prompt_text=actual_prompt_text,
@@ -795,32 +808,45 @@ async def websocket_tts_stream(websocket: WebSocket):
                             inference_timesteps=dit_steps,
                             normalize_lang=language,
                         )
-                        
-                        if first_segment_time is None:
-                            first_segment_time = time.time()
-                            
-                        # Send binary chunk
-                        q.put(("chunk", seg_wav_np))
-                        all_chunks.append(seg_wav_np)
-                        
-                        # Notify segment done
-                        duration_ms = int(len(seg_wav_np) / sample_rate * 1000)
-                        q.put(("segment_done", {"type": "segment_done", "index": i, "duration_ms": duration_ms}))
-                        
-                    if len(all_chunks) > 0:
-                        final_wav_np = np.concatenate(all_chunks)
+
+                    first_audio_time = time.time()
+
+                    if cancel_event.is_set():
+                        q.put(("cancelled", None))
+                        return
+
+                    num_segments = len(segments_list)
+                    if num_segments > 0 and len(full_wav_np) > 0:
+                        # Split audio proportionally by segment text length
+                        seg_lengths = [len(s) for s in segments_list]
+                        total_chars = sum(seg_lengths)
+                        total_samples = len(full_wav_np)
+
+                        offset = 0
+                        for i, seg_len in enumerate(seg_lengths):
+                            if i < num_segments - 1:
+                                chunk_samples = int(total_samples * seg_len / total_chars)
+                            else:
+                                chunk_samples = total_samples - offset
+                            seg_wav = full_wav_np[offset:offset + chunk_samples]
+                            offset += chunk_samples
+
+                            q.put(("chunk", seg_wav))
+                            duration_ms = int(len(seg_wav) / sample_rate * 1000)
+                            q.put(("segment_done", {"type": "segment_done", "index": i, "duration_ms": duration_ms}))
+
                         out_name = f"{uuid.uuid4().hex}.wav"
                         out_path = OUTPUT_DIR / out_name
-                        sf.write(out_path, final_wav_np, sample_rate)
-                        
-                        ttfb_ms = int((first_segment_time - start_time) * 1000) if first_segment_time else 0
-                        total_duration_ms = int(len(final_wav_np) / sample_rate * 1000)
-                        
+                        sf.write(out_path, full_wav_np, sample_rate)
+
+                        ttfb_ms = int((first_audio_time - start_time) * 1000)
+                        total_duration_ms = int(len(full_wav_np) / sample_rate * 1000)
+
                         metadata = {
                             "type": "done",
                             "mode": "stable",
                             "audio_url": f"/api/tts/file/{out_name}",
-                            "segments": len(segments_list),
+                            "segments": num_segments,
                             "ttfb_ms": ttfb_ms,
                             "duration_ms": total_duration_ms
                         }
@@ -831,11 +857,21 @@ async def websocket_tts_stream(websocket: WebSocket):
                     logger.exception("Stable segment generation failed")
                     q.put(("error", str(e)))
 
-        thread = threading.Thread(target=run_generation)
+        thread = threading.Thread(target=run_generation, daemon=True)
         thread.start()
 
         while True:
-            item_type, payload = await asyncio.to_thread(q.get)
+            try:
+                item_type, payload = await asyncio.wait_for(
+                    asyncio.to_thread(q.get, timeout=2.0),
+                    timeout=5.0,
+                )
+            except (asyncio.TimeoutError, Exception):
+                if cancel_event.is_set():
+                    break
+                if not thread.is_alive():
+                    break
+                continue
             
             if item_type == "chunk":
                 pcm16_bytes = float32_to_pcm16_bytes(payload)
@@ -866,6 +902,9 @@ async def websocket_tts_stream(websocket: WebSocket):
             pass
         cancel_event.set()
     finally:
+        cancel_event.set()
+        if thread is not None:
+            thread.join(timeout=30)
         if temp_wav_path and os.path.exists(temp_wav_path):
             try:
                 os.unlink(temp_wav_path)

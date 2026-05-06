@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ detail: "Internal Server Error" }, { status: 500 });
         }
 
-        const backendUrl = process.env.NEXT_PUBLIC_TTS_API_BASE || "http://127.0.0.1:8808/api/tts";
+        const backendUrl = "http://127.0.0.1:8808/api/tts";
         let wsUrl = "";
         try {
             const url = new URL(backendUrl);

@@ -42,7 +42,7 @@ export async function generateSpeech(params: GenerateTTSParams): Promise<TTSResu
         }
 
         const controller = new AbortController();
-        timeout = setTimeout(() => controller.abort(), 600_000);
+        timeout = setTimeout(() => controller.abort(), 1_800_000);
 
         const res = await fetch(`${PROXY_API}/generate`, {
             method: "POST",
@@ -54,11 +54,12 @@ export async function generateSpeech(params: GenerateTTSParams): Promise<TTSResu
 
         if (!res.ok) {
             let detail = "";
+            const text = await res.text();
             try {
-                const body = await res.json();
+                const body = JSON.parse(text);
                 detail = body?.detail ? String(body.detail) : "";
             } catch {
-                detail = await res.text();
+                detail = text;
             }
             throw new Error(`TTS API Error ${res.status}: ${detail || res.statusText || "Internal Server Error"}`);
         }
@@ -77,7 +78,7 @@ export async function generateSpeech(params: GenerateTTSParams): Promise<TTSResu
         if (timeout) clearTimeout(timeout);
         let msg = error instanceof Error ? error.message : "Failed to generate speech";
         if (error instanceof Error && error.name === "AbortError") {
-            msg = "Generation timed out after 10 minutes";
+            msg = "Generation timed out after 30 minutes";
         } else if (msg.includes("Failed to fetch") || msg.includes("fetch")) {
             msg = "Cannot connect to the TTS backend (port 8808). Please make sure the FastAPI server is running: python app.py --port 8808";
         }

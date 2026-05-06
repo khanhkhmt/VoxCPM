@@ -17,7 +17,9 @@ Di chuyển vào thư mục gốc của dự án và thực hiện các bước 
 
 ### Cài đặt thư viện:
 ```bash
-pip install . && export TTS_INTERNAL_SECRET="dev-internal-secret-change-me" python3 app. && py --port 8808
+pip install . --break-system-packages
+export TTS_INTERNAL_SECRET="dev-internal-secret-change-me"
+python3 app.py --port 8808
 ```
 
 *Lưu ý: Backend mặc định phải chạy ở cổng `8808` để Frontend có thể kết nối.*
@@ -58,8 +60,11 @@ npm run dev -- -p 3000
 Nếu chưa cài Node.js thì chạy lệnh sau:
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt-get install -y nodejs
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+nvm install 20
+nvm use 20
 ```
 
 ## 4. Xử lý lỗi thường gặp (Troubleshooting)

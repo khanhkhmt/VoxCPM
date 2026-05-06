@@ -15,7 +15,7 @@ export default function AdminHistoryPage() {
     const [total, setTotal] = useState(0);
     const [searchQuery, setSearchQuery] = useState("");
     const [filterUserId, setFilterUserId] = useState("");
-    const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const fetchHistory = useCallback(async (p: number, q: string, uid: string) => {
         setLoading(true);

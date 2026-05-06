@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     // Validate
     const parsed = changePasswordSchema.safeParse(body);
     if (!parsed.success) {
-        const firstError = parsed.error.errors[0];
+        const firstError = parsed.error.issues[0];
         return NextResponse.json(
             { ok: false, error: { code: "VALIDATION_ERROR", message: firstError?.message ?? "Validation failed" } },
             { status: 400 },

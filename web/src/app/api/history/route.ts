@@ -6,8 +6,7 @@ import { requireAuth, jsonOk, jsonError } from "@/lib/api-utils";
 // ---------------------------------------------------------------------------
 // Internal helpers for server-to-server communication with FastAPI
 // ---------------------------------------------------------------------------
-const BACKEND_ORIGIN = (process.env.NEXT_PUBLIC_TTS_API_BASE || "http://127.0.0.1:8808/api/tts")
-  .replace(/\/api\/tts\/?$/, "");
+const BACKEND_ORIGIN = "http://127.0.0.1:8808";
 const INTERNAL_SECRET = process.env.TTS_INTERNAL_SECRET || "";
 
 /**

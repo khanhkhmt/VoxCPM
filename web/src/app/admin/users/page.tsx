@@ -16,7 +16,7 @@ export default function AdminUsersPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
     const [searchQuery, setSearchQuery] = useState("");
-    const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const fetchUsers = useCallback(async (p: number, q: string) => {
         setLoading(true);

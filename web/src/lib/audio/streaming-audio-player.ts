@@ -1,6 +1,7 @@
 export interface StreamingAudioPlayerOptions {
   preBufferSeconds?: number;
   minBufferedSecondsBeforePlay?: number;
+  overlapSeconds?: number;
 }
 
 export interface StreamingAudioMetadata {
@@ -33,6 +34,8 @@ export class StreamingAudioPlayer {
   private pendingBuffers: AudioBuffer[] = [];
   private totalPendingDuration: number = 0;
   private hasStartedPlayback: boolean = false;
+  private isFirstScheduled: boolean = true;
+  private prevGainNode: GainNode | null = null;
 
   constructor(options?: StreamingAudioPlayerOptions) {
     this.options = {
@@ -123,11 +126,38 @@ export class StreamingAudioPlayer {
 
   private scheduleBuffer(audioBuffer: AudioBuffer): void {
     if (!this.audioContext) return;
+
+    const overlap = this.options.overlapSeconds || 0;
+    // Cap overlap to at most 50% of chunk duration to avoid fully overlapping short chunks
+    const effectiveOverlap = Math.min(overlap, audioBuffer.duration * 0.5);
+    const startTime = this.nextStartTime;
+    const endTime = startTime + audioBuffer.duration;
     
-    // Create Source Node
+    // Create Source Node with GainNode for crossfade
     const sourceNode = this.audioContext.createBufferSource();
     sourceNode.buffer = audioBuffer;
-    sourceNode.connect(this.audioContext.destination);
+    const gainNode = this.audioContext.createGain();
+    sourceNode.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+
+    // Apply crossfade when overlap is enabled
+    if (effectiveOverlap > 0) {
+      if (!this.isFirstScheduled) {
+        // Fade-in: ramp from 0 to 1 over the overlap period
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(1, startTime + effectiveOverlap);
+      }
+
+      // Fade-out the previous chunk's gain during the overlap region
+      if (this.prevGainNode && !this.isFirstScheduled) {
+        this.prevGainNode.gain.setValueAtTime(1, startTime);
+        this.prevGainNode.gain.linearRampToValueAtTime(0, startTime + effectiveOverlap);
+      }
+
+      this.prevGainNode = gainNode;
+    }
+
+    this.isFirstScheduled = false;
 
     // Track for stopping later
     this.sourceNodes.push(sourceNode);
@@ -141,8 +171,10 @@ export class StreamingAudioPlayer {
       }
     };
 
-    sourceNode.start(this.nextStartTime);
-    this.nextStartTime += audioBuffer.duration;
+    sourceNode.start(startTime);
+
+    // Next chunk starts `effectiveOverlap` seconds before this one ends
+    this.nextStartTime = endTime - effectiveOverlap;
   }
 
   public stop(): void {
@@ -200,5 +232,7 @@ export class StreamingAudioPlayer {
     this.pendingBuffers = [];
     this.totalPendingDuration = 0;
     this.hasStartedPlayback = false;
+    this.isFirstScheduled = true;
+    this.prevGainNode = null;
   }
 }

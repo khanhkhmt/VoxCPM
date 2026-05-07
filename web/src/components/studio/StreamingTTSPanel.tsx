@@ -71,7 +71,6 @@ export function StreamingTTSPanel({
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [finalAudioUrl, setFinalAudioUrl] = useState<string | null>(null);
   
-  const [strategy, setStrategy] = useState<"stable" | "fast">("stable");
   const [currentSegmentIndex, setCurrentSegmentIndex] = useState<number>(0);
   const [totalSegments, setTotalSegments] = useState<number>(0);
   const [currentSegmentText, setCurrentSegmentText] = useState<string>("");
@@ -167,7 +166,7 @@ export function StreamingTTSPanel({
 
     const request: TTSStreamRequest = {
       type: "start",
-      streaming_mode: strategy,
+      streaming_mode: "fast",
       text,
       control_instruction: controlInstruction,
       use_prompt_text: usePromptText,
@@ -311,24 +310,7 @@ export function StreamingTTSPanel({
         )}
       </div>
 
-      <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl mt-1 mb-1">
-        <button
-          onClick={() => setStrategy("stable")}
-          disabled={status !== "idle" && status !== "done" && status !== "error" && status !== "cancelled"}
-          className={`flex-1 flex flex-col items-center justify-center p-2 rounded-lg transition-all ${strategy === "stable" ? "bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600" : "hover:bg-gray-200 dark:hover:bg-gray-700/50"} disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Stable / Smooth</span>
-          <span className="text-[10px] text-gray-500">More stable, sends audio by sentence</span>
-        </button>
-        <button
-          onClick={() => setStrategy("fast")}
-          disabled={status !== "idle" && status !== "done" && status !== "error" && status !== "cancelled"}
-          className={`flex-1 flex flex-col items-center justify-center p-2 rounded-lg transition-all ${strategy === "fast" ? "bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600" : "hover:bg-gray-200 dark:hover:bg-gray-700/50"} disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Fast / Low-latency</span>
-          <span className="text-[10px] text-gray-500">Starts earlier, may stutter on weak GPU</span>
-        </button>
-      </div>
+
 
       <div className="flex gap-3">
         <button
@@ -372,15 +354,15 @@ export function StreamingTTSPanel({
         </div>
         <div className="flex flex-col bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
           <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-            {strategy === "stable" ? "Segments" : "Chunks"}
+            Chunks
           </span>
           <span className="font-mono text-lg text-gray-700 dark:text-gray-200">
-            {strategy === "stable" && totalSegments > 0 ? `${currentSegmentIndex} / ${totalSegments}` : chunksReceived}
+            {chunksReceived}
           </span>
         </div>
       </div>
       
-      {status === "playing" && strategy === "stable" && currentSegmentText && (
+      {status === "playing" && currentSegmentText && (
         <div className="text-xs text-gray-500 italic text-center animate-pulse px-2 line-clamp-2">
           Generating: &quot;{currentSegmentText}&quot;
         </div>

@@ -21,6 +21,7 @@ export type StreamingTTSPanelProps = {
   ditSteps: number;
   language: string;
   referenceAudioFile?: File | null;
+  voiceFeatureUrl?: string | null;
   activeVoiceProfileId?: string | null;
   finalAudioUrl?: string | null;
   onDone?: (audioUrl: string) => void;
@@ -61,6 +62,7 @@ export function StreamingTTSPanel({
   ditSteps,
   language,
   referenceAudioFile,
+  voiceFeatureUrl,
   finalAudioUrl: externalFinalAudioUrl,
   onDone,
 }: StreamingTTSPanelProps) {
@@ -177,6 +179,7 @@ export function StreamingTTSPanel({
       dit_steps: ditSteps > 4 ? 4 : ditSteps,
       language,
       reference_wav_base64: base64,
+      voice_feature_url: voiceFeatureUrl,
     };
 
     clientRef.current = new TTSStreamingClient({
@@ -267,9 +270,9 @@ export function StreamingTTSPanel({
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 border rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700">
+    <div className="flex flex-col gap-4 p-4 border rounded-xl bg-vox-surface border-vox-outline/20">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-lg text-gray-900 dark:text-white flex items-center gap-2">
+        <h3 className="font-semibold text-lg text-vox-text flex items-center gap-2">
           <span className="relative flex h-3 w-3">
             {(status === "connecting" || status === "generating" || status === "playing") && (
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
@@ -295,22 +298,20 @@ export function StreamingTTSPanel({
               : status === "done"
               ? "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
               : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+              ? "bg-gray-100 text-gray-700"
+              : "bg-gray-100 text-gray-500"
           }`}
         >
           {status}
         </span>
       </div>
       
-      <div className="text-[11px] text-gray-500 font-medium -mt-2">
+      <p className="text-xs text-vox-text-dim mt-1">
         Streaming Mode is optimized with lower steps for smoother real-time playback.
         {ditSteps > 4 && (
-          <span className="ml-1 text-amber-600 dark:text-amber-400">
-            (LocDiT steps capped from {ditSteps} to 4 for streaming)
-          </span>
+          <span className="text-amber-500 ml-1">(LocDIT steps capped from {ditSteps} to 4 for streaming)</span>
         )}
-      </div>
-
-
+      </p>
 
       <div className="flex gap-3">
         <button
@@ -333,37 +334,33 @@ export function StreamingTTSPanel({
         <button
           onClick={handleStop}
           disabled={status === "idle" || status === "done" || status === "error" || status === "cancelled"}
-          className="bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 font-medium py-2.5 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-red-200 dark:border-red-800/30"
+          className="bg-vox-surface-secondary hover:bg-vox-surface-tertiary text-vox-text font-medium py-2.5 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-vox-outline"
         >
           Stop
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="flex flex-col bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
-          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Elapsed</span>
-          <span className="font-mono text-lg text-gray-700 dark:text-gray-200">
-            {(elapsedTime / 1000).toFixed(1)}<span className="text-sm text-gray-400">s</span>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="flex flex-col p-3 rounded-lg bg-vox-surface-lowest border border-vox-outline/10">
+          <span className="text-[10px] font-semibold text-vox-text-dim tracking-wider uppercase mb-1">Elapsed</span>
+          <span className="text-lg font-mono text-vox-text">{(elapsedTime / 1000).toFixed(1)}<span className="text-sm text-vox-text-dim ml-0.5">s</span></span>
+        </div>
+        <div className="flex flex-col p-3 rounded-lg bg-vox-surface-lowest border border-vox-outline/10">
+          <span className="text-[10px] font-semibold text-vox-text-dim tracking-wider uppercase mb-1">TTFB</span>
+          <span className="text-lg font-mono text-vox-text">
+            {ttfbMs > 0 ? (
+              <>{(ttfbMs / 1000).toFixed(2)}<span className="text-sm text-vox-text-dim ml-0.5">s</span></>
+            ) : "-"}
           </span>
         </div>
-        <div className="flex flex-col bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
-          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">TTFB</span>
-          <span className="font-mono text-lg text-gray-700 dark:text-gray-200">
-            {ttfbMs > 0 ? ttfbMs : "-"}<span className="text-sm text-gray-400">{ttfbMs > 0 ? "ms" : ""}</span>
-          </span>
-        </div>
-        <div className="flex flex-col bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
-          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-            Chunks
-          </span>
-          <span className="font-mono text-lg text-gray-700 dark:text-gray-200">
-            {chunksReceived}
-          </span>
+        <div className="flex flex-col p-3 rounded-lg bg-vox-surface-lowest border border-vox-outline/10">
+          <span className="text-[10px] font-semibold text-vox-text-dim tracking-wider uppercase mb-1">Chunks</span>
+          <span className="text-lg font-mono text-vox-text">{chunksReceived}</span>
         </div>
       </div>
       
       {status === "playing" && currentSegmentText && (
-        <div className="text-xs text-gray-500 italic text-center animate-pulse px-2 line-clamp-2">
+        <div className="text-xs text-vox-text-dim italic text-center animate-pulse px-2 line-clamp-2">
           Generating: &quot;{currentSegmentText}&quot;
         </div>
       )}

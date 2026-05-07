@@ -11,6 +11,7 @@ export interface TTSStreamRequest {
   dit_steps: number;
   language: string;
   reference_wav_base64?: string | null;
+  voice_feature_url?: string | null;
 }
 
 export interface TTSStreamStartMetadata {

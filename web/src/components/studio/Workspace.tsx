@@ -97,8 +97,6 @@ export default function Workspace() {
 
     // ---- Voice Library State ----
     const [libraryVoices, setLibraryVoices] = useState<LibraryVoice[]>([]);
-    const [saveToLibrary, setSaveToLibrary] = useState(false);
-
     // Fetch voice library on mount
     useEffect(() => {
         fetch("/api/voices?limit=50")
@@ -129,23 +127,7 @@ export default function Workspace() {
         setRefAudioPreview(URL.createObjectURL(file));
         clearLibraryVoice();
 
-        if (saveToLibrary) {
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("name", file.name.replace(/\.[^.]+$/, ""));
-            formData.append("description", "Saved from Studio");
-            fetch("/api/voices", { method: "POST", body: formData })
-                .then(async (res) => {
-                    if (res.ok) {
-                        const json = await res.json();
-                        if (json.data?.id) setActiveVoiceProfileId(json.data.id);
-                        console.log("[Voice Library] Saved:", file.name);
-                    }
-                    else console.warn("[Voice Library] Save failed:", await res.text());
-                })
-                .catch(() => {});
-        }
-    }, [saveToLibrary, clearLibraryVoice]);
+    }, [clearLibraryVoice]);
 
     const handleFileDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -461,19 +443,6 @@ export default function Workspace() {
                             }}
                         />
 
-                        {/* Save to Voice Library Toggle */}
-                        {!selectedLibraryVoice && (
-                            <label className="flex items-center gap-2 text-xs mt-2 cursor-pointer select-none">
-                                <input
-                                    type="checkbox"
-                                    checked={saveToLibrary}
-                                    onChange={(e) => setSaveToLibrary(e.target.checked)}
-                                    className="rounded border-vox-outline"
-                                />
-                                <span className="text-vox-text-dim">Save uploaded audio to Voice Library</span>
-                            </label>
-                        )}
-
                         {/* --- Ultimate Cloning Toggle --- */}
                         {(refAudioFile || selectedLibraryVoice) && (
                             <div className="mt-4 space-y-3">
@@ -784,6 +753,7 @@ export default function Workspace() {
                     ditSteps={ditSteps}
                     language={language}
                     referenceAudioFile={refAudioFile}
+                    voiceFeatureUrl={selectedLibraryVoice?.featureUrl}
                     activeVoiceProfileId={activeVoiceProfileId}
                     finalAudioUrl={streamingFinalUrl}
                     onDone={handleStreamingDone}

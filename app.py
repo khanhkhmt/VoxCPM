@@ -4,6 +4,7 @@ import logging
 import uuid
 import numpy as np
 import soundfile as sf
+import librosa
 import torch
 import gradio as gr
 import uvicorn
@@ -347,6 +348,7 @@ class VoxCPMDemo:
         denoise: bool = True,
         inference_timesteps: int = 10,
         normalize_lang: str = "auto",
+        **kwargs
     ) -> Generator[np.ndarray, None, None]:
         current_model = self.get_or_load_voxcpm()
 
@@ -360,7 +362,11 @@ class VoxCPMDemo:
         audio_path = reference_wav_path_input if reference_wav_path_input else None
         prompt_text_clean = (prompt_text or "").strip() or None
 
-        if audio_path and prompt_text_clean:
+        prompt_cache = kwargs.pop("prompt_cache", None)
+
+        if prompt_cache:
+            logger.info(f"[Voice Cloning Streaming] using cached voice feature")
+        elif audio_path and prompt_text_clean:
             logger.info(f"[Voice Cloning Streaming] prompt_wav + prompt_text + reference_wav")
         elif audio_path:
             logger.info(f"[Voice Control Streaming] reference_wav only")
@@ -368,17 +374,42 @@ class VoxCPMDemo:
             logger.info(f"[Voice Design Streaming] control: {control[:50] if control else 'None'}...")
 
         logger.info(f"Streaming audio for text: '{final_text[:80]}...' [lang={normalize_lang}]")
-        generate_kwargs = self._build_generate_kwargs(
-            final_text=final_text,
-            audio_path=audio_path,
-            prompt_text_clean=prompt_text_clean,
-            cfg_value_input=cfg_value_input,
-            do_normalize=do_normalize,
-            denoise=denoise,
-            inference_timesteps=inference_timesteps,
-            normalize_lang=normalize_lang,
-        )
-        return current_model.generate_streaming(**generate_kwargs)
+
+        if prompt_cache is not None:
+            # Bypass _generate and directly use tts_model._generate_with_prompt_cache
+            # Apply text normalization if requested
+            if do_normalize:
+                if current_model.text_normalizer is None:
+                    from voxcpm.utils.text_normalize import TextNormalizer
+                    current_model.text_normalizer = TextNormalizer()
+                norm_lang = normalize_lang if normalize_lang != "auto" else None
+                final_text = current_model.text_normalizer.normalize(final_text, lang=norm_lang)
+
+            generate_result = current_model.tts_model._generate_with_prompt_cache(
+                target_text=final_text,
+                prompt_cache=prompt_cache,
+                inference_timesteps=inference_timesteps,
+                cfg_value=cfg_value_input,
+                streaming=True,
+            )
+            try:
+                for wav, _, _ in generate_result:
+                    yield wav.squeeze(0).cpu().numpy()
+            finally:
+                generate_result.close()
+        else:
+            generate_kwargs = self._build_generate_kwargs(
+                final_text=final_text,
+                audio_path=audio_path,
+                prompt_text_clean=prompt_text_clean,
+                cfg_value_input=cfg_value_input,
+                do_normalize=do_normalize,
+                denoise=denoise,
+                inference_timesteps=inference_timesteps,
+                normalize_lang=normalize_lang,
+            )
+            for wav in current_model.generate_streaming(**generate_kwargs):
+                yield wav
 
 
 # ---------- FastAPI API ----------
@@ -563,7 +594,12 @@ def generate(
             # Fall back to original WAV-based flow
             ref_path: Optional[str] = None
             if reference_wav is not None and reference_wav.filename:
-                ref_path = str(_save_upload(reference_wav))
+                saved = _save_upload(reference_wav)
+                y, sr = librosa.load(str(saved), sr=16000, mono=True)
+                if len(y) > int(5.0 * sr):
+                    y = y[:int(5.0 * sr)]
+                    sf.write(str(saved), y, sr)
+                ref_path = str(saved)
 
             with _inference_lock:
                 sr, wav_np = get_demo().generate_tts_audio(
@@ -642,6 +678,14 @@ def encode_voice_endpoint(
 ):
     try:
         saved_wav = _save_upload(reference_wav)
+        
+        # Truncate audio to 5 seconds to prevent OOM, context overflow, and timeouts
+        y, sr = librosa.load(str(saved_wav), sr=16000, mono=True)
+        max_duration = 5.0
+        if len(y) > int(max_duration * sr):
+            y = y[:int(max_duration * sr)]
+            sf.write(str(saved_wav), y, sr)
+
         demo = get_demo()
         model = demo.get_or_load_voxcpm().tts_model
 
@@ -846,9 +890,10 @@ async def streaming_tts(websocket: WebSocket):
             return
         language = data.get("language", "auto")
         reference_wav_base64 = data.get("reference_wav_base64", None)
+        voice_feature_url = data.get("voice_feature_url", None)
 
         if reference_wav_base64:
-            if len(reference_wav_base64) > 5 * 1024 * 1024:
+            if len(reference_wav_base64) > 10 * 1024 * 1024:
                 await websocket.send_json({"type": "error", "message": "Reference audio base64 too large."})
                 await websocket.close()
                 return
@@ -856,7 +901,27 @@ async def streaming_tts(websocket: WebSocket):
             tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
             tmp.write(audio_bytes)
             tmp.close()
+            
+            # Truncate to 5s to prevent OOM
+            y, sr = librosa.load(tmp.name, sr=16000, mono=True)
+            if len(y) > int(5.0 * sr):
+                y = y[:int(5.0 * sr)]
+                sf.write(tmp.name, y, sr)
+                
             temp_wav_path = tmp.name
+
+        prompt_cache = None
+        if voice_feature_url and voice_feature_url.strip():
+            try:
+                from safetensors.torch import load_file
+                feat_path = _download_to_local(voice_feature_url.strip())
+                loaded = load_file(str(feat_path), device="cpu")
+                prompt_cache = {
+                    "ref_audio_feat": loaded["ref_audio_feat"],
+                    "mode": "reference",
+                }
+            except Exception as e:
+                logger.warning(f"Failed to load voice feature for streaming: {e}")
 
         ultimate = use_prompt_text
         actual_prompt_text = prompt_text.strip() if ultimate else ""
@@ -892,6 +957,7 @@ async def streaming_tts(websocket: WebSocket):
                         denoise=denoise,
                         inference_timesteps=dit_steps,
                         normalize_lang=language,
+                        prompt_cache=prompt_cache,
                     )
                     
                     for chunk in generator:

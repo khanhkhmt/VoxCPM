@@ -420,15 +420,6 @@ app.add_middleware(
 
 TTS_INTERNAL_SECRET = os.environ.get("TTS_INTERNAL_SECRET")
 
-# Optional allow-list prefix for fetching cached voice features over HTTPS
-# (e.g. the R2 public URL the frontend uploads to). When set, only URLs
-# whose origin/path matches one of these prefixes are accepted by
-# `_download_to_local`. Comma-separated. Always include relative
-# /api/tts/file/ URLs which are served locally.
-FEATURE_URL_ALLOWED_PREFIXES = [
-    p.strip() for p in os.environ.get("FEATURE_URL_ALLOWED_PREFIXES", "").split(",") if p.strip()
-]
-
 @app.middleware("http")
 async def require_internal_secret(request: Request, call_next):
     path = request.url.path
@@ -688,81 +679,35 @@ def encode_voice_endpoint(
 
 
 _FEATURE_FILE_RE = re.compile(r"^[A-Fa-f0-9]+\.safetensors$")
-_FEATURE_MAX_BYTES = 50 * 1024 * 1024
 
 
 def _download_to_local(url: str) -> Path:
-    """Resolve a feature file path locally.
+    """Resolve a feature file path locally from ``OUTPUT_DIR``.
 
-    Two URL forms are accepted:
-      * Relative URLs starting with ``/`` — read from ``OUTPUT_DIR`` directly.
-      * Absolute HTTPS URLs whose prefix matches one of
-        ``FEATURE_URL_ALLOWED_PREFIXES`` — fetched via httpx and cached in
-        ``OUTPUT_DIR`` before being returned.
-
-    Any other URL (raw http://, internal IPs, file://, etc.) is rejected.
-    The remote filename is constrained to a SHA-style hex name with
-    ``.safetensors`` suffix to prevent path-traversal and arbitrary writes.
+    Only relative ``/api/tts/file/<hex>.safetensors`` URLs are accepted —
+    callers that want to use a remote feature (e.g. an R2 URL) must
+    fetch it themselves and forward the bytes as a ``voice_feature``
+    multipart upload. The Next.js proxy at ``/api/tts/generate`` does
+    exactly this for browser clients, so the FastAPI process never
+    needs to make outbound HTTPS calls (no SSRF surface).
     """
     if not url:
         raise HTTPException(400, "Empty feature URL.")
-
-    if url.startswith("/"):
-        # Local lookup — strip query/fragment and resolve under OUTPUT_DIR
-        name = url.rsplit("/", 1)[-1].split("?", 1)[0].split("#", 1)[0]
-        if not _FEATURE_FILE_RE.match(name):
-            raise HTTPException(400, "Invalid feature file name.")
-        local_path = (OUTPUT_DIR / name).resolve()
-        if OUTPUT_DIR.resolve() not in local_path.parents:
-            raise HTTPException(400, "Invalid feature path.")
-        if not local_path.exists():
-            raise HTTPException(400, f"Feature file not found locally: {name}")
-        return local_path
-
-    # Absolute URL: must be HTTPS and match an allow-listed prefix.
-    if not url.lower().startswith("https://"):
-        raise HTTPException(400, "Only https:// or relative feature URLs are allowed.")
-    if not FEATURE_URL_ALLOWED_PREFIXES or not any(
-        url.startswith(prefix) for prefix in FEATURE_URL_ALLOWED_PREFIXES
-    ):
+    if not url.startswith("/"):
         raise HTTPException(
             400,
-            "Feature URL not allow-listed. Configure FEATURE_URL_ALLOWED_PREFIXES on the backend.",
+            "Only relative /api/tts/file/<name>.safetensors URLs are accepted; "
+            "forward remote feature files as a multipart `voice_feature` upload.",
         )
-
     name = url.rsplit("/", 1)[-1].split("?", 1)[0].split("#", 1)[0]
     if not _FEATURE_FILE_RE.match(name):
-        raise HTTPException(400, "Invalid feature file name in URL.")
-
-    cached = OUTPUT_DIR / name
-    if cached.exists():
-        return cached
-
-    import httpx
-
-    try:
-        with httpx.Client(timeout=30.0, follow_redirects=False) as client:
-            with client.stream("GET", url) as resp:
-                resp.raise_for_status()
-                content_length = resp.headers.get("content-length")
-                if content_length and int(content_length) > _FEATURE_MAX_BYTES:
-                    raise HTTPException(400, "Feature file too large (>50MB).")
-                tmp_path = OUTPUT_DIR / f"{name}.partial-{uuid.uuid4().hex}"
-                total = 0
-                with tmp_path.open("wb") as fh:
-                    for chunk in resp.iter_bytes(chunk_size=64 * 1024):
-                        total += len(chunk)
-                        if total > _FEATURE_MAX_BYTES:
-                            fh.close()
-                            tmp_path.unlink(missing_ok=True)
-                            raise HTTPException(400, "Feature file too large (>50MB).")
-                        fh.write(chunk)
-                tmp_path.replace(cached)
-                return cached
-    except HTTPException:
-        raise
-    except httpx.HTTPError as e:
-        raise HTTPException(400, f"Failed to fetch feature file: {e}")
+        raise HTTPException(400, "Invalid feature file name.")
+    local_path = (OUTPUT_DIR / name).resolve()
+    if OUTPUT_DIR.resolve() not in local_path.parents:
+        raise HTTPException(400, "Invalid feature path.")
+    if not local_path.exists():
+        raise HTTPException(400, f"Feature file not found locally: {name}")
+    return local_path
 
 
 def float32_to_pcm16_bytes(audio_np: np.ndarray) -> bytes:
@@ -890,8 +835,10 @@ async def streaming_tts(websocket: WebSocket):
             await websocket.send_json({"type": "error", "message": "cfg_value must be between 0.1 and 10.0."})
             await websocket.close()
             return
-        do_normalize = data.get("do_normalize", True)
-        denoise = data.get("denoise", True)
+        # Defaults match the REST /api/tts/generate endpoint (do_normalize/denoise=false).
+        # Anything else would silently break external WebSocket clients that omit the field.
+        do_normalize = bool(data.get("do_normalize", False))
+        denoise = bool(data.get("denoise", False))
         dit_steps = int(data.get("dit_steps", 10))
         if not (1 <= dit_steps <= 50):
             await websocket.send_json({"type": "error", "message": "dit_steps must be between 1 and 50."})

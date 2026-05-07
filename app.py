@@ -420,6 +420,15 @@ app.add_middleware(
 
 TTS_INTERNAL_SECRET = os.environ.get("TTS_INTERNAL_SECRET")
 
+# Optional allow-list prefix for fetching cached voice features over HTTPS
+# (e.g. the R2 public URL the frontend uploads to). When set, only URLs
+# whose origin/path matches one of these prefixes are accepted by
+# `_download_to_local`. Comma-separated. Always include relative
+# /api/tts/file/ URLs which are served locally.
+FEATURE_URL_ALLOWED_PREFIXES = [
+    p.strip() for p in os.environ.get("FEATURE_URL_ALLOWED_PREFIXES", "").split(",") if p.strip()
+]
+
 @app.middleware("http")
 async def require_internal_secret(request: Request, call_next):
     path = request.url.path
@@ -469,7 +478,7 @@ def asr(reference_wav: UploadFile = File(...)):
 
 
 @app.post("/api/tts/generate")
-async def generate(
+def generate(
     text: str = Form(...),
     control_instruction: str = Form(""),
     use_prompt_text: str = Form("false"),
@@ -524,7 +533,7 @@ async def generate(
             if voice_feature is not None and voice_feature.filename:
                 feat_path = _save_upload(voice_feature)
             else:
-                feat_path = await _download_to_local(voice_feature_url.strip())
+                feat_path = _download_to_local(voice_feature_url.strip())
             loaded = load_file(str(feat_path), device="cpu")
             if "ref_audio_feat" not in loaded:
                 raise HTTPException(400, "Invalid safetensors: missing 'ref_audio_feat'")
@@ -636,7 +645,7 @@ class EncodeVoiceResponse(BaseModel):
 
 
 @app.post("/api/tts/encode-voice", response_model=EncodeVoiceResponse)
-async def encode_voice_endpoint(
+def encode_voice_endpoint(
     reference_wav: UploadFile = File(...),
     trim_silence_vad: str = Form("false"),
 ):
@@ -678,17 +687,82 @@ async def encode_voice_endpoint(
         raise HTTPException(status_code=500, detail=f"Voice encoding failed: {e}")
 
 
-async def _download_to_local(url: str) -> Path:
-    """Resolve a feature file path from OUTPUT_DIR. Only relative /api/tts/file/ URLs are accepted."""
-    if not url.startswith("/"):
-        raise HTTPException(400, "Only relative feature URLs are allowed (must start with '/').")
-    name = url.rsplit("/", 1)[-1]
-    if "/" in name or ".." in name:
-        raise HTTPException(400, "Invalid feature file name.")
-    local_path = OUTPUT_DIR / name
-    if not local_path.exists():
-        raise HTTPException(400, f"Feature file not found locally: {name}")
-    return local_path
+_FEATURE_FILE_RE = re.compile(r"^[A-Fa-f0-9]+\.safetensors$")
+_FEATURE_MAX_BYTES = 50 * 1024 * 1024
+
+
+def _download_to_local(url: str) -> Path:
+    """Resolve a feature file path locally.
+
+    Two URL forms are accepted:
+      * Relative URLs starting with ``/`` — read from ``OUTPUT_DIR`` directly.
+      * Absolute HTTPS URLs whose prefix matches one of
+        ``FEATURE_URL_ALLOWED_PREFIXES`` — fetched via httpx and cached in
+        ``OUTPUT_DIR`` before being returned.
+
+    Any other URL (raw http://, internal IPs, file://, etc.) is rejected.
+    The remote filename is constrained to a SHA-style hex name with
+    ``.safetensors`` suffix to prevent path-traversal and arbitrary writes.
+    """
+    if not url:
+        raise HTTPException(400, "Empty feature URL.")
+
+    if url.startswith("/"):
+        # Local lookup — strip query/fragment and resolve under OUTPUT_DIR
+        name = url.rsplit("/", 1)[-1].split("?", 1)[0].split("#", 1)[0]
+        if not _FEATURE_FILE_RE.match(name):
+            raise HTTPException(400, "Invalid feature file name.")
+        local_path = (OUTPUT_DIR / name).resolve()
+        if OUTPUT_DIR.resolve() not in local_path.parents:
+            raise HTTPException(400, "Invalid feature path.")
+        if not local_path.exists():
+            raise HTTPException(400, f"Feature file not found locally: {name}")
+        return local_path
+
+    # Absolute URL: must be HTTPS and match an allow-listed prefix.
+    if not url.lower().startswith("https://"):
+        raise HTTPException(400, "Only https:// or relative feature URLs are allowed.")
+    if not FEATURE_URL_ALLOWED_PREFIXES or not any(
+        url.startswith(prefix) for prefix in FEATURE_URL_ALLOWED_PREFIXES
+    ):
+        raise HTTPException(
+            400,
+            "Feature URL not allow-listed. Configure FEATURE_URL_ALLOWED_PREFIXES on the backend.",
+        )
+
+    name = url.rsplit("/", 1)[-1].split("?", 1)[0].split("#", 1)[0]
+    if not _FEATURE_FILE_RE.match(name):
+        raise HTTPException(400, "Invalid feature file name in URL.")
+
+    cached = OUTPUT_DIR / name
+    if cached.exists():
+        return cached
+
+    import httpx
+
+    try:
+        with httpx.Client(timeout=30.0, follow_redirects=False) as client:
+            with client.stream("GET", url) as resp:
+                resp.raise_for_status()
+                content_length = resp.headers.get("content-length")
+                if content_length and int(content_length) > _FEATURE_MAX_BYTES:
+                    raise HTTPException(400, "Feature file too large (>50MB).")
+                tmp_path = OUTPUT_DIR / f"{name}.partial-{uuid.uuid4().hex}"
+                total = 0
+                with tmp_path.open("wb") as fh:
+                    for chunk in resp.iter_bytes(chunk_size=64 * 1024):
+                        total += len(chunk)
+                        if total > _FEATURE_MAX_BYTES:
+                            fh.close()
+                            tmp_path.unlink(missing_ok=True)
+                            raise HTTPException(400, "Feature file too large (>50MB).")
+                        fh.write(chunk)
+                tmp_path.replace(cached)
+                return cached
+    except HTTPException:
+        raise
+    except httpx.HTTPError as e:
+        raise HTTPException(400, f"Failed to fetch feature file: {e}")
 
 
 def float32_to_pcm16_bytes(audio_np: np.ndarray) -> bytes:

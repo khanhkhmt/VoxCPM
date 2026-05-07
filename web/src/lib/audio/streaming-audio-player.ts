@@ -125,11 +125,19 @@ export class StreamingAudioPlayer {
 
   public flush(): void {
     if (this.pendingFloat32Length > 0) {
-      this.flushPendingFloat32();
+      this.flushPendingFloat32(true);
+      return;
+    }
+    // Drain any tail that was withheld from the previous batch for
+    // crossfading. Without this it would never be played.
+    if (this.prevTailSamples && this.audioContext && this.metadata) {
+      const tail = this.prevTailSamples;
+      this.prevTailSamples = null;
+      this.scheduleSamples(tail);
     }
   }
 
-  private flushPendingFloat32(): void {
+  private flushPendingFloat32(isFinal: boolean = false): void {
     if (!this.audioContext || !this.metadata || this.pendingFloat32Length === 0) return;
 
     // Concatenate accumulated float32 arrays into one batch
@@ -139,36 +147,64 @@ export class StreamingAudioPlayer {
       combined.set(arr, offset);
       offset += arr.length;
     }
-    
+
     this.pendingFloat32 = [];
     this.pendingFloat32Length = 0;
 
-    // Apply boundary smoothing: short crossfade between end of previous
-    // batch and start of this batch to eliminate clicks from waveform
-    // discontinuities at VAE decode boundaries.
-    const fadeLen = Math.min(StreamingAudioPlayer.BOUNDARY_FADE_SAMPLES, combined.length);
-    if (this.prevTailSamples && fadeLen > 0) {
-      const tailLen = Math.min(this.prevTailSamples.length, fadeLen);
-      for (let i = 0; i < tailLen; i++) {
-        const t = (i + 1) / (tailLen + 1); // 0→1 ramp
-        combined[i] = this.prevTailSamples[i] * (1 - t) + combined[i] * t;
+    const fadeLen = StreamingAudioPlayer.BOUNDARY_FADE_SAMPLES;
+
+    // Build the playable buffer. If the previous flush withheld a tail
+    // for crossfading, do a true equal-length crossfade between that
+    // tail (fade-out) and the head of this batch (fade-in). Because the
+    // tail was never scheduled, this avoids the temporal-backwards-jump
+    // problem of blending samples that have already been played.
+    let playable: Float32Array<ArrayBuffer>;
+    if (this.prevTailSamples && this.prevTailSamples.length > 0) {
+      const tailLen = this.prevTailSamples.length;
+      if (combined.length >= tailLen) {
+        playable = new Float32Array(combined.length);
+        for (let i = 0; i < tailLen; i++) {
+          const t = (i + 1) / (tailLen + 1); // 0→1 ramp
+          playable[i] = this.prevTailSamples[i] * (1 - t) + combined[i] * t;
+        }
+        playable.set(combined.subarray(tailLen), tailLen);
+      } else {
+        // The new batch is shorter than the held-back tail — just
+        // concatenate to keep continuity; no crossfade is possible.
+        playable = new Float32Array(tailLen + combined.length);
+        playable.set(this.prevTailSamples, 0);
+        playable.set(combined, tailLen);
       }
+      this.prevTailSamples = null;
+    } else {
+      playable = combined;
     }
 
-    // Store tail samples for next batch's boundary smoothing
-    if (combined.length >= fadeLen) {
-      this.prevTailSamples = combined.slice(combined.length - fadeLen);
+    // Withhold the last fadeLen samples for the next batch's crossfade.
+    // Skip on the final flush so the audio actually plays out fully.
+    // `slice` (rather than subarray) is used so the buffers are detached
+    // copies and satisfy the strict Float32Array<ArrayBuffer> typing of
+    // AudioBuffer.copyToChannel.
+    let toSchedule: Float32Array<ArrayBuffer>;
+    if (!isFinal && playable.length > fadeLen) {
+      toSchedule = playable.slice(0, playable.length - fadeLen);
+      this.prevTailSamples = playable.slice(playable.length - fadeLen);
+    } else {
+      toSchedule = playable;
+      this.prevTailSamples = null;
     }
+
+    if (toSchedule.length === 0) return;
 
     // Create AudioBuffer
     const audioBuffer = this.audioContext.createBuffer(
       this.metadata.channels,
-      combined.length,
+      toSchedule.length,
       this.metadata.sampleRate
     );
 
     // Copy to channel 0 (mono)
-    audioBuffer.copyToChannel(combined, 0);
+    audioBuffer.copyToChannel(toSchedule, 0);
 
     if (!this.hasStartedPlayback) {
       this.pendingBuffers.push(audioBuffer);
@@ -217,6 +253,30 @@ export class StreamingAudioPlayer {
     // Schedule back-to-back for gapless playback
     sourceNode.start(this.nextStartTime);
     this.nextStartTime += audioBuffer.duration;
+  }
+
+  private scheduleSamples(samples: Float32Array): void {
+    if (!this.audioContext || !this.metadata || samples.length === 0) return;
+    // Copy into a fresh Float32Array<ArrayBuffer> so it satisfies the
+    // strict type of copyToChannel (it doesn't accept SharedArrayBuffer).
+    const owned = new Float32Array(samples.length);
+    owned.set(samples);
+    const audioBuffer = this.audioContext.createBuffer(
+      this.metadata.channels,
+      owned.length,
+      this.metadata.sampleRate,
+    );
+    audioBuffer.copyToChannel(owned, 0);
+    if (this.hasStartedPlayback) {
+      const currentTime = this.audioContext.currentTime;
+      if (this.nextStartTime < currentTime) {
+        this.nextStartTime = currentTime + 0.02;
+      }
+      this.scheduleBuffer(audioBuffer);
+    } else {
+      this.pendingBuffers.push(audioBuffer);
+      this.totalPendingDuration += audioBuffer.duration;
+    }
   }
 
   public stop(): void {

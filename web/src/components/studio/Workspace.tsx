@@ -178,11 +178,47 @@ export default function Workspace() {
         setCurrentAudio(null);
 
         try {
+            // Resolve the audio reference. Prefer the cached feature when
+            // available; otherwise fall back to the library voice's WAV
+            // (fetched from R2) so cloning still works even if the
+            // feature-encode step failed during voice upload.
+            let voiceFeatureUrl: string | null = null;
+            let referenceWav: File | null = refAudioFile;
+
+            if (selectedLibraryVoice) {
+                if (selectedLibraryVoice.featureUrl) {
+                    voiceFeatureUrl = selectedLibraryVoice.featureUrl;
+                    referenceWav = null;
+                } else if (selectedLibraryVoice.audioUrl) {
+                    try {
+                        const audioRes = await fetch(selectedLibraryVoice.audioUrl);
+                        if (!audioRes.ok) {
+                            throw new Error(`HTTP ${audioRes.status}`);
+                        }
+                        const blob = await audioRes.blob();
+                        const fileName = `${selectedLibraryVoice.name || "library-voice"}.wav`;
+                        referenceWav = new File([blob], fileName, {
+                            type: blob.type || "audio/wav",
+                        });
+                    } catch (fetchErr) {
+                        console.error(
+                            "[Workspace] Failed to fetch library voice audio:",
+                            fetchErr,
+                        );
+                        setError(
+                            "Selected library voice is missing both a cached feature and a downloadable audio reference.",
+                        );
+                        setIsGenerating(false);
+                        return;
+                    }
+                }
+            }
+
             const result = await generateSpeech({
                 text,
                 controlInstruction: ultimateCloning ? "" : controlInstruction,
-                voiceFeatureUrl: selectedLibraryVoice?.featureUrl ?? null,
-                referenceWav: selectedLibraryVoice ? null : refAudioFile,
+                voiceFeatureUrl,
+                referenceWav,
                 usePromptText: ultimateCloning,
                 promptText: ultimateCloning ? promptText : "",
                 cfgValue,

@@ -141,9 +141,8 @@ export function StreamingTTSPanel({
       await playerRef.current.close();
     }
     playerRef.current = new StreamingAudioPlayer({
-      preBufferSeconds: 0.8,
-      minBufferedSecondsBeforePlay: 0.8,
-      overlapSeconds: 0,
+      preBufferSeconds: 0.3,
+      minBufferedSecondsBeforePlay: 0.3,
     });
 
     // Handle reference audio

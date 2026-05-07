@@ -1,7 +1,6 @@
 export interface StreamingAudioPlayerOptions {
   preBufferSeconds?: number;
   minBufferedSecondsBeforePlay?: number;
-  overlapSeconds?: number;
 }
 
 export interface StreamingAudioMetadata {
@@ -20,6 +19,23 @@ export interface StreamingAudioPlayerState {
   channels: number | null;
 }
 
+/**
+ * Gapless streaming audio player using Web Audio API.
+ *
+ * Tiny chunks from the streaming VAE decoder are accumulated into ~0.1s
+ * batches before scheduling, which reduces Web Audio API overhead and
+ * prevents scheduling artifacts.
+ *
+ * Chunks are scheduled back-to-back on a timeline so the browser plays them
+ * without gaps or overlap.  When chunks arrive too slowly and the playback
+ * cursor overtakes `nextStartTime`, the player schedules the new chunk
+ * almost immediately (20ms safety buffer) instead of inserting a large
+ * rebuffer gap.
+ *
+ * A micro-crossfade (16 samples ≈ 0.3ms at 48kHz) is applied at batch
+ * boundaries to eliminate clicks/pops caused by waveform discontinuities
+ * from the streaming VAE decoder.
+ */
 export class StreamingAudioPlayer {
   private audioContext: AudioContext | null = null;
   private options: StreamingAudioPlayerOptions;
@@ -34,17 +50,21 @@ export class StreamingAudioPlayer {
   private pendingBuffers: AudioBuffer[] = [];
   private totalPendingDuration: number = 0;
   private hasStartedPlayback: boolean = false;
-  private isFirstScheduled: boolean = true;
-  private prevGainNode: GainNode | null = null;
 
-  // New properties for accumulating tiny chunks
+  // For boundary smoothing: keep last few samples of previous batch
+  private prevTailSamples: Float32Array | null = null;
+
+  // Number of samples to crossfade at batch boundaries to prevent clicks
+  private static readonly BOUNDARY_FADE_SAMPLES = 16;
+
+  // Accumulate tiny chunks into larger batches before scheduling
   private pendingFloat32: Float32Array[] = [];
   private pendingFloat32Length: number = 0;
 
   constructor(options?: StreamingAudioPlayerOptions) {
     this.options = {
-      preBufferSeconds: 0.8,
-      minBufferedSecondsBeforePlay: 0.8,
+      preBufferSeconds: 0.3,
+      minBufferedSecondsBeforePlay: 0.3,
       ...options,
     };
   }
@@ -89,8 +109,6 @@ export class StreamingAudioPlayer {
     const int16Array = new Int16Array(arrayBuffer);
     const float32Array = new Float32Array(int16Array.length);
     for (let i = 0; i < int16Array.length; i++) {
-      // Int16 values are in range [-32768, 32767]
-      // Float32 values should be in range [-1.0, 1.0]
       float32Array[i] = int16Array[i] / 32768.0;
     }
 
@@ -114,7 +132,7 @@ export class StreamingAudioPlayer {
   private flushPendingFloat32(): void {
     if (!this.audioContext || !this.metadata || this.pendingFloat32Length === 0) return;
 
-    // Concatenate accumulated float32 arrays
+    // Concatenate accumulated float32 arrays into one batch
     const combined = new Float32Array(this.pendingFloat32Length);
     let offset = 0;
     for (const arr of this.pendingFloat32) {
@@ -124,6 +142,23 @@ export class StreamingAudioPlayer {
     
     this.pendingFloat32 = [];
     this.pendingFloat32Length = 0;
+
+    // Apply boundary smoothing: short crossfade between end of previous
+    // batch and start of this batch to eliminate clicks from waveform
+    // discontinuities at VAE decode boundaries.
+    const fadeLen = Math.min(StreamingAudioPlayer.BOUNDARY_FADE_SAMPLES, combined.length);
+    if (this.prevTailSamples && fadeLen > 0) {
+      const tailLen = Math.min(this.prevTailSamples.length, fadeLen);
+      for (let i = 0; i < tailLen; i++) {
+        const t = (i + 1) / (tailLen + 1); // 0→1 ramp
+        combined[i] = this.prevTailSamples[i] * (1 - t) + combined[i] * t;
+      }
+    }
+
+    // Store tail samples for next batch's boundary smoothing
+    if (combined.length >= fadeLen) {
+      this.prevTailSamples = combined.slice(combined.length - fadeLen);
+    }
 
     // Create AudioBuffer
     const audioBuffer = this.audioContext.createBuffer(
@@ -139,10 +174,10 @@ export class StreamingAudioPlayer {
       this.pendingBuffers.push(audioBuffer);
       this.totalPendingDuration += audioBuffer.duration;
       
-      const minBuffer = this.options.minBufferedSecondsBeforePlay || 0.8;
+      const minBuffer = this.options.minBufferedSecondsBeforePlay || 0.3;
       if (this.totalPendingDuration >= minBuffer) {
         this.hasStartedPlayback = true;
-        this.nextStartTime = this.audioContext.currentTime + (this.options.preBufferSeconds || 0.8);
+        this.nextStartTime = this.audioContext.currentTime + (this.options.preBufferSeconds || 0.3);
         for (const buf of this.pendingBuffers) {
           this.scheduleBuffer(buf);
         }
@@ -151,9 +186,7 @@ export class StreamingAudioPlayer {
     } else {
       const currentTime = this.audioContext.currentTime;
       if (this.nextStartTime < currentTime) {
-        // Buffer underrun! The network/backend couldn't keep up.
-        // Previously, this added preBufferSeconds (0.8s) of silence, causing unnatural word splitting.
-        // Now, we schedule it to play almost immediately.
+        // Buffer underrun — schedule almost immediately instead of large gap
         this.nextStartTime = currentTime + 0.02;
       }
       this.scheduleBuffer(audioBuffer);
@@ -164,55 +197,26 @@ export class StreamingAudioPlayer {
 
   private scheduleBuffer(audioBuffer: AudioBuffer): void {
     if (!this.audioContext) return;
-
-    const overlap = this.options.overlapSeconds || 0;
-    // Cap overlap to at most 50% of chunk duration to avoid fully overlapping short chunks
-    const effectiveOverlap = Math.min(overlap, audioBuffer.duration * 0.5);
-    const startTime = this.nextStartTime;
-    const endTime = startTime + audioBuffer.duration;
     
-    // Create Source Node with GainNode for crossfade
+    // Create Source Node — connect directly, no overlap
     const sourceNode = this.audioContext.createBufferSource();
     sourceNode.buffer = audioBuffer;
-    const gainNode = this.audioContext.createGain();
-    sourceNode.connect(gainNode);
-    gainNode.connect(this.audioContext.destination);
-
-    // Apply crossfade when overlap is enabled
-    if (effectiveOverlap > 0) {
-      if (!this.isFirstScheduled) {
-        // Fade-in: ramp from 0 to 1 over the overlap period
-        gainNode.gain.setValueAtTime(0, startTime);
-        gainNode.gain.linearRampToValueAtTime(1, startTime + effectiveOverlap);
-      }
-
-      // Fade-out the previous chunk's gain during the overlap region
-      if (this.prevGainNode && !this.isFirstScheduled) {
-        this.prevGainNode.gain.setValueAtTime(1, startTime);
-        this.prevGainNode.gain.linearRampToValueAtTime(0, startTime + effectiveOverlap);
-      }
-
-      this.prevGainNode = gainNode;
-    }
-
-    this.isFirstScheduled = false;
+    sourceNode.connect(this.audioContext.destination);
 
     // Track for stopping later
     this.sourceNodes.push(sourceNode);
 
     sourceNode.onended = () => {
       this.chunksPlayed++;
-      // Remove from sourceNodes array
       const idx = this.sourceNodes.indexOf(sourceNode);
       if (idx !== -1) {
         this.sourceNodes.splice(idx, 1);
       }
     };
 
-    sourceNode.start(startTime);
-
-    // Next chunk starts `effectiveOverlap` seconds before this one ends
-    this.nextStartTime = endTime - effectiveOverlap;
+    // Schedule back-to-back for gapless playback
+    sourceNode.start(this.nextStartTime);
+    this.nextStartTime += audioBuffer.duration;
   }
 
   public stop(): void {
@@ -270,8 +274,7 @@ export class StreamingAudioPlayer {
     this.pendingBuffers = [];
     this.totalPendingDuration = 0;
     this.hasStartedPlayback = false;
-    this.isFirstScheduled = true;
-    this.prevGainNode = null;
+    this.prevTailSamples = null;
     this.pendingFloat32 = [];
     this.pendingFloat32Length = 0;
   }

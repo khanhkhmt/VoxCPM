@@ -24,6 +24,9 @@ export async function GET(
         fileSize: true,
         mimeType: true,
         description: true,
+        featureUrl: true,
+        voxcpmVersion: true,
+        vaeVersion: true,
         createdAt: true,
         updatedAt: true,
         userId: true,
@@ -110,7 +113,7 @@ export async function DELETE(
 
     const voice = await prisma.voiceProfile.findUnique({
       where: { id },
-      select: { userId: true, r2Key: true },
+      select: { userId: true, r2Key: true, featureR2Key: true },
     });
 
     if (!voice) {
@@ -121,11 +124,18 @@ export async function DELETE(
       return jsonError("FORBIDDEN", "You don't own this voice profile", 403);
     }
 
-    // Delete R2 file
+    // Delete R2 files (WAV + feature cache)
     try {
       await deleteFromR2(voice.r2Key);
     } catch (err) {
       console.error("[voices] R2 delete error:", err);
+    }
+    if (voice.featureR2Key) {
+      try {
+        await deleteFromR2(voice.featureR2Key);
+      } catch (err) {
+        console.error("[voices] R2 feature delete error:", err);
+      }
     }
 
     // Delete DB record

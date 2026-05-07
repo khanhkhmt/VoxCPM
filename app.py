@@ -7,7 +7,8 @@ import soundfile as sf
 import torch
 import gradio as gr
 import uvicorn
-from typing import Optional, Tuple, Generator
+from typing import Optional, Tuple, Generator, List
+from pydantic import BaseModel
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -468,7 +469,7 @@ def asr(reference_wav: UploadFile = File(...)):
 
 
 @app.post("/api/tts/generate")
-def generate(
+async def generate(
     text: str = Form(...),
     control_instruction: str = Form(""),
     use_prompt_text: str = Form("false"),
@@ -479,18 +480,22 @@ def generate(
     dit_steps: str = Form("10"),
     language: str = Form("auto"),
     reference_wav: Optional[UploadFile] = File(default=None),
+    voice_feature: Optional[UploadFile] = File(default=None),
+    voice_feature_url: Optional[str] = Form(default=None),
 ):
     logger.info(
         f"[/api/tts/generate] received: text_len={len(text)}, cfg_value={cfg_value!r}, "
         f"dit_steps={dit_steps!r}, do_normalize={do_normalize!r}, denoise={denoise!r}, "
         f"use_prompt_text={use_prompt_text!r}, language={language!r}, "
-        f"has_ref={reference_wav is not None and bool(reference_wav.filename)}"
+        f"has_ref={reference_wav is not None and bool(reference_wav.filename)}, "
+        f"has_feature={voice_feature is not None and bool(voice_feature.filename)}, "
+        f"feature_url={voice_feature_url!r}"
     )
     try:
         if len(text) > 10000:
             raise ValueError("Text length exceeds maximum allowed (10000 characters).")
 
-        # Defensive parsing: chấp nhận empty/invalid và fallback về default
+        # Defensive parsing
         try:
             dit_steps_int = int(str(dit_steps).strip()) if str(dit_steps).strip() else 10
         except (ValueError, TypeError):
@@ -505,26 +510,65 @@ def generate(
         if not (0.1 <= cfg_value_f <= 10.0):
             raise ValueError("cfg_value must be between 0.1 and 10.0.")
 
-        ref_path: Optional[str] = None
-        if reference_wav is not None and reference_wav.filename:
-            ref_path = str(_save_upload(reference_wav))
-
         ultimate = _to_bool(use_prompt_text, default=False)
         actual_prompt_text = prompt_text.strip() if ultimate else ""
         actual_control = "" if ultimate else (control_instruction or "")
 
-        with _inference_lock:
-            sr, wav_np = get_demo().generate_tts_audio(
-                text_input=text,
-                control_instruction=actual_control,
-                reference_wav_path_input=ref_path,
-                prompt_text=actual_prompt_text,
-                cfg_value_input=cfg_value_f,
-                do_normalize=_to_bool(do_normalize, default=False),
-                denoise=_to_bool(denoise, default=False),
-                inference_timesteps=dit_steps_int,
-                normalize_lang=language,
-            )
+        # --- Feature cache path (priority over reference_wav) ---
+        prompt_cache = None
+        has_feature = (voice_feature is not None and voice_feature.filename) or (
+            voice_feature_url and voice_feature_url.strip()
+        )
+        if has_feature:
+            from safetensors.torch import load_file
+            if voice_feature is not None and voice_feature.filename:
+                feat_path = _save_upload(voice_feature)
+            else:
+                feat_path = await _download_to_local(voice_feature_url.strip())
+            loaded = load_file(str(feat_path), device="cpu")
+            if "ref_audio_feat" not in loaded:
+                raise HTTPException(400, "Invalid safetensors: missing 'ref_audio_feat'")
+            prompt_cache = {
+                "ref_audio_feat": loaded["ref_audio_feat"],
+                "mode": "reference",
+            }
+            if voice_feature_url and reference_wav is not None and reference_wav.filename:
+                logger.warning("Both voice_feature_url and reference_wav provided; using cached feature.")
+
+        if prompt_cache is not None:
+            # Generate using cached feature (skip WAV encode)
+            demo = get_demo()
+            model = demo.get_or_load_voxcpm()
+            control = actual_control.strip()
+            final_text = f"({control}){text}" if control else text
+
+            with _inference_lock:
+                wav_tensor, _, _ = model.tts_model.generate_with_prompt_cache(
+                    target_text=final_text,
+                    prompt_cache=prompt_cache,
+                    inference_timesteps=dit_steps_int,
+                    cfg_value=cfg_value_f,
+                )
+            wav_np = wav_tensor.squeeze(0).cpu().numpy()
+            sr = model.tts_model.sample_rate
+        else:
+            # Fall back to original WAV-based flow
+            ref_path: Optional[str] = None
+            if reference_wav is not None and reference_wav.filename:
+                ref_path = str(_save_upload(reference_wav))
+
+            with _inference_lock:
+                sr, wav_np = get_demo().generate_tts_audio(
+                    text_input=text,
+                    control_instruction=actual_control,
+                    reference_wav_path_input=ref_path,
+                    prompt_text=actual_prompt_text,
+                    cfg_value_input=cfg_value_f,
+                    do_normalize=_to_bool(do_normalize, default=False),
+                    denoise=_to_bool(denoise, default=False),
+                    inference_timesteps=dit_steps_int,
+                    normalize_lang=language,
+                )
 
         out_name = f"{uuid.uuid4().hex}.wav"
         out_path = OUTPUT_DIR / out_name
@@ -547,7 +591,8 @@ def tts_file(file_name: str):
     file_path = OUTPUT_DIR / file_name
     if not file_path.exists() or not file_path.is_file():
         raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(path=str(file_path), media_type="audio/wav", filename=file_name)
+    mime = "application/octet-stream" if file_name.endswith(".safetensors") else "audio/wav"
+    return FileResponse(path=str(file_path), media_type=mime, filename=file_name)
 
 
 @app.delete("/api/tts/file/{file_name}")
@@ -558,6 +603,93 @@ def delete_tts_file(file_name: str):
     file_path.unlink()
     logger.info(f"Deleted audio file: {file_name}")
     return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Voice Feature Encoding
+# ---------------------------------------------------------------------------
+
+def _detect_voxcpm_version(model) -> str:
+    cls = model.__class__.__name__
+    if cls == "VoxCPM2Model":
+        return "2"
+    return getattr(model.config, "voxcpm_version", "1")
+
+
+def _detect_vae_version(model) -> str:
+    return "v2" if getattr(model.audio_vae, "out_sample_rate", None) == 48000 else "v1"
+
+
+class EncodeVoiceResponse(BaseModel):
+    feature_url: str
+    feature_size: int
+    shape: List[int]
+    metadata: dict
+
+
+@app.post("/api/tts/encode-voice", response_model=EncodeVoiceResponse)
+async def encode_voice_endpoint(
+    reference_wav: UploadFile = File(...),
+    trim_silence_vad: str = Form("false"),
+):
+    try:
+        saved_wav = _save_upload(reference_wav)
+        demo = get_demo()
+        model = demo.get_or_load_voxcpm().tts_model
+
+        with _inference_lock:
+            feat = model._encode_wav(
+                str(saved_wav),
+                padding_mode="right",
+                trim_silence_vad=str(trim_silence_vad).lower() == "true",
+            )
+
+        from safetensors.torch import save_file
+        out_name = f"{uuid.uuid4().hex}.safetensors"
+        out_path = OUTPUT_DIR / out_name
+        metadata = {
+            "mode": "reference",
+            "voxcpm_version": _detect_voxcpm_version(model),
+            "vae_version": _detect_vae_version(model),
+            "encode_sr": str(model._encode_sample_rate),
+            "trim_vad": "true" if str(trim_silence_vad).lower() == "true" else "false",
+            "patch_size": str(model.patch_size),
+            "latent_dim": str(model.audio_vae.latent_dim),
+            "shape": ",".join(map(str, feat.shape)),
+        }
+        save_file({"ref_audio_feat": feat.contiguous()}, str(out_path), metadata=metadata)
+
+        return EncodeVoiceResponse(
+            feature_url=f"/api/tts/file/{out_name}",
+            feature_size=out_path.stat().st_size,
+            shape=list(feat.shape),
+            metadata=metadata,
+        )
+    except Exception as e:
+        logger.exception("Voice encoding failed")
+        raise HTTPException(status_code=500, detail=f"Voice encoding failed: {e}")
+
+
+async def _download_to_local(url: str) -> Path:
+    """Download a feature file to OUTPUT_DIR. Supports relative /api/tts/file/ URLs and http(s)."""
+    if url.startswith("/"):
+        # Relative URL — read from OUTPUT_DIR directly
+        name = url.rsplit("/", 1)[-1]
+        local_path = OUTPUT_DIR / name
+        if not local_path.exists():
+            raise HTTPException(400, f"Feature file not found locally: {name}")
+        return local_path
+
+    import httpx
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.get(url)
+        resp.raise_for_status()
+        if len(resp.content) > 50 * 1024 * 1024:
+            raise HTTPException(400, "Feature file too large (>50MB)")
+        out_name = f"{uuid.uuid4().hex}.safetensors"
+        out_path = OUTPUT_DIR / out_name
+        out_path.write_bytes(resp.content)
+        return out_path
 
 
 def float32_to_pcm16_bytes(audio_np: np.ndarray) -> bytes:

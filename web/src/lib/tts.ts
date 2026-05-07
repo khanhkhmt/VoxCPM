@@ -5,6 +5,7 @@ export interface GenerateTTSParams {
     text: string;
     controlInstruction: string;
     referenceWav?: File | string | null;
+    voiceFeatureUrl?: string | null;
     usePromptText: boolean;
     promptText: string;
     cfgValue: number;
@@ -37,7 +38,9 @@ export async function generateSpeech(params: GenerateTTSParams): Promise<TTSResu
         form.append("dit_steps", String(safeDit));
         form.append("language", params.language || "auto");
 
-        if (params.referenceWav instanceof File) {
+        if (params.voiceFeatureUrl) {
+            form.append("voice_feature_url", params.voiceFeatureUrl);
+        } else if (params.referenceWav instanceof File) {
             form.append("reference_wav", params.referenceWav);
         }
 

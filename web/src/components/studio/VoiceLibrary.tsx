@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   Upload, Mic, Play, Pause, Trash2, Download, Edit3, Check, X,
-  Loader2, AlertTriangle, ChevronLeft, ChevronRight, FileAudio, Copy,
+  Loader2, AlertTriangle, ChevronLeft, ChevronRight, FileAudio, Copy, Zap,
 } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
+import { useVoiceSelection } from "@/lib/stores/voice-selection";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -18,6 +20,9 @@ interface VoiceProfile {
   fileSize: number;
   mimeType: string;
   description: string;
+  featureUrl: string | null;
+  voxcpmVersion: string | null;
+  vaeVersion: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -33,6 +38,9 @@ interface PaginatedResponse {
 // Component
 // ---------------------------------------------------------------------------
 export default function VoiceLibrary() {
+  const router = useRouter();
+  const setSelected = useVoiceSelection((s) => s.setSelected);
+  const selectedVoice = useVoiceSelection((s) => s.selected);
   const [data, setData] = useState<PaginatedResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -130,6 +138,18 @@ export default function VoiceLibrary() {
     setPlayingId(item.id);
   };
 
+  // ---- Use voice in Studio ----
+  const handleUseVoice = (item: VoiceProfile) => {
+    setSelected({
+      id: item.id,
+      name: item.name,
+      audioUrl: item.audioUrl,
+      featureUrl: item.featureUrl ?? null,
+      voxcpmVersion: item.voxcpmVersion ?? null,
+    });
+    router.push("/studio");
+  };
+
   // ---- Delete ----
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this voice profile?")) return;
@@ -137,6 +157,7 @@ export default function VoiceLibrary() {
     try {
       const res = await fetch(`/api/voices/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
+      if (selectedVoice?.id === id) setSelected(null);
       await fetchVoices(page);
     } catch {
       alert("Failed to delete. Please try again.");
@@ -349,6 +370,18 @@ export default function VoiceLibrary() {
                     </>
                   ) : (
                     <>
+                      <button
+                        onClick={() => handleUseVoice(item)}
+                        className="px-2 py-1 rounded-md bg-vox-secondary/20 hover:bg-vox-secondary/30 text-xs flex items-center gap-1 text-vox-secondary transition-colors"
+                        title="Use this voice in Studio"
+                      >
+                        <Mic size={12} /> Use
+                      </button>
+                      {item.featureUrl && (
+                        <span className="text-amber-400" title="Feature cached">
+                          <Zap size={12} />
+                        </span>
+                      )}
                       <button
                         onClick={() => togglePlay(item)}
                         className={`p-1.5 rounded-lg transition-colors ${

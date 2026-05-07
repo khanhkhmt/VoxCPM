@@ -5,12 +5,21 @@ import { generateSpeech } from "@/lib/tts";
 import { useAuth } from "@/lib/auth";
 import { GlassCard } from "@/components/GlassCard";
 import { StreamingTTSPanel } from "@/components/studio/StreamingTTSPanel";
+import { useVoiceSelection } from "@/lib/stores/voice-selection";
 import {
     SlidersHorizontal, Type, Play, Mic, Waves, Download,
     CheckCircle2, RotateCcw, History as HistoryIcon,
     Upload, X, FileAudio, ChevronDown, ChevronUp,
-    Lightbulb, AlertTriangle, Loader2, Trash2,
+    Lightbulb, AlertTriangle, Loader2, Trash2, Zap,
 } from "lucide-react";
+
+interface LibraryVoice {
+    id: string;
+    name: string;
+    audioUrl: string;
+    featureUrl: string | null;
+    voxcpmVersion: string | null;
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -49,6 +58,9 @@ const EXAMPLES = [
 // ---------------------------------------------------------------------------
 export default function Workspace() {
     const { user } = useAuth();
+    const selectedLibraryVoice = useVoiceSelection((s) => s.selected);
+    const setSelectedVoice = useVoiceSelection((s) => s.setSelected);
+    const clearLibraryVoice = useCallback(() => setSelectedVoice(null), [setSelectedVoice]);
 
     // localStorage key riêng cho từng tài khoản
     const historyKey = user ? `voxora_history_${user.id}` : null;
@@ -83,6 +95,20 @@ export default function Workspace() {
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [showExamples, setShowExamples] = useState(false);
 
+    // ---- Voice Library State ----
+    const [libraryVoices, setLibraryVoices] = useState<LibraryVoice[]>([]);
+    const [saveToLibrary, setSaveToLibrary] = useState(false);
+
+    // Fetch voice library on mount
+    useEffect(() => {
+        fetch("/api/voices?limit=50")
+            .then((r) => r.json())
+            .then((j) => {
+                if (j.data?.items) setLibraryVoices(j.data.items);
+            })
+            .catch(() => {});
+    }, []);
+
     // Load history khi user thay đổi (đăng nhập/đăng xuất/đổi tài khoản)
     useEffect(() => {
         if (!historyKey) {
@@ -101,23 +127,25 @@ export default function Workspace() {
     const handleFileSelect = useCallback((file: File) => {
         setRefAudioFile(file);
         setRefAudioPreview(URL.createObjectURL(file));
+        clearLibraryVoice();
 
-        // --- 🆕 Auto-save to Voice Library (fire-and-forget) ---
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("name", file.name.replace(/\.[^.]+$/, ""));
-        formData.append("description", "Auto-saved from Studio");
-        fetch("/api/voices", { method: "POST", body: formData })
-            .then(async (res) => {
-                if (res.ok) {
-                    const json = await res.json();
-                    if (json.data?.id) setActiveVoiceProfileId(json.data.id);
-                    console.log("[Voice Library] Auto-saved:", file.name);
-                }
-                else console.warn("[Voice Library] Save failed:", await res.text());
-            })
-            .catch(() => {});
-    }, []);
+        if (saveToLibrary) {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("name", file.name.replace(/\.[^.]+$/, ""));
+            formData.append("description", "Saved from Studio");
+            fetch("/api/voices", { method: "POST", body: formData })
+                .then(async (res) => {
+                    if (res.ok) {
+                        const json = await res.json();
+                        if (json.data?.id) setActiveVoiceProfileId(json.data.id);
+                        console.log("[Voice Library] Saved:", file.name);
+                    }
+                    else console.warn("[Voice Library] Save failed:", await res.text());
+                })
+                .catch(() => {});
+        }
+    }, [saveToLibrary, clearLibraryVoice]);
 
     const handleFileDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -153,7 +181,8 @@ export default function Workspace() {
             const result = await generateSpeech({
                 text,
                 controlInstruction: ultimateCloning ? "" : controlInstruction,
-                referenceWav: refAudioFile,
+                voiceFeatureUrl: selectedLibraryVoice?.featureUrl ?? null,
+                referenceWav: selectedLibraryVoice ? null : refAudioFile,
                 usePromptText: ultimateCloning,
                 promptText: ultimateCloning ? promptText : "",
                 cfgValue,
@@ -289,7 +318,68 @@ export default function Workspace() {
                             <span className="text-xs text-vox-text-dim ml-1">(optional — for voice cloning)</span>
                         </label>
 
-                        {refAudioFile ? (
+                        {/* Voice Library Selector */}
+                        {libraryVoices.length > 0 && (
+                            <div className="mb-3">
+                                <label className="text-xs text-vox-text-dim mb-1 block">Pick from Voice Library</label>
+                                <select
+                                    value={selectedLibraryVoice?.id ?? ""}
+                                    onChange={(e) => {
+                                        const v = libraryVoices.find((x) => x.id === e.target.value);
+                                        if (v) {
+                                            setSelectedVoice({
+                                                id: v.id,
+                                                name: v.name,
+                                                audioUrl: v.audioUrl,
+                                                featureUrl: v.featureUrl ?? null,
+                                                voxcpmVersion: v.voxcpmVersion ?? null,
+                                            });
+                                            setRefAudioFile(null);
+                                            setRefAudioPreview(null);
+                                        } else {
+                                            clearLibraryVoice();
+                                        }
+                                    }}
+                                    className="w-full bg-vox-surface-lowest border border-vox-outline/30 rounded-xl px-3 py-2 text-sm text-vox-text outline-none focus:border-vox-primary transition-colors"
+                                >
+                                    <option value="">— None —</option>
+                                    {libraryVoices.map((v) => (
+                                        <option key={v.id} value={v.id}>
+                                            {v.name} {v.featureUrl ? "\u26A1" : ""}
+                                        </option>
+                                    ))}
+                                </select>
+                                <p className="text-xs text-vox-text-dim mt-1">
+                                    <Zap size={10} className="inline text-amber-400" /> = has feature cache (faster cloning)
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Selected Library Voice Display */}
+                        {selectedLibraryVoice ? (
+                            <div className="flex items-center gap-3 bg-vox-surface-lowest border border-vox-primary/30 rounded-xl p-3">
+                                <div className="w-10 h-10 rounded-lg bg-vox-primary/10 flex items-center justify-center shrink-0">
+                                    <Mic size={20} className="text-vox-primary" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm text-vox-text font-medium truncate">
+                                        Using: {selectedLibraryVoice.name}
+                                    </p>
+                                    {selectedLibraryVoice.featureUrl && (
+                                        <p className="text-xs text-amber-400 flex items-center gap-1">
+                                            <Zap size={10} /> Feature cached
+                                        </p>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={clearLibraryVoice}
+                                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-vox-text-dim hover:text-red-400 transition-colors"
+                                    title="Clear selection"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+                        ) : refAudioFile ? (
                             <div className="flex items-center gap-3 bg-vox-surface-lowest border border-vox-outline/20 rounded-xl p-3">
                                 <div className="w-10 h-10 rounded-lg bg-vox-primary/10 flex items-center justify-center shrink-0">
                                     <FileAudio size={20} className="text-vox-primary" />
@@ -335,8 +425,21 @@ export default function Workspace() {
                             }}
                         />
 
+                        {/* Save to Voice Library Toggle */}
+                        {!selectedLibraryVoice && (
+                            <label className="flex items-center gap-2 text-xs mt-2 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={saveToLibrary}
+                                    onChange={(e) => setSaveToLibrary(e.target.checked)}
+                                    className="rounded border-vox-outline"
+                                />
+                                <span className="text-vox-text-dim">Save uploaded audio to Voice Library</span>
+                            </label>
+                        )}
+
                         {/* --- Ultimate Cloning Toggle --- */}
-                        {refAudioFile && (
+                        {(refAudioFile || selectedLibraryVoice) && (
                             <div className="mt-4 space-y-3">
                                 <div className="flex items-center justify-between p-3 bg-vox-surface rounded-xl border border-vox-outline/10">
                                     <div>

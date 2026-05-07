@@ -542,6 +542,14 @@ async def generate(
             control = actual_control.strip()
             final_text = f"({control}){text}" if control else text
 
+            # Apply text normalization (same as WAV-based path)
+            if _to_bool(do_normalize, default=False):
+                if model.text_normalizer is None:
+                    from voxcpm.utils.text_normalize import TextNormalizer
+                    model.text_normalizer = TextNormalizer()
+                norm_lang = language if language != "auto" else None
+                final_text = model.text_normalizer.normalize(final_text, lang=norm_lang)
+
             with _inference_lock:
                 wav_tensor, _, _ = model.tts_model.generate_with_prompt_cache(
                     target_text=final_text,
@@ -671,25 +679,16 @@ async def encode_voice_endpoint(
 
 
 async def _download_to_local(url: str) -> Path:
-    """Download a feature file to OUTPUT_DIR. Supports relative /api/tts/file/ URLs and http(s)."""
-    if url.startswith("/"):
-        # Relative URL — read from OUTPUT_DIR directly
-        name = url.rsplit("/", 1)[-1]
-        local_path = OUTPUT_DIR / name
-        if not local_path.exists():
-            raise HTTPException(400, f"Feature file not found locally: {name}")
-        return local_path
-
-    import httpx
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.get(url)
-        resp.raise_for_status()
-        if len(resp.content) > 50 * 1024 * 1024:
-            raise HTTPException(400, "Feature file too large (>50MB)")
-        out_name = f"{uuid.uuid4().hex}.safetensors"
-        out_path = OUTPUT_DIR / out_name
-        out_path.write_bytes(resp.content)
-        return out_path
+    """Resolve a feature file path from OUTPUT_DIR. Only relative /api/tts/file/ URLs are accepted."""
+    if not url.startswith("/"):
+        raise HTTPException(400, "Only relative feature URLs are allowed (must start with '/').")
+    name = url.rsplit("/", 1)[-1]
+    if "/" in name or ".." in name:
+        raise HTTPException(400, "Invalid feature file name.")
+    local_path = OUTPUT_DIR / name
+    if not local_path.exists():
+        raise HTTPException(400, f"Feature file not found locally: {name}")
+    return local_path
 
 
 def float32_to_pcm16_bytes(audio_np: np.ndarray) -> bytes:
@@ -775,6 +774,22 @@ def split_text_into_segments(text: str, min_words: int = 4, max_words: int = 25)
 @app.websocket("/ws/tts/stream")
 async def streaming_tts(websocket: WebSocket):
     await websocket.accept()
+
+    # Authenticate via ?token= query parameter
+    token = websocket.query_params.get("token")
+    if not token or not TTS_INTERNAL_SECRET:
+        await websocket.send_json({"type": "error", "message": "Unauthorized: Missing token"})
+        await websocket.close(code=4401)
+        return
+
+    try:
+        payload = jwt.decode(token, TTS_INTERNAL_SECRET, algorithms=["HS256"])
+        max_length = payload.get("max_length", 10000)
+    except jwt.PyJWTError as e:
+        await websocket.send_json({"type": "error", "message": f"Unauthorized: Invalid token ({str(e)})"})
+        await websocket.close(code=4401)
+        return
+
     thread = None
     temp_wav_path = None
     cancel_event = threading.Event()
@@ -788,13 +803,26 @@ async def streaming_tts(websocket: WebSocket):
             return
 
         text = data.get("text", "").strip()
+        if len(text) > max_length:
+            await websocket.send_json({"type": "error", "message": f"Text length exceeds maximum allowed ({max_length} characters)."})
+            await websocket.close()
+            return
+
         control_instruction = data.get("control_instruction", "")
         use_prompt_text = data.get("use_prompt_text", False)
         prompt_text = data.get("prompt_text", "")
         cfg_value = float(data.get("cfg_value", 2.0))
+        if not (0.1 <= cfg_value <= 10.0):
+            await websocket.send_json({"type": "error", "message": "cfg_value must be between 0.1 and 10.0."})
+            await websocket.close()
+            return
         do_normalize = data.get("do_normalize", True)
         denoise = data.get("denoise", True)
         dit_steps = int(data.get("dit_steps", 10))
+        if not (1 <= dit_steps <= 50):
+            await websocket.send_json({"type": "error", "message": "dit_steps must be between 1 and 50."})
+            await websocket.close()
+            return
         language = data.get("language", "auto")
         reference_wav_base64 = data.get("reference_wav_base64", None)
 
@@ -926,7 +954,7 @@ async def streaming_tts(websocket: WebSocket):
     finally:
         cancel_event.set()
         if thread is not None:
-            thread.join(timeout=30)
+            await asyncio.to_thread(thread.join, 30)
         if temp_wav_path and os.path.exists(temp_wav_path):
             try:
                 os.unlink(temp_wav_path)

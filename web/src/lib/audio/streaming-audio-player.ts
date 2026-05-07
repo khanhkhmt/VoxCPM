@@ -37,6 +37,10 @@ export class StreamingAudioPlayer {
   private isFirstScheduled: boolean = true;
   private prevGainNode: GainNode | null = null;
 
+  // New properties for accumulating tiny chunks
+  private pendingFloat32: Float32Array[] = [];
+  private pendingFloat32Length: number = 0;
+
   constructor(options?: StreamingAudioPlayerOptions) {
     this.options = {
       preBufferSeconds: 0.8,
@@ -90,15 +94,46 @@ export class StreamingAudioPlayer {
       float32Array[i] = int16Array[i] / 32768.0;
     }
 
+    // Accumulate Float32Arrays instead of scheduling immediately
+    this.pendingFloat32.push(float32Array);
+    this.pendingFloat32Length += float32Array.length;
+
+    // Flush if we have at least 0.1 seconds of audio accumulated
+    const minSamples = this.metadata.sampleRate * 0.1;
+    if (this.pendingFloat32Length >= minSamples) {
+      this.flushPendingFloat32();
+    }
+  }
+
+  public flush(): void {
+    if (this.pendingFloat32Length > 0) {
+      this.flushPendingFloat32();
+    }
+  }
+
+  private flushPendingFloat32(): void {
+    if (!this.audioContext || !this.metadata || this.pendingFloat32Length === 0) return;
+
+    // Concatenate accumulated float32 arrays
+    const combined = new Float32Array(this.pendingFloat32Length);
+    let offset = 0;
+    for (const arr of this.pendingFloat32) {
+      combined.set(arr, offset);
+      offset += arr.length;
+    }
+    
+    this.pendingFloat32 = [];
+    this.pendingFloat32Length = 0;
+
     // Create AudioBuffer
     const audioBuffer = this.audioContext.createBuffer(
       this.metadata.channels,
-      float32Array.length,
+      combined.length,
       this.metadata.sampleRate
     );
 
     // Copy to channel 0 (mono)
-    audioBuffer.copyToChannel(float32Array, 0);
+    audioBuffer.copyToChannel(combined, 0);
 
     if (!this.hasStartedPlayback) {
       this.pendingBuffers.push(audioBuffer);
@@ -116,7 +151,10 @@ export class StreamingAudioPlayer {
     } else {
       const currentTime = this.audioContext.currentTime;
       if (this.nextStartTime < currentTime) {
-        this.nextStartTime = currentTime + (this.options.preBufferSeconds || 0.8);
+        // Buffer underrun! The network/backend couldn't keep up.
+        // Previously, this added preBufferSeconds (0.8s) of silence, causing unnatural word splitting.
+        // Now, we schedule it to play almost immediately.
+        this.nextStartTime = currentTime + 0.02;
       }
       this.scheduleBuffer(audioBuffer);
     }
@@ -234,5 +272,7 @@ export class StreamingAudioPlayer {
     this.hasStartedPlayback = false;
     this.isFirstScheduled = true;
     this.prevGainNode = null;
+    this.pendingFloat32 = [];
+    this.pendingFloat32Length = 0;
   }
 }

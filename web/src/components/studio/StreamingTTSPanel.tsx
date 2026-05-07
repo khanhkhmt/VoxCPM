@@ -143,7 +143,7 @@ export function StreamingTTSPanel({
     playerRef.current = new StreamingAudioPlayer({
       preBufferSeconds: 0.8,
       minBufferedSecondsBeforePlay: 0.8,
-      overlapSeconds: strategy === "fast" ? 0.5 : 0,
+      overlapSeconds: 0,
     });
 
     // Handle reference audio
@@ -220,6 +220,9 @@ export function StreamingTTSPanel({
       },
       onDone: (payload: TTSStreamDonePayload) => {
         setStatus("done");
+        if (playerRef.current) {
+          playerRef.current.flush();
+        }
         // Use backend-measured TTFB if available (more accurate than client-side)
         if (payload.ttfb_ms && payload.ttfb_ms > 0) {
           setTtfbMs(payload.ttfb_ms);

@@ -173,7 +173,9 @@ export default function Workspace() {
                     referenceWav = null;
                 } else if (selectedLibraryVoice.audioUrl) {
                     try {
-                        const audioRes = await fetch(selectedLibraryVoice.audioUrl);
+                        // Use the server-side proxy to avoid CORS issues with R2
+                        const proxyUrl = `/api/voices/${selectedLibraryVoice.id}/audio`;
+                        const audioRes = await fetch(proxyUrl);
                         if (!audioRes.ok) {
                             throw new Error(`HTTP ${audioRes.status}`);
                         }

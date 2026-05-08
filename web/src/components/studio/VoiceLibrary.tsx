@@ -10,6 +10,57 @@ import { GlassCard } from "@/components/GlassCard";
 import { useVoiceSelection } from "@/lib/stores/voice-selection";
 
 // ---------------------------------------------------------------------------
+// WAV encoder — turns raw PCM Float32 channel data into a WAV ArrayBuffer
+// ---------------------------------------------------------------------------
+function encodeWav(
+  channelData: Float32Array[],
+  sampleRate: number,
+  numChannels: number,
+): ArrayBuffer {
+  const samples = channelData[0].length;
+  const bytesPerSample = 2; // 16-bit PCM
+  const dataSize = samples * numChannels * bytesPerSample;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+
+  // RIFF header
+  writeStr(view, 0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(view, 8, "WAVE");
+
+  // fmt sub-chunk
+  writeStr(view, 12, "fmt ");
+  view.setUint32(16, 16, true); // sub-chunk size
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * bytesPerSample, true);
+  view.setUint16(32, numChannels * bytesPerSample, true);
+  view.setUint16(34, bytesPerSample * 8, true);
+
+  // data sub-chunk
+  writeStr(view, 36, "data");
+  view.setUint32(40, dataSize, true);
+
+  // Interleave channels and write 16-bit PCM samples
+  let offset = 44;
+  for (let i = 0; i < samples; i++) {
+    for (let ch = 0; ch < numChannels; ch++) {
+      const s = Math.max(-1, Math.min(1, channelData[ch][i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      offset += 2;
+    }
+  }
+  return buffer;
+}
+
+function writeStr(view: DataView, offset: number, str: string) {
+  for (let i = 0; i < str.length; i++) {
+    view.setUint8(offset + i, str.charCodeAt(i));
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 interface VoiceProfile {
@@ -77,6 +128,37 @@ export default function VoiceLibrary() {
     fetchVoices(page);
   }, [page, fetchVoices]);
 
+  // ---- Trim audio to max duration using Web Audio API ----
+  const MAX_AUDIO_SECONDS = 7;
+
+  const trimAudioToWav = useCallback(async (file: File): Promise<File> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const audioCtx = new AudioContext();
+    const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+    await audioCtx.close();
+
+    const duration = decoded.duration;
+    if (duration <= MAX_AUDIO_SECONDS) {
+      return file; // No trimming needed
+    }
+
+    // Trim to MAX_AUDIO_SECONDS
+    const sampleRate = decoded.sampleRate;
+    const maxSamples = Math.floor(MAX_AUDIO_SECONDS * sampleRate);
+    const channels = decoded.numberOfChannels;
+
+    // Extract channel data (trimmed)
+    const channelData: Float32Array[] = [];
+    for (let ch = 0; ch < channels; ch++) {
+      channelData.push(decoded.getChannelData(ch).slice(0, maxSamples));
+    }
+
+    // Encode as WAV
+    const wavBuffer = encodeWav(channelData, sampleRate, channels);
+    const trimmedName = file.name.replace(/\.[^.]+$/, "") + "_trimmed.wav";
+    return new File([wavBuffer], trimmedName, { type: "audio/wav" });
+  }, []);
+
   // ---- Upload voice ----
   const handleUpload = async (file: File) => {
     if (!file.type.startsWith("audio/")) {
@@ -92,10 +174,14 @@ export default function VoiceLibrary() {
     if (!name) return;
 
     setUploading(true);
-    setUploadProgress("Uploading…");
+    setUploadProgress("Processing audio…");
     try {
+      // Trim audio to max 7 seconds
+      const trimmedFile = await trimAudioToWav(file);
+
+      setUploadProgress("Uploading…");
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", trimmedFile);
       formData.append("name", name);
       formData.append("description", "");
 
@@ -268,7 +354,7 @@ export default function VoiceLibrary() {
                 Drop an audio file here or <span className="text-vox-secondary underline underline-offset-2">browse</span>
               </p>
               <p className="text-xs text-vox-text-dim mt-1">
-                WAV, MP3, FLAC — max 10MB
+                WAV, MP3, FLAC — max 10MB · auto-trimmed to 7s
               </p>
             </>
           )}

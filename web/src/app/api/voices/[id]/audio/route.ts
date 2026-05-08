@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAuth, jsonError } from "@/lib/api-utils";
 
 // ---------------------------------------------------------------------------
-// GET /api/voices/:id/audio — Stream/redirect audio from R2
+// GET /api/voices/:id/audio — Proxy audio from R2 (avoids CORS issues)
 // ---------------------------------------------------------------------------
 export async function GET(
   _request: NextRequest,
@@ -26,8 +26,22 @@ export async function GET(
       return jsonError("FORBIDDEN", "You don't own this voice profile", 403);
     }
 
-    // Redirect to R2 public URL for audio playback
-    return NextResponse.redirect(voice.audioUrl);
+    // Proxy the audio bytes instead of redirecting to avoid CORS issues
+    const audioRes = await fetch(voice.audioUrl);
+    if (!audioRes.ok) {
+      return jsonError("UPSTREAM_ERROR", `Failed to fetch audio: ${audioRes.status}`, 502);
+    }
+
+    const contentType = audioRes.headers.get("content-type") || "audio/wav";
+    const audioBody = audioRes.body;
+
+    return new NextResponse(audioBody, {
+      status: 200,
+      headers: {
+        "Content-Type": contentType,
+        "Cache-Control": "private, max-age=3600",
+      },
+    });
   } catch (error) {
     if (error instanceof Response) return error;
     console.error("[voices] audio GET error:", error);

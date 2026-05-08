@@ -23,6 +23,14 @@ function resolveBackendAudioUrl(audioUrl: string): string {
     return `${BACKEND_ORIGIN}${audioUrl}`;
   }
   if (audioUrl.startsWith("http")) {
+    // If it's a URL pointing at our own public domain, extract the path and
+    // route through localhost to avoid self-signed certificate errors.
+    try {
+      const parsed = new URL(audioUrl);
+      if (parsed.pathname.startsWith("/api/tts/")) {
+        return `${BACKEND_ORIGIN}${parsed.pathname}`;
+      }
+    } catch { /* not a valid URL, fall through */ }
     return audioUrl;
   }
   // Fallback: treat as relative path on backend

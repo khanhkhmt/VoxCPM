@@ -89,28 +89,34 @@ model VoiceProfile {
 
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   generations TTSGeneration[]
+  apiKeys     ApiKey[]
 
   @@unique([userId, fingerprint])
   @@index([userId, createdAt])
 }
 
 model ApiKey {
-  id          String    @id @default(cuid())
-  userId      String
-  name        String
-  prefix      String    // "vox_sk_test" or "vox_sk_live"
-  keyHash     String    @unique // SHA-256
-  lastFour    String
-  scopes      String
-  environment String    // "test" or "live"
-  isActive    Boolean   @default(true)
-  expiresAt   DateTime?
-  revokedAt   DateTime?
-  lastUsedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  userId         String
+  voiceProfileId String
+  name           String
+  prefix         String    // "vc_sk_live"
+  keyHash        String    @unique // SHA-256
+  lastFour       String
+  scopes         String
+  environment    String    @default("live") // "live"
+  isActive       Boolean   @default(true)
+  usageCount     Int       @default(0)
+  rateLimit      Int       @default(100) // requests per minute
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  lastUsedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voiceProfile VoiceProfile @relation(fields: [voiceProfileId], references: [id], onDelete: Cascade)
 
+  @@unique([voiceProfileId])
   @@index([userId])
 }

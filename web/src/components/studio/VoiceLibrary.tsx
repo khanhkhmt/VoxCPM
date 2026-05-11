@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Upload, Mic, Play, Pause, Trash2, Download, Edit3, Check, X,
-  Loader2, AlertTriangle, ChevronLeft, ChevronRight, FileAudio, Copy, Zap,
+  Loader2, AlertTriangle, ChevronLeft, ChevronRight, FileAudio, Copy, Zap, Key,
 } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { useVoiceSelection } from "@/lib/stores/voice-selection";
@@ -105,6 +105,9 @@ export default function VoiceLibrary() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [generatingKeyForId, setGeneratingKeyForId] = useState<string | null>(null);
+  const [generatedKey, setGeneratedKey] = useState<{ voiceId: string; plainKey: string } | null>(null);
+  const [copiedGeneratedKey, setCopiedGeneratedKey] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const limit = 12;
 
@@ -299,6 +302,37 @@ export default function VoiceLibrary() {
     });
   };
 
+  // ---- Generate API Key for voice ----
+  const handleGenerateApiKey = async (voiceId: string) => {
+    setGeneratingKeyForId(voiceId);
+    try {
+      const res = await fetch("/api/keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voiceProfileId: voiceId }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setGeneratedKey({ voiceId, plainKey: data.data.plainKey });
+      } else {
+        alert(data.error?.message || "Failed to generate API key");
+      }
+    } catch (err) {
+      console.error("Failed to generate API key", err);
+      alert("Failed to generate API key");
+    } finally {
+      setGeneratingKeyForId(null);
+    }
+  };
+
+  const copyGeneratedKey = () => {
+    if (generatedKey) {
+      navigator.clipboard.writeText(generatedKey.plainKey);
+      setCopiedGeneratedKey(true);
+      setTimeout(() => setCopiedGeneratedKey(false), 2000);
+    }
+  };
+
   // ========================== RENDER ==========================
 
   if (loading && !data) {
@@ -371,6 +405,36 @@ export default function VoiceLibrary() {
           }}
         />
       </GlassCard>
+
+      {/* Generated API Key Alert */}
+      {generatedKey && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={20} />
+            <div className="flex-1">
+              <h3 className="text-amber-500 font-bold text-sm mb-1">Save your API key</h3>
+              <p className="text-vox-text-dim text-sm mb-3">
+                For security, we only show this key once. Copy and store it safely.
+              </p>
+              <div className="flex items-center gap-2 bg-vox-surface-low border border-vox-outline/20 p-3 rounded-lg">
+                <code className="flex-1 font-mono text-sm text-vox-heading break-all">{generatedKey.plainKey}</code>
+                <button
+                  onClick={copyGeneratedKey}
+                  className="p-2 hover:bg-vox-surface rounded-md transition-colors text-vox-text-dim hover:text-vox-primary"
+                >
+                  {copiedGeneratedKey ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={() => setGeneratedKey(null)}
+              className="text-vox-text-dim hover:text-vox-heading transition-colors text-xl leading-none"
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Voice count */}
       {data && data.total > 0 && (
@@ -456,6 +520,19 @@ export default function VoiceLibrary() {
                     </>
                   ) : (
                     <>
+                      <button
+                        onClick={() => handleGenerateApiKey(item.id)}
+                        disabled={generatingKeyForId === item.id}
+                        className="px-2 py-1 rounded-md bg-vox-primary/20 hover:bg-vox-primary/30 text-xs flex items-center gap-1 text-vox-primary transition-colors disabled:opacity-50"
+                        title="Generate API Key"
+                      >
+                        {generatingKeyForId === item.id ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          <Key size={12} />
+                        )}
+                        API Key
+                      </button>
                       <button
                         onClick={() => handleUseVoice(item)}
                         className="px-2 py-1 rounded-md bg-vox-secondary/20 hover:bg-vox-secondary/30 text-xs flex items-center gap-1 text-vox-secondary transition-colors"

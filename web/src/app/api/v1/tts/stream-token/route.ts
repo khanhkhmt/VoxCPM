@@ -5,7 +5,7 @@ import { SignJWT } from "jose";
 
 export async function POST(req: NextRequest) {
     try {
-        const { user } = await requireApiKey(req, "tts.stream");
+        const { user, voiceProfile } = await requireApiKey(req, "tts.stream");
         
         const body = await req.json().catch(() => ({}));
         const text_length = Number(body.text_length);
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
         // Issue short-lived JWT token (60 seconds) with max_length claim
         const secretKey = new TextEncoder().encode(internalSecret);
-        const token = await new SignJWT({ sub: user.id, max_length: text_length })
+        const token = await new SignJWT({ sub: user.id, voice_id: voiceProfile.id, max_length: text_length })
             .setProtectedHeader({ alg: "HS256" })
             .setIssuedAt()
             .setExpirationTime("60s")
@@ -56,9 +56,10 @@ export async function POST(req: NextRequest) {
             expires_in: 60
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof NextResponse) return error;
         console.error("V1 Stream Token Error:", error);
-        return jsonError("INTERNAL_ERROR", error.message, 500);
+        const message = error instanceof Error ? error.message : "Unknown error";
+        return jsonError("INTERNAL_ERROR", message, 500);
     }
 }

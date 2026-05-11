@@ -47,13 +47,13 @@ export async function requireAdmin() {
 }
 
 // ---------------------------------------------------------------------------
-// External API helper — returns apiKey and user or throws response
+// External API helper — returns apiKey, user, and voiceProfile or throws response
 // ---------------------------------------------------------------------------
 export async function requireApiKey(req: NextRequest, requiredScope: string) {
   const authHeader = req.headers.get("authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     throw NextResponse.json(
-      { ok: false, error: { code: "UNAUTHORIZED", message: "Missing or invalid Authorization Bearer token" } },
+      { ok: false, error: { code: "INVALID_API_KEY", message: "Missing or invalid Authorization Bearer token" } },
       { status: 401 },
     );
   }
@@ -63,52 +63,66 @@ export async function requireApiKey(req: NextRequest, requiredScope: string) {
 
   const apiKey = await prisma.apiKey.findUnique({
     where: { keyHash },
-    include: { user: true },
+    include: {
+      user: true,
+      voiceProfile: true,
+    },
   });
 
   if (!apiKey) {
     throw NextResponse.json(
-      { ok: false, error: { code: "UNAUTHORIZED", message: "Invalid API Key" } },
+      { ok: false, error: { code: "INVALID_API_KEY", message: "API key is invalid" } },
       { status: 401 },
     );
   }
 
   if (!apiKey.isActive) {
     throw NextResponse.json(
-      { ok: false, error: { code: "FORBIDDEN", message: "API Key is inactive" } },
+      { ok: false, error: { code: "INVALID_API_KEY", message: "API Key is inactive" } },
       { status: 403 },
     );
   }
 
   if (apiKey.revokedAt) {
     throw NextResponse.json(
-      { ok: false, error: { code: "FORBIDDEN", message: "API Key has been revoked" } },
+      { ok: false, error: { code: "INVALID_API_KEY", message: "API Key has been revoked" } },
       { status: 403 },
     );
   }
 
   if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
     throw NextResponse.json(
-      { ok: false, error: { code: "FORBIDDEN", message: "API Key has expired" } },
+      { ok: false, error: { code: "INVALID_API_KEY", message: "API Key has expired" } },
       { status: 403 },
     );
   }
 
   if (!hasScope(apiKey.scopes, requiredScope)) {
     throw NextResponse.json(
-      { ok: false, error: { code: "FORBIDDEN", message: `Missing required scope: ${requiredScope}` } },
+      { ok: false, error: { code: "INVALID_API_KEY", message: `Missing required scope: ${requiredScope}` } },
       { status: 403 },
     );
   }
 
-  // Update lastUsedAt asynchronously
+  if (!apiKey.voiceProfile) {
+    throw NextResponse.json(
+      { ok: false, error: { code: "VOICE_NOT_FOUND", message: "Voice profile associated with this API key not found" } },
+      { status: 404 },
+    );
+  }
+
+  // Update lastUsedAt and increment usageCount asynchronously
   prisma.apiKey.update({
     where: { id: apiKey.id },
-    data: { lastUsedAt: new Date() },
-  }).catch((err) => console.error("Failed to update lastUsedAt:", err));
+    data: {
+      lastUsedAt: new Date(),
+      usageCount: { increment: 1 },
+    },
+  }).catch((err: unknown) => console.error("Failed to update lastUsedAt:", err));
 
   return {
     apiKey,
     user: apiKey.user,
+    voiceProfile: apiKey.voiceProfile,
   };
 }

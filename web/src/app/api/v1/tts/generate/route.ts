@@ -7,13 +7,17 @@ import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
     try {
-        const { user } = await requireApiKey(req, "tts.generate");
+        const { user, voiceProfile } = await requireApiKey(req, "tts.generate");
         
         const body = await req.json().catch(() => ({}));
         const text = body.text;
 
         if (!text || typeof text !== "string" || text.trim() === "") {
             return jsonError("BAD_REQUEST", "Missing or invalid 'text' parameter", 400);
+        }
+
+        if (text.length > 5000) {
+            return jsonError("TEXT_TOO_LONG", "Text exceeds maximum length of 5000 characters", 400);
         }
 
         const charsToDeduct = text.length;
@@ -33,8 +37,13 @@ export async function POST(req: NextRequest) {
         const backendUrl = "http://127.0.0.1:8808/api/tts";
         const generateUrl = backendUrl.replace(/\/$/, "") + "/generate";
 
+        const language = body.language || "auto";
+        const speed = body.speed ?? 1.0;
+        const format = body.format || "mp3";
+
         const form = new FormData();
         form.append("text", text);
+        form.append("voice_id", voiceProfile.id);
         form.append("control_instruction", body.control_instruction || "");
         form.append("use_prompt_text", body.use_prompt_text ? "true" : "false");
         form.append("prompt_text", body.prompt_text || "");
@@ -42,7 +51,9 @@ export async function POST(req: NextRequest) {
         form.append("do_normalize", body.do_normalize ? "true" : "false");
         form.append("denoise", body.denoise ? "true" : "false");
         form.append("dit_steps", String(body.dit_steps || 10));
-        form.append("language", body.language || "auto");
+        form.append("language", language);
+        form.append("speed", String(speed));
+        form.append("format", format);
 
         const res = await fetch(generateUrl, {
             method: "POST",
@@ -53,7 +64,6 @@ export async function POST(req: NextRequest) {
         });
 
         if (!res.ok) {
-            // MVP tradeoff: no refund on downstream failure
             const errorText = await res.text().catch(() => "Unknown backend error");
             return jsonError("BACKEND_ERROR", `TTS Generation failed: ${errorText}`, res.status);
         }
@@ -75,8 +85,10 @@ export async function POST(req: NextRequest) {
         const buffer = Buffer.from(arrayBuffer);
 
         // Upload to R2
-        const r2Key = `v1_tts/${user.id}/${crypto.randomUUID()}.wav`;
-        const { r2Url } = await uploadToR2(r2Key, buffer, "audio/wav");
+        const mimeType = format === "wav" ? "audio/wav" : "audio/mpeg";
+        const ext = format === "wav" ? "wav" : "mp3";
+        const r2Key = `v1_tts/${user.id}/${crypto.randomUUID()}.${ext}`;
+        const { r2Url } = await uploadToR2(r2Key, buffer, mimeType);
 
         // Save to History (TTSGeneration)
         const generation = await prisma.tTSGeneration.create({
@@ -86,27 +98,32 @@ export async function POST(req: NextRequest) {
                 controlInstruction: body.control_instruction || "",
                 audioUrl: r2Url,
                 audioR2Key: r2Key,
-                language: body.language || "auto",
+                language,
                 cfgValue: Number(body.cfg_value || 2.0),
                 ditSteps: Number(body.dit_steps || 10),
                 doNormalize: Boolean(body.do_normalize),
                 denoise: Boolean(body.denoise),
                 usePromptText: Boolean(body.use_prompt_text),
                 promptText: body.prompt_text || "",
+                voiceProfileId: voiceProfile.id,
             }
         });
 
-        // Return envelope { ok, data }
         return jsonOk({
-            id: generation.id,
+            success: true,
+            request_id: generation.id,
+            voice_id: voiceProfile.id,
             audio_url: r2Url,
             text,
+            duration: data.duration || null,
+            status: "completed",
             chars_deducted: charsToDeduct
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof NextResponse) return error;
         console.error("V1 TTS Generate Error:", error);
-        return jsonError("INTERNAL_ERROR", error.message, 500);
+        const message = error instanceof Error ? error.message : "Unknown error";
+        return jsonError("INTERNAL_ERROR", message, 500);
     }
 }

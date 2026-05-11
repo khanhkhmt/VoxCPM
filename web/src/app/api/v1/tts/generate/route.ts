@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
         // Quota check and deduct (Upfront charging)
         const success = await checkAndDeductQuota(user.id, charsToDeduct);
         if (!success) {
-            return jsonError("RATE_LIMIT_EXCEEDED", "Not enough quota remaining", 403);
+            return jsonError("QUOTA_EXCEEDED", "Not enough quota remaining", 403);
         }
 
         // Prepare request to FastAPI
@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
         form.append("dit_steps", String(body.dit_steps || 10));
         form.append("language", language);
         form.append("speed", String(speed));
+        form.append("format", format);
 
         const res = await fetch(generateUrl, {
             method: "POST",

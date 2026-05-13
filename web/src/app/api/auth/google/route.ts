@@ -5,6 +5,7 @@ import {
     GOOGLE_OAUTH_NEXT_COOKIE,
     GOOGLE_OAUTH_STATE_COOKIE,
     isGoogleOAuthConfigured,
+    resolveRequestOrigin,
     sanitizeNextPath,
 } from "@/lib/auth/google";
 
@@ -15,7 +16,7 @@ const STATE_COOKIE_MAX_AGE = 10 * 60; // 10 minutes
 
 export async function GET(request: NextRequest) {
     if (!isGoogleOAuthConfigured()) {
-        const url = new URL("/login", request.url);
+        const url = new URL("/login", resolveRequestOrigin(request));
         url.searchParams.set("error", "google_not_configured");
         return NextResponse.redirect(url);
     }

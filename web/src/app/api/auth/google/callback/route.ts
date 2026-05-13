@@ -8,6 +8,7 @@ import {
     GOOGLE_OAUTH_NEXT_COOKIE,
     GOOGLE_OAUTH_STATE_COOKIE,
     isGoogleOAuthConfigured,
+    resolveRequestOrigin,
     sanitizeNextPath,
 } from "@/lib/auth/google";
 
@@ -15,7 +16,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function loginErrorRedirect(request: NextRequest, code: string) {
-    const url = new URL("/login", request.url);
+    const url = new URL("/login", resolveRequestOrigin(request));
     url.searchParams.set("error", code);
     return NextResponse.redirect(url);
 }
@@ -88,5 +89,5 @@ export async function GET(request: NextRequest) {
     }
 
     const nextPath = sanitizeNextPath(storedNext);
-    return NextResponse.redirect(new URL(nextPath, request.url));
+    return NextResponse.redirect(new URL(nextPath, resolveRequestOrigin(request)));
 }

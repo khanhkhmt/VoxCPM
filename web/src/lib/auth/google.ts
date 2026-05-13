@@ -58,6 +58,41 @@ export function isGoogleOAuthConfigured(): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// Origin resolution for in-app redirects.
+//
+// Next.js's `request.url` reflects the host the server was bound to, which may
+// differ from the user-facing host (e.g. `next dev -H 0.0.0.0` makes
+// `request.url` use `0.0.0.0` even when the browser is on `localhost`).
+// Cookies set on `localhost` won't be sent with a redirect to `0.0.0.0`, so we
+// must redirect using the same origin the browser actually used.
+//
+// Priority: APP_URL env var → forwarded headers → Host header → request.url.
+// ---------------------------------------------------------------------------
+export function resolveRequestOrigin(request: Request): string {
+    const appUrl = process.env.APP_URL;
+    if (appUrl) {
+        try {
+            return new URL(appUrl).origin;
+        } catch {
+            // ignore malformed APP_URL
+        }
+    }
+    const headers = request.headers;
+    const forwardedHost = headers.get("x-forwarded-host");
+    const forwardedProto = headers.get("x-forwarded-proto");
+    const host = forwardedHost ?? headers.get("host");
+    if (host) {
+        const proto = forwardedProto ?? (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
+        return `${proto}://${host}`;
+    }
+    try {
+        return new URL(request.url).origin;
+    } catch {
+        return "http://localhost:3000";
+    }
+}
+
+// ---------------------------------------------------------------------------
 // State / random
 // ---------------------------------------------------------------------------
 export function generateOAuthState(): string {

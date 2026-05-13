@@ -9,6 +9,7 @@ import { registerSchema, type RegisterInput } from "@/lib/schemas/auth";
 import { useAuth } from "@/lib/auth";
 import { FormField, TextInput, PasswordInput, SubmitButton } from "@/components/auth/AuthForm";
 import CaptchaField from "@/components/auth/CaptchaField";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { AlertTriangle, UserPlus } from "lucide-react";
 import { generateId } from "@/lib/utils";
 
@@ -113,6 +114,15 @@ export default function RegisterPage() {
                         <p>{serverSuccess}</p>
                     </div>
                 )}
+
+                <div className="flex flex-col gap-3 mb-6">
+                    <GoogleSignInButton label="Sign up with Google" />
+                    <div className="flex items-center gap-3 text-xs text-vox-text-dim">
+                        <div className="flex-1 h-px bg-vox-outline/30" />
+                        <span>or create with username</span>
+                        <div className="flex-1 h-px bg-vox-outline/30" />
+                    </div>
+                </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
                     <FormField label="Name" error={errors.name?.message}>

@@ -11,16 +11,20 @@ import { loginSchema, type LoginInput } from "@/lib/schemas/auth";
 import { useAuth } from "@/lib/auth";
 import { FormField, TextInput, PasswordInput, SubmitButton } from "@/components/auth/AuthForm";
 import CaptchaField from "@/components/auth/CaptchaField";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { AlertTriangle, LogIn } from "lucide-react";
 import { generateId } from "@/lib/utils";
+import { getGoogleAuthErrorMessage } from "@/lib/auth/google-errors";
 
 function LoginForm() {
     const { login } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
     const next = searchParams.get("next") ?? "/studio";
+    const oauthErrorCode = searchParams.get("error");
+    const oauthErrorMessage = getGoogleAuthErrorMessage(oauthErrorCode);
 
-    const [serverError, setServerError] = useState<string | null>(null);
+    const [serverError, setServerError] = useState<string | null>(oauthErrorMessage);
     const [captchaId, setCaptchaId] = useState("");
 
     // Generate captchaId only on client to avoid SSR/client hydration mismatch
@@ -90,6 +94,15 @@ function LoginForm() {
                         <p>{serverError}</p>
                     </div>
                 )}
+
+                <div className="flex flex-col gap-3 mb-6">
+                    <GoogleSignInButton next={next === "/studio" ? null : next} />
+                    <div className="flex items-center gap-3 text-xs text-vox-text-dim">
+                        <div className="flex-1 h-px bg-vox-outline/30" />
+                        <span>or sign in with username</span>
+                        <div className="flex-1 h-px bg-vox-outline/30" />
+                    </div>
+                </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
                     <FormField label="Username" error={errors.username?.message}>

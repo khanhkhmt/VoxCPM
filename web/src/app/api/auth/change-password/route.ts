@@ -52,6 +52,20 @@ export async function POST(request: NextRequest) {
         );
     }
 
+    // OAuth-only accounts have no password to change.
+    if (!dbUser.passwordHash) {
+        return NextResponse.json(
+            {
+                ok: false,
+                error: {
+                    code: "OAUTH_ONLY_ACCOUNT",
+                    message: "Tài khoản này được tạo bằng Google và chưa có mật khẩu để đổi.",
+                },
+            },
+            { status: 400 },
+        );
+    }
+
     // Verify current password
     const valid = await verifyPassword(currentPassword, dbUser.passwordHash);
     if (!valid) {

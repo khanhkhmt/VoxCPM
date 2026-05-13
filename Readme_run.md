@@ -48,11 +48,20 @@ R2_ACCESS_KEY_ID="c1785f7092e927d595d8e66e2a939a77"
 R2_SECRET_ACCESS_KEY="6c59feadad5162ec3540c8c04707b0219433e368c781c2ebc781cc3ab43fefcd"
 R2_BUCKET_NAME="voxcpm-audio"
 R2_PUBLIC_URL="https://pub-f6e9530ed8ce419993e861523e143b35.r2.dev"
+
+# === Google OAuth (Sign in with Google) — tùy chọn ===
+# Để trống nếu chưa cần. Khi để trống, button "Sign in with Google" sẽ
+# redirect về /login?error=google_not_configured (không crash app).
+# Hướng dẫn tạo credentials xem mục 3.bis bên dưới.
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+GOOGLE_REDIRECT_URI="http://localhost:3000/api/auth/google/callback"
+APP_URL="http://localhost:3000"
 EOF
 
 npm install && \
 npx prisma generate && \
-npx prisma db push && \
+npx prisma migrate deploy && \
 npm run dev -- -p 3000
 
 ```
@@ -66,6 +75,51 @@ export NVM_DIR="$HOME/.nvm"
 nvm install 20
 nvm use 20
 ```
+
+## 3.bis Bật "Sign in with Google" (tùy chọn)
+
+Nếu muốn dùng tính năng đăng nhập bằng Google, làm các bước sau (nếu bỏ qua, app vẫn chạy bình thường với username/password).
+
+### Bước 1: Tạo OAuth Client trên Google Cloud
+1. Vào https://console.cloud.google.com/apis/credentials
+2. Bấm **Create Credentials** → **OAuth client ID** → Application type: **Web application**.
+3. **Authorized redirect URIs**: thêm chính xác `http://localhost:3000/api/auth/google/callback` cho dev. Với production thêm thêm URL tương ứng (vd `https://your-domain.com/api/auth/google/callback`).
+4. Copy **Client ID** và **Client Secret** sinh ra.
+
+### Bước 2: Điền vào `web/.env.local`
+```env
+GOOGLE_CLIENT_ID="<paste-client-id-here>"
+GOOGLE_CLIENT_SECRET="<paste-client-secret-here>"
+GOOGLE_REDIRECT_URI="http://localhost:3000/api/auth/google/callback"
+APP_URL="http://localhost:3000"
+```
+
+**Lưu ý quan trọng về `APP_URL`**:
+- `npm run dev` của Next.js bind ở `0.0.0.0:3000`. Nếu KHÔNG set `APP_URL`, các redirect OAuth có thể dùng host `0.0.0.0`, làm mất cookie state CSRF và báo lỗi `google_invalid_state`.
+- Luôn đặt `APP_URL` = origin mà trình duyệt thực sự dùng (vd `http://localhost:3000`).
+
+### Bước 3: Áp dụng migration Prisma cho bảng OAuthAccount
+```bash
+cd web
+npx prisma migrate deploy   # áp dụng migration 20260513045005_add_google_oauth
+npx prisma generate
+```
+
+### Bước 4: Test
+1. Mở `http://localhost:3000/login`.
+2. Bấm nút **"Sign in with Google"**.
+3. Chọn tài khoản Google → consent → quay về `/studio` đã đăng nhập.
+
+Lần đầu sẽ tự tạo `User` mới (passwordHash = NULL) và một dòng `OAuthAccount` link tới Google. Lần sau cùng tài khoản đó sẽ tái sử dụng user cũ, không tạo trùng.
+
+### Các mã lỗi có thể gặp (trên URL `/login?error=...`)
+- `google_not_configured` — chưa điền `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`.
+- `google_invalid_state` — cookie state mất (thường do origin mismatch; check `APP_URL`).
+- `google_oauth_denied` — user bấm Cancel ở màn Google consent.
+- `google_no_email` / `google_email_not_verified` — tài khoản Google chưa verify email.
+- `google_token_exchange_failed` — `GOOGLE_CLIENT_SECRET` sai hoặc `redirect_uri` không khớp với cấu hình trên Google Cloud Console.
+
+---
 
 ## 4. Xử lý lỗi thường gặp (Troubleshooting)
 

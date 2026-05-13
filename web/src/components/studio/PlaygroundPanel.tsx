@@ -66,10 +66,14 @@ export default function PlaygroundPanel() {
         setAudioUrl(null);
 
         try {
-            const res = await fetch("/api/v1/tts/generate", {
+            const res = await fetch("/api/tts/playground", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: text.trim(), mode }),
+                body: JSON.stringify({
+                    text: text.trim(),
+                    mode,
+                    voiceProfileId: selectedVoice.voiceId,
+                }),
             });
 
             const status = res.status;

@@ -63,7 +63,9 @@ export default function App() {
   const [baseUrl, setBaseUrl] = useState(
     import.meta.env.VITE_BASE_API_URL || "http://127.0.0.1:8000"
   );
-  const [apiKey, setApiKey] = useState("");
+  const [apiKey, setApiKey] = useState(
+    import.meta.env.VITE_VOICE_API_KEY || ""
+  );
   const [activeTab, setActiveTab] = useState("usage");
 
   /* ---- Usage ---- */

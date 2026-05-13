@@ -115,14 +115,7 @@ export default function RegisterPage() {
                     </div>
                 )}
 
-                <div className="flex flex-col gap-3 mb-6">
-                    <GoogleSignInButton label="Sign up with Google" />
-                    <div className="flex items-center gap-3 text-xs text-vox-text-dim">
-                        <div className="flex-1 h-px bg-vox-outline/30" />
-                        <span>or create with username</span>
-                        <div className="flex-1 h-px bg-vox-outline/30" />
-                    </div>
-                </div>
+
 
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
                     <FormField label="Name" error={errors.name?.message}>
@@ -199,6 +192,15 @@ export default function RegisterPage() {
                         Create account
                     </SubmitButton>
                 </form>
+
+                <div className="mt-6 flex flex-col gap-3">
+                    <div className="flex items-center gap-3 text-xs text-vox-text-dim">
+                        <div className="flex-1 h-px bg-vox-outline/30" />
+                        <span>or continue with</span>
+                        <div className="flex-1 h-px bg-vox-outline/30" />
+                    </div>
+                    <GoogleSignInButton label="Sign up with Google" />
+                </div>
 
                 <div className="mt-6 text-center text-sm text-vox-text-dim">
                     Already have an account?{" "}

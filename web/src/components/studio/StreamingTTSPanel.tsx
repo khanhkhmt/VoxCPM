@@ -298,8 +298,6 @@ export function StreamingTTSPanel({
               : status === "done"
               ? "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
               : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
-              ? "bg-gray-100 text-gray-700"
-              : "bg-gray-100 text-gray-500"
           }`}
         >
           {status}

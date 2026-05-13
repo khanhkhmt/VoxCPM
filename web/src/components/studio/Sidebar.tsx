@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
-import { Mic, LayoutDashboard, History, Settings, PanelLeftClose, PanelLeft, LogOut, Sun, Moon, Code2 } from "lucide-react";
+import { Mic, LayoutDashboard, History, Settings, PanelLeftClose, PanelLeft, LogOut, Sun, Moon, Code2, TerminalSquare, BookOpen } from "lucide-react";
 import { useState } from "react";
 import Logo from "@/components/Logo";
 
@@ -17,7 +17,9 @@ export default function Sidebar() {
     const links = [
         { name: "Studio", href: "/studio", icon: LayoutDashboard },
         { name: "Voice Library", href: "/studio/voices", icon: Mic },
-        { name: "Developer API", href: "/studio/developer", icon: Code2 },
+        { name: "API Console", href: "/studio/developer", icon: Code2 },
+        { name: "Playground", href: "/studio/playground", icon: TerminalSquare },
+        { name: "API Docs", href: "/studio/api-docs", icon: BookOpen },
         { name: "History", href: "/studio/history", icon: History },
         { name: "Settings", href: "/studio/settings", icon: Settings },
     ];

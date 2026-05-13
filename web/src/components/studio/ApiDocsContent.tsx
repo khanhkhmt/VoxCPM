@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, Zap, Server, Key, BarChart3, ArrowLeft, ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
+import { Copy, Check, Zap, Server, Key, BarChart3, ArrowLeft, ChevronDown, ChevronRight, AlertTriangle, TerminalSquare, Play } from "lucide-react";
 import Link from "next/link";
 
 /* ------------------------------------------------------------------ */
@@ -99,6 +99,7 @@ function CollapsibleExample({ title, children }: { title: string; children: Reac
 
 export default function ApiDocsContent() {
     const NAV = [
+        { id: "quick-start", label: "Quick Start" },
         { id: "overview", label: "Overview" },
         { id: "auth", label: "Authentication" },
         { id: "generate", label: "POST /v1/tts/generate" },
@@ -146,11 +147,16 @@ export default function ApiDocsContent() {
                 {/* Header */}
                 <header className="flex items-center justify-between">
                     <div>
-                        <Link href="/studio/developer" className="inline-flex items-center gap-1.5 text-sm text-vox-text-dim hover:text-vox-primary transition-colors mb-4">
-                            <ArrowLeft size={16} /> Back to Developer API
-                        </Link>
-                        <h1 className="text-3xl font-bold text-vox-heading tracking-tight">API Documentation</h1>
-                        <p className="text-vox-text-dim mt-2 text-lg">VoxCPM Voice Clone TTS API v1</p>
+                            <Link href="/studio/developer" className="inline-flex items-center gap-1.5 text-sm text-vox-text-dim hover:text-vox-primary transition-colors mb-4">
+                                <ArrowLeft size={16} /> Back to API Console
+                            </Link>
+                            <h1 className="text-3xl font-bold text-vox-heading tracking-tight">API Documentation</h1>
+                            <p className="text-vox-text-dim mt-2 text-lg">VoxCPM Voice Clone TTS API v1</p>
+                            <div className="flex gap-2 mt-4">
+                                <Link href="/studio/playground" className="inline-flex items-center gap-2 px-4 py-2 bg-vox-secondary/10 border border-vox-secondary/20 text-vox-secondary rounded-xl text-sm font-semibold hover:bg-vox-secondary/20 transition-colors">
+                                    <TerminalSquare size={16} /> Test in Playground
+                                </Link>
+                            </div>
                     </div>
                 </header>
 
@@ -160,6 +166,42 @@ export default function ApiDocsContent() {
                         <a key={n.id} href={`#${n.id}`} className="px-3 py-1.5 rounded-lg text-sm text-vox-text-dim hover:text-vox-heading hover:bg-vox-primary/10 transition-colors">{n.label}</a>
                     ))}
                 </nav>
+
+                {/* ---- Quick Start ---- */}
+                <SectionCard id="quick-start" icon={<Play size={20} />} title="Quick Start">
+                    <p className="text-vox-text leading-relaxed mb-4">
+                        Get started with VoxCPM TTS in under a minute. Each voice clone has its own API key &mdash;
+                        you do not need to pass <code className="text-xs bg-vox-surface px-1 py-0.5 rounded font-mono">voice_id</code>.
+                        The server automatically detects the voice from the API key.
+                    </p>
+                    <div className="space-y-4">
+                        <div className="flex gap-4 items-start">
+                            <div className="w-8 h-8 rounded-full bg-vox-primary/15 text-vox-primary flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
+                            <div className="flex-1">
+                                <p className="text-sm font-semibold text-vox-heading">Create a voice &amp; get an API key</p>
+                                <p className="text-sm text-vox-text-dim">Upload a voice in the <Link href="/studio/voices" className="text-vox-primary hover:underline">Voice Library</Link>, then click &ldquo;Create API Key&rdquo; on any voice card.</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-4 items-start">
+                            <div className="w-8 h-8 rounded-full bg-vox-primary/15 text-vox-primary flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
+                            <div className="flex-1">
+                                <p className="text-sm font-semibold text-vox-heading">Make your first API call</p>
+                                <p className="text-sm text-vox-text-dim mb-3">Use this cURL command to generate speech:</p>
+                                <CopyBlock code={`curl -X POST ${typeof window !== "undefined" ? window.location.origin : "https://your-domain.com"}/api/v1/tts/generate \\
+  -H "Authorization: Bearer vc_sk_live_YOUR_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"text": "Hello world!", "mode": "blocking"}'`} />
+                            </div>
+                        </div>
+                        <div className="flex gap-4 items-start">
+                            <div className="w-8 h-8 rounded-full bg-vox-primary/15 text-vox-primary flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
+                            <div className="flex-1">
+                                <p className="text-sm font-semibold text-vox-heading">Play the audio</p>
+                                <p className="text-sm text-vox-text-dim">The response includes an <code className="text-xs bg-vox-surface px-1 py-0.5 rounded font-mono">audio_url</code> you can stream or download. Or use the <Link href="/studio/playground" className="text-vox-primary hover:underline">Playground</Link> to test interactively.</p>
+                            </div>
+                        </div>
+                    </div>
+                </SectionCard>
 
                 {/* ---- Overview ---- */}
                 <SectionCard id="overview" icon={<Server size={20} />} title="Overview">
@@ -194,7 +236,7 @@ export default function ApiDocsContent() {
                 <SectionCard id="auth" icon={<Key size={20} />} title="Authentication">
                     <p className="text-vox-text leading-relaxed">
                         All API requests must include your voice API key in the header.
-                        Generate keys from the <Link href="/studio/developer" className="text-vox-primary hover:underline">Developer API</Link> page
+                        Generate keys from the <Link href="/studio/developer" className="text-vox-primary hover:underline">API Console</Link> page
                         or from individual voice profiles in the <Link href="/studio/voices" className="text-vox-primary hover:underline">Voice Library</Link>.
                     </p>
                     <CopyBlock language="http" code={`Authorization: Bearer {VOICE_API_KEY}\nContent-Type: application/json`} />
@@ -542,10 +584,18 @@ ws.onmessage = (event) => {
                     </div>
                 </SectionCard>
 
-                {/* Footer note */}
-                <div className="bg-vox-surface-low border border-vox-outline/10 rounded-2xl p-6 text-center text-sm text-vox-text-dim">
-                    <p><strong>UX Goal:</strong> You should immediately understand which voice clone each API key belongs to, how to use it, and integrate it right away.</p>
-                    <p className="mt-1">For questions or issues, contact the project maintainer.</p>
+                {/* Footer CTA */}
+                <div className="bg-vox-surface border border-vox-outline/20 rounded-2xl p-8 text-center">
+                    <h3 className="text-lg font-bold text-vox-heading mb-2">Ready to build?</h3>
+                    <p className="text-sm text-vox-text-dim mb-4">Test your API keys live in the Playground or head to the API Console to manage your voices.</p>
+                    <div className="flex items-center justify-center gap-3">
+                        <Link href="/studio/playground" className="inline-flex items-center gap-2 px-5 py-2.5 bg-vox-primary text-white rounded-xl text-sm font-semibold hover:bg-vox-primary/90 transition-colors">
+                            <TerminalSquare size={16} /> Test in Playground
+                        </Link>
+                        <Link href="/studio/developer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-vox-surface-low border border-vox-outline/20 text-vox-heading rounded-xl text-sm font-semibold hover:bg-vox-surface-high transition-colors">
+                            <Key size={16} /> API Console
+                        </Link>
+                    </div>
                 </div>
             </div>
         </div>

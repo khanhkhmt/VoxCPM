@@ -1,14 +1,12 @@
 import crypto from "crypto";
 
-export type ApiKeyEnvironment = "test" | "live";
-
 /**
- * Sinh khóa API dạng plaintext với prefix xác định.
- * Format: vox_sk_test_... hoặc vox_sk_live_...
+ * Sinh khóa API dạng plaintext cho voice clone.
+ * Format: vc_sk_live_xxxxxxxxx (vc = Voice Clone, sk = Secret Key, live = Production)
  */
-export function generatePlainApiKey(env: ApiKeyEnvironment): string {
+export function generatePlainApiKey(): string {
     const randomBytes = crypto.randomBytes(32).toString("base64url");
-    return `vox_sk_${env}_${randomBytes}`;
+    return `vc_sk_live_${randomBytes}`;
 }
 
 /**

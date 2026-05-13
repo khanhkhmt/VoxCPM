@@ -1,16 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireApiKey, jsonOk, jsonError } from "@/lib/api-utils";
+import { requireAuth, jsonOk, jsonError } from "@/lib/api-utils";
 import { checkAndDeductQuota } from "@/lib/quota";
 import { prisma } from "@/lib/db";
 import { uploadToR2 } from "@/lib/r2";
 import crypto from "crypto";
 
+/**
+ * POST /api/tts/playground
+ *
+ * Session-authenticated proxy for the Playground UI.
+ * Instead of requiring an external API key (Bearer token),
+ * this endpoint uses the logged-in user's session to authenticate,
+ * looks up the voice profile, and calls the backend directly.
+ */
 export async function POST(req: NextRequest) {
     try {
-        const { user, voiceProfile } = await requireApiKey(req, "tts.generate");
-        
+        const user = await requireAuth();
+
         const body = await req.json().catch(() => ({}));
-        const text = body.text;
+        const { text, voiceProfileId } = body;
 
         if (!text || typeof text !== "string" || text.trim() === "") {
             return jsonError("BAD_REQUEST", "Missing or invalid 'text' parameter", 400);
@@ -20,15 +28,32 @@ export async function POST(req: NextRequest) {
             return jsonError("TEXT_TOO_LONG", "Text exceeds maximum length of 5000 characters", 400);
         }
 
+        if (!voiceProfileId || typeof voiceProfileId !== "string") {
+            return jsonError("BAD_REQUEST", "Missing or invalid 'voiceProfileId'", 400);
+        }
+
+        // Look up voice profile and verify ownership
+        const voiceProfile = await prisma.voiceProfile.findUnique({
+            where: { id: voiceProfileId },
+        });
+
+        if (!voiceProfile) {
+            return jsonError("NOT_FOUND", "Voice profile not found", 404);
+        }
+
+        if (voiceProfile.userId !== user.id) {
+            return jsonError("FORBIDDEN", "You do not own this voice profile", 403);
+        }
+
         const charsToDeduct = text.length;
 
-        // Quota check and deduct (Upfront charging)
+        // Quota check and deduct
         const success = await checkAndDeductQuota(user.id, charsToDeduct);
         if (!success) {
             return jsonError("QUOTA_EXCEEDED", "Not enough quota remaining", 403);
         }
 
-        // Prepare request to FastAPI
+        // Prepare request to FastAPI backend
         const internalSecret = process.env.TTS_INTERNAL_SECRET;
         if (!internalSecret) {
             return jsonError("INTERNAL_ERROR", "Server configuration error", 500);
@@ -54,26 +79,33 @@ export async function POST(req: NextRequest) {
         form.append("speed", String(speed));
         form.append("format", format);
 
-        // FIX: Resolve the actual voice file instead of just sending voice_id
+        // Resolve voice feature or audio for cloning
         if (voiceProfile.featureUrl) {
-            const featRes = await fetch(voiceProfile.featureUrl);
-            if (featRes.ok) {
-                const featBuffer = await featRes.arrayBuffer();
-                form.append("voice_feature", new Blob([featBuffer]), "feature.safetensors");
+            try {
+                const featRes = await fetch(voiceProfile.featureUrl);
+                if (featRes.ok) {
+                    const featBuffer = await featRes.arrayBuffer();
+                    form.append("voice_feature", new Blob([featBuffer]), "feature.safetensors");
+                }
+            } catch {
+                // Feature URL inaccessible — fall through to audioUrl
             }
-        } else if (voiceProfile.audioUrl) {
-            const audioRes = await fetch(voiceProfile.audioUrl);
-            if (audioRes.ok) {
-                const audioBuffer = await audioRes.arrayBuffer();
-                form.append("reference_wav", new Blob([audioBuffer]), voiceProfile.fileName || "reference.wav");
+        }
+        if (!voiceProfile.featureUrl && voiceProfile.audioUrl) {
+            try {
+                const audioRes = await fetch(voiceProfile.audioUrl);
+                if (audioRes.ok) {
+                    const audioBuffer = await audioRes.arrayBuffer();
+                    form.append("reference_wav", new Blob([audioBuffer]), voiceProfile.fileName || "reference.wav");
+                }
+            } catch {
+                // Audio URL inaccessible
             }
         }
 
         const res = await fetch(generateUrl, {
             method: "POST",
-            headers: {
-                "X-Internal-Secret": internalSecret,
-            },
+            headers: { "X-Internal-Secret": internalSecret },
             body: form,
         });
 
@@ -90,7 +122,7 @@ export async function POST(req: NextRequest) {
         // Fetch the generated file from FastAPI directly
         const audioFileUrl = `${backendUrl.replace(/\/api\/tts$/, "")}${data.audio_url}`;
         const fileRes = await fetch(audioFileUrl);
-        
+
         if (!fileRes.ok) {
             return jsonError("BACKEND_ERROR", "Failed to retrieve audio file from backend", 500);
         }
@@ -101,42 +133,22 @@ export async function POST(req: NextRequest) {
         // Upload to R2
         const mimeType = format === "wav" ? "audio/wav" : "audio/mpeg";
         const ext = format === "wav" ? "wav" : "mp3";
-        const r2Key = `v1_tts/${user.id}/${crypto.randomUUID()}.${ext}`;
+        const r2Key = `playground/${user.id}/${crypto.randomUUID()}.${ext}`;
         const { r2Url } = await uploadToR2(r2Key, buffer, mimeType);
-
-        // Save to History (TTSGeneration)
-        const generation = await prisma.tTSGeneration.create({
-            data: {
-                userId: user.id,
-                text,
-                controlInstruction: body.control_instruction || "",
-                audioUrl: r2Url,
-                audioR2Key: r2Key,
-                language,
-                cfgValue: Number(body.cfg_value || 2.0),
-                ditSteps: Number(body.dit_steps || 10),
-                doNormalize: Boolean(body.do_normalize),
-                denoise: Boolean(body.denoise),
-                usePromptText: Boolean(body.use_prompt_text),
-                promptText: body.prompt_text || "",
-                voiceProfileId: voiceProfile.id,
-            }
-        });
 
         return jsonOk({
             success: true,
-            request_id: generation.id,
             voice_id: voiceProfile.id,
             audio_url: r2Url,
             text,
             duration: data.duration || null,
             status: "completed",
-            chars_deducted: charsToDeduct
+            chars_deducted: charsToDeduct,
         });
 
     } catch (error: unknown) {
         if (error instanceof NextResponse) return error;
-        console.error("V1 TTS Generate Error:", error);
+        console.error("Playground TTS Error:", error);
         const message = error instanceof Error ? error.message : "Unknown error";
         return jsonError("INTERNAL_ERROR", message, 500);
     }

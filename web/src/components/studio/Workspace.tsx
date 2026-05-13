@@ -77,6 +77,7 @@ export default function Workspace() {
     const [refAudioPreview, setRefAudioPreview] = useState<string | null>(null);
     const [activeVoiceProfileId, setActiveVoiceProfileId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isSavingVoice, setIsSavingVoice] = useState(false);
 
     // ---- Ultimate Cloning (REAL) ----
     const [ultimateCloning, setUltimateCloning] = useState(false);
@@ -107,19 +108,36 @@ export default function Workspace() {
             .catch(() => {});
     }, []);
 
-    // Load history khi user thay đổi (đăng nhập/đăng xuất/đổi tài khoản)
+    // ---- Fetch history from DB ----
+    const fetchRecentHistory = useCallback(async () => {
+        try {
+            const res = await fetch("/api/history?limit=10");
+            if (res.ok) {
+                const json = await res.json();
+                if (json.data?.items) {
+                    const mapped = json.data.items.map((item: any) => ({
+                        id: item.id,
+                        text: item.text,
+                        audioUrl: item.audioUrl,
+                        date: new Date(item.createdAt).toLocaleTimeString(),
+                        controlInstruction: item.controlInstruction || "",
+                    }));
+                    setHistory(mapped);
+                }
+            }
+        } catch (e) {
+            console.error("[Workspace] Failed to fetch recent history:", e);
+        }
+    }, []);
+
+    // Load history khi user thay đổi hoặc focus lại tab
     useEffect(() => {
-        if (!historyKey) {
-            setHistory([]);
-            return;
-        }
-        const saved = localStorage.getItem(historyKey);
-        if (saved) {
-            try { setHistory(JSON.parse(saved)); } catch { setHistory([]); }
-        } else {
-            setHistory([]);
-        }
-    }, [historyKey]);
+        fetchRecentHistory();
+        
+        const onFocus = () => fetchRecentHistory();
+        window.addEventListener("focus", onFocus);
+        return () => window.removeEventListener("focus", onFocus);
+    }, [fetchRecentHistory, user]);
 
     // ---- Reference audio helpers ----
     const handleFileSelect = useCallback((file: File) => {
@@ -147,6 +165,61 @@ export default function Workspace() {
             setPromptText("");
         }
     }, [refAudioPreview, ultimateCloning]);
+
+    // ---- Save Reference Audio to Library ----
+    const handleSaveReferenceToLibrary = async () => {
+        if (!refAudioFile) return;
+        const name = prompt("Enter a name for this voice:", refAudioFile.name.replace(/\.[^.]+$/, ""));
+        if (!name) return;
+
+        setIsSavingVoice(true);
+        setError(null);
+        try {
+            const formData = new FormData();
+            formData.append("file", refAudioFile);
+            formData.append("name", name);
+            formData.append("description", "Uploaded from Studio");
+
+            const res = await fetch("/api/voices", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!res.ok) {
+                const json = await res.json();
+                throw new Error(json.error?.message || "Failed to save voice");
+            }
+
+            const newVoice = await res.json();
+            
+            // Refresh library voices
+            const voicesRes = await fetch("/api/voices?limit=50");
+            if (voicesRes.ok) {
+                const voicesJson = await voicesRes.json();
+                if (voicesJson.data?.items) {
+                    setLibraryVoices(voicesJson.data.items);
+                }
+            }
+
+            // Select the newly created voice
+            if (newVoice.data) {
+                const v = newVoice.data;
+                setSelectedVoice({
+                    id: v.id,
+                    name: v.name,
+                    audioUrl: v.audioUrl,
+                    featureUrl: v.featureUrl ?? null,
+                    voxcpmVersion: v.voxcpmVersion ?? null,
+                });
+                setRefAudioFile(null);
+                setRefAudioPreview(null);
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to save voice");
+        } finally {
+            setIsSavingVoice(false);
+        }
+    };
 
     // ---- Generate ----
     const handleGenerate = async () => {
@@ -225,7 +298,6 @@ export default function Workspace() {
                 };
                 const newHistory = [newItem, ...history].slice(0, 10);
                 setHistory(newHistory);
-                if (historyKey) localStorage.setItem(historyKey, JSON.stringify(newHistory));
 
                 // --- 🆕 Persist to database (fire-and-forget, không block UI) ---
                 const tempId = newItem.id;
@@ -249,7 +321,6 @@ export default function Workspace() {
                             const updated = prev.map(h =>
                                 h.id === tempId ? { ...h, id: dbId, audioUrl: r2Url || h.audioUrl } : h
                             );
-                            if (historyKey) localStorage.setItem(historyKey, JSON.stringify(updated));
                             return updated;
                         });
                         // Chuyển player sang R2 URL (không dùng local nữa)
@@ -276,7 +347,6 @@ export default function Workspace() {
         };
         const newHistory = [newItem, ...history].slice(0, 10);
         setHistory(newHistory);
-        if (historyKey) localStorage.setItem(historyKey, JSON.stringify(newHistory));
 
         const tempId = newItem.id;
         fetch("/api/history", {
@@ -297,7 +367,6 @@ export default function Workspace() {
                     const updated = prev.map(h =>
                         h.id === tempId ? { ...h, id: dbId, audioUrl: r2Url || h.audioUrl } : h
                     );
-                    if (historyKey) localStorage.setItem(historyKey, JSON.stringify(updated));
                     return updated;
                 });
                 // Chuyển player sang R2 URL (tránh bị 404 do file local bị xoá)
@@ -411,6 +480,15 @@ export default function Workspace() {
                                 {refAudioPreview && (
                                     <audio controls src={refAudioPreview} className="h-8 w-40 shrink-0" />
                                 )}
+                                <button
+                                    onClick={handleSaveReferenceToLibrary}
+                                    disabled={isSavingVoice}
+                                    className="p-1.5 px-3 rounded-lg bg-vox-secondary/20 hover:bg-vox-secondary/30 text-xs flex items-center gap-1 text-vox-secondary transition-colors disabled:opacity-50"
+                                    title="Save to Voice Library"
+                                >
+                                    {isSavingVoice ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                                    <span className="hidden sm:inline">Save</span>
+                                </button>
                                 <button
                                     onClick={clearRefAudio}
                                     className="p-1.5 rounded-lg hover:bg-red-500/10 text-vox-text-dim hover:text-red-400 transition-colors"
@@ -781,7 +859,6 @@ export default function Workspace() {
                                 // 🆕 Xóa tất cả history trong database
                                 fetch("/api/history", { method: "DELETE" }).catch(() => {});
                                 setHistory([]);
-                                if (historyKey) localStorage.removeItem(historyKey);
                             }}
                             className="text-xs text-vox-text-dim hover:text-red-400 transition-colors px-2 py-1 rounded-lg hover:bg-red-500/10"
                         >
@@ -817,7 +894,6 @@ export default function Workspace() {
                                             fetch(`/api/history/${item.id}`, { method: "DELETE" }).catch(() => {});
                                             const newHistory = history.filter((h) => h.id !== item.id);
                                             setHistory(newHistory);
-                                            if (historyKey) localStorage.setItem(historyKey, JSON.stringify(newHistory));
                                         }}
                                         className="p-2 rounded-full text-vox-text-dim hover:text-red-400 hover:bg-red-500/10 transition-colors"
                                         title="Delete"

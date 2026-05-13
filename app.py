@@ -848,6 +848,8 @@ async def streaming_tts(websocket: WebSocket):
     try:
         payload = jwt.decode(token, TTS_INTERNAL_SECRET, algorithms=["HS256"])
         max_length = payload.get("max_length", 10000)
+        token_feature_url = payload.get("feature_url")
+        token_audio_url = payload.get("audio_url")
     except jwt.PyJWTError as e:
         await websocket.send_json({"type": "error", "message": f"Unauthorized: Invalid token ({str(e)})"})
         await websocket.close(code=4401)
@@ -892,36 +894,53 @@ async def streaming_tts(websocket: WebSocket):
         reference_wav_base64 = data.get("reference_wav_base64", None)
         voice_feature_url = data.get("voice_feature_url", None)
 
-        if reference_wav_base64:
-            if len(reference_wav_base64) > 10 * 1024 * 1024:
-                await websocket.send_json({"type": "error", "message": "Reference audio base64 too large."})
-                await websocket.close()
-                return
-            audio_bytes = base64.b64decode(reference_wav_base64)
-            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-            tmp.write(audio_bytes)
-            tmp.close()
-            
-            # Truncate to 5s to prevent OOM
-            y, sr = librosa.load(tmp.name, sr=16000, mono=True)
-            if len(y) > int(5.0 * sr):
-                y = y[:int(5.0 * sr)]
-                sf.write(tmp.name, y, sr)
-                
-            temp_wav_path = tmp.name
-
         prompt_cache = None
-        if voice_feature_url and voice_feature_url.strip():
+        # Force override client features if token defines them (API Key Voice resolving)
+        if token_feature_url:
             try:
+                import httpx
+                resp = httpx.get(token_feature_url)
+                resp.raise_for_status()
+                tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".safetensors")
+                tmp.write(resp.content)
+                tmp.close()
                 from safetensors.torch import load_file
-                feat_path = _download_to_local(voice_feature_url.strip())
-                loaded = load_file(str(feat_path), device="cpu")
+                loaded = load_file(tmp.name, device="cpu")
                 prompt_cache = {
                     "ref_audio_feat": loaded["ref_audio_feat"],
                     "mode": "reference",
                 }
+                os.unlink(tmp.name)
             except Exception as e:
-                logger.warning(f"Failed to load voice feature for streaming: {e}")
+                logger.warning(f"Failed to load token feature_url for streaming: {e}")
+        elif token_audio_url:
+            try:
+                import httpx
+                resp = httpx.get(token_audio_url)
+                resp.raise_for_status()
+                tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+                tmp.write(resp.content)
+                tmp.close()
+                y, sr = librosa.load(tmp.name, sr=16000, mono=True)
+                if len(y) > int(5.0 * sr):
+                    y = y[:int(5.0 * sr)]
+                    sf.write(tmp.name, y, sr)
+                temp_wav_path = tmp.name
+            except Exception as e:
+                logger.warning(f"Failed to load token audio_url for streaming: {e}")
+        else:
+            # Fallback to client-provided feature if token allows it (not locked to an API key)
+            if voice_feature_url and voice_feature_url.strip():
+                try:
+                    from safetensors.torch import load_file
+                    feat_path = _download_to_local(voice_feature_url.strip())
+                    loaded = load_file(str(feat_path), device="cpu")
+                    prompt_cache = {
+                        "ref_audio_feat": loaded["ref_audio_feat"],
+                        "mode": "reference",
+                    }
+                except Exception as e:
+                    logger.warning(f"Failed to load voice feature for streaming: {e}")
 
         ultimate = use_prompt_text
         actual_prompt_text = prompt_text.strip() if ultimate else ""

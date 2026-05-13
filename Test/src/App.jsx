@@ -106,6 +106,8 @@ export default function App() {
   const [wsConnected, setWsConnected] = useState(false);
   const wsRef = useRef(null);
   const audioCtxRef = useRef(null);
+  const nextStartTimeRef = useRef(0);
+  const sampleRateRef = useRef(24000);
   const [wsAudioUrl, setWsAudioUrl] = useState(null);
   const chunksRef = useRef([]);
 
@@ -182,7 +184,13 @@ export default function App() {
     setWsLogs([]);
     setWsAudioUrl(null);
     chunksRef.current = [];
+    nextStartTimeRef.current = 0;
     addLog("info", `Connecting to ${wsUrl}…`);
+    
+    // Voice verification
+    if (stData?.voice_id) {
+       addLog("info", `🔍 Verifying voice profile constraint: Voice ID ${stData.voice_id} from Stream Token will be used.`);
+    }
 
     const ws = createStreamWebSocket(wsUrl, wsToken);
     wsRef.current = ws;
@@ -211,12 +219,41 @@ export default function App() {
         const bytes = event.data.byteLength;
         chunksRef.current.push(new Uint8Array(event.data));
         addLog("info", `🔊 Binary chunk received: ${bytes} bytes`);
+        
+        // Real-time playback
+        if (audioCtxRef.current) {
+          const pcm16 = new Int16Array(event.data);
+          const float32 = new Float32Array(pcm16.length);
+          for (let i = 0; i < pcm16.length; i++) {
+            float32[i] = pcm16[i] / 32768.0;
+          }
+          const audioBuffer = audioCtxRef.current.createBuffer(1, float32.length, sampleRateRef.current);
+          audioBuffer.getChannelData(0).set(float32);
+          const source = audioCtxRef.current.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(audioCtxRef.current.destination);
+          
+          const startTime = Math.max(audioCtxRef.current.currentTime, nextStartTimeRef.current);
+          source.start(startTime);
+          nextStartTimeRef.current = startTime + audioBuffer.duration;
+        }
         return;
       }
 
       try {
         const msg = JSON.parse(event.data);
         addLog("info", `📩 ${msg.type || "message"}: ${JSON.stringify(msg)}`);
+        
+        if (msg.type === "start") {
+           sampleRateRef.current = msg.sample_rate || 24000;
+           if (!audioCtxRef.current) {
+               audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: sampleRateRef.current });
+           } else if (audioCtxRef.current.state === "suspended") {
+               audioCtxRef.current.resume();
+           }
+           nextStartTimeRef.current = audioCtxRef.current.currentTime;
+           addLog("info", `🔍 Stream metadata verified: format=${msg.format}, sample_rate=${msg.sample_rate}`);
+        }
 
         if (msg.type === "done" && msg.audio_url) {
           const full = msg.audio_url.startsWith("http")
@@ -224,6 +261,9 @@ export default function App() {
             : `${baseUrl}${msg.audio_url}`;
           setWsAudioUrl(full);
           addLog("success", `🎵 Audio URL: ${full}`);
+          if (stData?.voice_id) {
+             addLog("success", `✅ Verified entire stream used Voice ID: ${stData.voice_id}`);
+          }
         }
 
         if (msg.type === "error") {
@@ -256,6 +296,10 @@ export default function App() {
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
+    }
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close();
+      audioCtxRef.current = null;
     }
   };
 

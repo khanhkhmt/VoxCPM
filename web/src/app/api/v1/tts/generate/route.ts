@@ -43,7 +43,6 @@ export async function POST(req: NextRequest) {
 
         const form = new FormData();
         form.append("text", text);
-        form.append("voice_id", voiceProfile.id);
         form.append("control_instruction", body.control_instruction || "");
         form.append("use_prompt_text", body.use_prompt_text ? "true" : "false");
         form.append("prompt_text", body.prompt_text || "");
@@ -54,6 +53,21 @@ export async function POST(req: NextRequest) {
         form.append("language", language);
         form.append("speed", String(speed));
         form.append("format", format);
+
+        // FIX: Resolve the actual voice file instead of just sending voice_id
+        if (voiceProfile.featureUrl) {
+            const featRes = await fetch(voiceProfile.featureUrl);
+            if (featRes.ok) {
+                const featBuffer = await featRes.arrayBuffer();
+                form.append("voice_feature", new Blob([featBuffer]), "feature.safetensors");
+            }
+        } else if (voiceProfile.audioUrl) {
+            const audioRes = await fetch(voiceProfile.audioUrl);
+            if (audioRes.ok) {
+                const audioBuffer = await audioRes.arrayBuffer();
+                form.append("reference_wav", new Blob([audioBuffer]), voiceProfile.fileName || "reference.wav");
+            }
+        }
 
         const res = await fetch(generateUrl, {
             method: "POST",

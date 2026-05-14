@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { BACKEND_BASE_URL } from "@/lib/config";
 import { prisma } from "@/lib/db";
 import { uploadToR2, deleteFromR2 } from "@/lib/r2";
 import { requireAuth, jsonOk, jsonError } from "@/lib/api-utils";
@@ -6,14 +7,14 @@ import { requireAuth, jsonOk, jsonError } from "@/lib/api-utils";
 // ---------------------------------------------------------------------------
 // Internal helpers for server-to-server communication with FastAPI
 // ---------------------------------------------------------------------------
-const BACKEND_ORIGIN = "http://127.0.0.1:8808";
+const BACKEND_ORIGIN = BACKEND_BASE_URL;
 const INTERNAL_SECRET = process.env.TTS_INTERNAL_SECRET || "";
 
 /**
  * Normalize any audioUrl variant into an absolute FastAPI URL.
- *  - "/tts_api/file/xxx.wav"          → "http://127.0.0.1:8808/api/tts/file/xxx.wav"
- *  - "/api/tts/file/xxx.wav"          → "http://127.0.0.1:8808/api/tts/file/xxx.wav"
- *  - "http://127.0.0.1:8808/..."      → pass-through
+ *  - "/tts_api/file/xxx.wav"          → `${BACKEND_BASE_URL}/api/tts/file/xxx.wav`
+ *  - "/api/tts/file/xxx.wav"          → `${BACKEND_BASE_URL}/api/tts/file/xxx.wav`
+ *  - `${BACKEND_BASE_URL}/...`        → pass-through
  */
 function resolveBackendAudioUrl(audioUrl: string): string {
   if (audioUrl.startsWith("/tts_api/")) {

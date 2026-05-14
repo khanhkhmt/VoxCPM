@@ -1,4 +1,6 @@
-const FASTAPI_BASE = process.env.VOXCPM_API_BASE || "http://localhost:8808";
+import { BACKEND_BASE_URL } from "@/lib/config";
+
+const FASTAPI_BASE = process.env.VOXCPM_API_BASE || BACKEND_BASE_URL;
 const INTERNAL_SECRET = process.env.TTS_INTERNAL_SECRET || "";
 
 interface EncodeVoiceResult {

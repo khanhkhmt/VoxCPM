@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { BACKEND_BASE_URL } from "@/lib/config";
 import { requireAuth, jsonOk, jsonError } from "@/lib/api-utils";
 import { checkAndDeductQuota } from "@/lib/quota";
 import { prisma } from "@/lib/db";
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
             return jsonError("INTERNAL_ERROR", "Server configuration error", 500);
         }
 
-        const backendUrl = "http://127.0.0.1:8808/api/tts";
+        const backendUrl = `${BACKEND_BASE_URL}/api/tts`;
         const generateUrl = backendUrl.replace(/\/$/, "") + "/generate";
 
         const language = body.language || "auto";

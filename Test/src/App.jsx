@@ -95,7 +95,16 @@ export default function App() {
   const [stLoading, setStLoading] = useState(false);
 
   /* ---- WebSocket ---- */
-  const [wsUrl, setWsUrl] = useState("ws://127.0.0.1:8808/ws/tts/stream");
+  const deriveWsUrl = (base) => {
+    try {
+      const u = new URL(base);
+      const wsProto = u.protocol === "https:" ? "wss:" : "ws:";
+      return `${wsProto}//${u.host}/ws/tts/stream`;
+    } catch {
+      return "ws://127.0.0.1:8808/ws/tts/stream";
+    }
+  };
+  const [wsUrl, setWsUrl] = useState(deriveWsUrl(import.meta.env.VITE_BASE_API_URL || "http://127.0.0.1:8000"));
   const [wsToken, setWsToken] = useState("");
   const [wsText, setWsText] = useState("Hello from the WebSocket streaming test!");
   const [wsParams, setWsParams] = useState({

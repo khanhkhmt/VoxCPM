@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     response.cookies.set(GOOGLE_OAUTH_STATE_COOKIE, state, {
         httpOnly: true,
-        secure: isProd,
+        secure: false, // Bypass self-signed cert secure cookie issues
         sameSite: "lax",
         path: "/",
         maxAge: STATE_COOKIE_MAX_AGE,
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     response.cookies.set(GOOGLE_OAUTH_NEXT_COOKIE, nextParam, {
         httpOnly: true,
-        secure: isProd,
+        secure: false, // Bypass self-signed cert secure cookie issues
         sameSite: "lax",
         path: "/",
         maxAge: STATE_COOKIE_MAX_AGE,

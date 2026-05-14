@@ -57,12 +57,14 @@ export interface TTSStreamCallbacks {
   onClose?: (event: CloseEvent) => void;
 }
 
+import { BACKEND_BASE_URL } from "@/lib/config";
+
 /**
  * Transforms HTTP/HTTPS base URL to WS/WSS URL for streaming.
  * Example: http://127.0.0.1:8808/api/tts -> ws://127.0.0.1:8808/ws/tts/stream
  */
 export function buildStreamingWsUrl(baseUrl?: string): string {
-  const base = baseUrl || process.env.NEXT_PUBLIC_TTS_API_BASE || "http://127.0.0.1:8808/api/tts";
+  const base = baseUrl || process.env.NEXT_PUBLIC_TTS_API_BASE || `${BACKEND_BASE_URL}/api/tts`;
   try {
     const url = new URL(base);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
@@ -75,7 +77,7 @@ export function buildStreamingWsUrl(baseUrl?: string): string {
 
 export function buildFullHttpUrl(audioPath: string, baseUrl?: string): string {
   if (audioPath.startsWith("http")) return audioPath;
-  const base = baseUrl || process.env.NEXT_PUBLIC_TTS_API_BASE || "http://127.0.0.1:8808/api/tts";
+  const base = baseUrl || process.env.NEXT_PUBLIC_TTS_API_BASE || `${BACKEND_BASE_URL}/api/tts`;
   const origin = base.replace(/\/api\/tts\/?$/, "");
   return audioPath.startsWith("/api/tts/") ? `${origin}${audioPath}` : audioPath;
 }

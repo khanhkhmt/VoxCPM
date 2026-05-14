@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { API_BASE_URL } from "@/lib/config";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -88,7 +89,7 @@ export function resolveRequestOrigin(request: Request): string {
     try {
         return new URL(request.url).origin;
     } catch {
-        return "http://localhost:3000";
+        return API_BASE_URL;
     }
 }
 

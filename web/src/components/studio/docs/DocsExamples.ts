@@ -1,5 +1,7 @@
-// Base URL placeholder used in all code examples
-export const BASE = "BASE_URL";
+import { API_BASE_URL, BACKEND_BASE_URL } from "@/lib/config";
+
+// Base URL used in all code examples
+export const BASE = API_BASE_URL;
 export const KEY = "YOUR_API_KEY";
 
 export const CURL_USAGE = `curl ${BASE}/api/v1/usage \\
@@ -23,7 +25,7 @@ export const CURL_STREAM_TOKEN = `curl -X POST ${BASE}/api/v1/tts/stream-token \
 
 export const PYTHON_GENERATE = `import requests
 
-BASE_URL = "http://127.0.0.1:3000"   # ← change for production
+BASE_URL = "${API_BASE_URL}"   # ← change for production
 API_KEY  = "vc_sk_live_xxxxx"
 
 res = requests.post(
@@ -49,7 +51,7 @@ else:
 
 export const PYTHON_WEBSOCKET = `import requests, json, websocket
 
-BASE_URL = "http://127.0.0.1:3000"
+BASE_URL = "${API_BASE_URL}"
 API_KEY  = "vc_sk_live_xxxxx"
 
 # Step 1 — Get a stream token (quota deducted here)
@@ -90,7 +92,7 @@ while True:
 
 ws.close()`;
 
-export const JS_GENERATE = `const BASE_URL = "http://127.0.0.1:3000"; // ← change for production
+export const JS_GENERATE = `const BASE_URL = "${API_BASE_URL}"; // ← change for production
 const API_KEY  = "vc_sk_live_xxxxx";
 
 const res = await fetch(\`\${BASE_URL}/api/v1/tts/generate\`, {
@@ -116,7 +118,7 @@ if (ok) {
   console.error("Error:", error.message);
 }`;
 
-export const JS_WEBSOCKET = `const BASE_URL = "http://127.0.0.1:3000";
+export const JS_WEBSOCKET = `const BASE_URL = "${API_BASE_URL}";
 const API_KEY  = "vc_sk_live_xxxxx";
 
 // Step 1 — Get stream token
@@ -196,7 +198,7 @@ export const RESPONSE_STREAM_TOKEN = `{
   "ok": true,
   "data": {
     "stream_token": "eyJhbGciOiJIUzI1NiJ9...",
-    "ws_url": "ws://127.0.0.1:8808/ws/tts/stream",
+    "ws_url": "${BACKEND_BASE_URL.replace('http', 'ws')}/ws/tts/stream",
     "max_length": 200,
     "chars_deducted": 200,
     "expires_in": 60

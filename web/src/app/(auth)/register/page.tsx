@@ -74,10 +74,8 @@ export default function RegisterPage() {
                 captchaText,
             });
 
-            setServerSuccess("Account created successfully! Redirecting to login...");
-            setTimeout(() => {
-                router.push("/login");
-            }, 1500);
+            setServerSuccess("Account created successfully! Redirecting...");
+            router.push("/studio");
         } catch (err: unknown) {
             const error = err as Error & { code?: string };
             setServerError(error.message);

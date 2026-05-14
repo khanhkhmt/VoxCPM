@@ -8,6 +8,7 @@ import {
     CollapsibleExample, InfoBox, WarningBox, StepList, ParamTable, ErrorTable,
 } from "./docs/DocsComponents";
 import * as EX from "./docs/DocsExamples";
+import { API_BASE_URL } from "@/lib/config";
 
 export default function ApiDocsContent() {
     const NAV = [
@@ -67,11 +68,11 @@ export default function ApiDocsContent() {
                     <p className="text-vox-text leading-relaxed">Get started with VoxCPM TTS in 3 steps. Each API key is bound to a specific cloned voice &mdash; you never need to pass <code className="text-xs bg-vox-surface px-1 py-0.5 rounded font-mono">voice_id</code>.</p>
                     <StepList steps={[
                         { title: "Create a voice & get an API key", desc: "Upload audio in the Voice Library, then click \"Create API Key\" on any voice card. The key is shown only once — save it." },
-                        { title: "Configure your base URL", desc: "Local development: http://127.0.0.1:3000 — Production: https://api.yourdomain.com. All endpoints are relative to this URL." },
+                        { title: "Configure your base URL", desc: `Production / Dev: ${API_BASE_URL}. All endpoints are relative to this URL.` },
                         { title: "Make your first API call", desc: "Use the cURL command below, or copy any example from the Code Examples section." },
                     ]} />
                     <CopyBlock code={`# Replace BASE_URL and API key with your values
-curl -X POST http://127.0.0.1:3000/api/v1/tts/generate \\
+curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
   -H "Authorization: Bearer vc_sk_live_YOUR_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"text": "Hello world!", "language": "auto", "format": "mp3"}'`} />
@@ -87,7 +88,7 @@ curl -X POST http://127.0.0.1:3000/api/v1/tts/generate \\
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
                         <div className="bg-vox-surface-low rounded-xl p-4 border border-vox-outline/10">
                             <p className="text-xs text-vox-text-dim mb-1">Base URL (Local)</p>
-                            <code className="text-sm font-mono text-vox-heading">http://127.0.0.1:3000</code>
+                            <code className="text-sm font-mono text-vox-heading">{API_BASE_URL}</code>
                         </div>
                         <div className="bg-vox-surface-low rounded-xl p-4 border border-vox-outline/10">
                             <p className="text-xs text-vox-text-dim mb-1">Content Type</p>
@@ -114,7 +115,7 @@ curl -X POST http://127.0.0.1:3000/api/v1/tts/generate \\
                     </div>
                     <InfoBox>
                         <p className="font-semibold text-vox-heading mb-1">🔗 Dynamic Base URL</p>
-                        <p className="text-vox-text-dim">All examples use a configurable base URL. For local dev use <code className="font-mono text-xs">http://127.0.0.1:3000</code>. For production, replace with your deployed domain. The Test app sidebar lets you change this at runtime.</p>
+                        <p className="text-vox-text-dim">All examples use a configurable base URL. Currently configured as <code className="font-mono text-xs">{API_BASE_URL}</code>. The Test app sidebar lets you change this at runtime.</p>
                     </InfoBox>
                 </SectionCard>
 
@@ -231,7 +232,7 @@ curl -X POST http://127.0.0.1:3000/api/v1/tts/generate \\
                 {/* ── Code Examples ── */}
                 <SectionCard id="examples" icon={<Code2 size={20} />} title="Code Examples">
                     <InfoBox>
-                        <p className="text-vox-text-dim">All examples use a <strong>configurable base URL</strong>. Replace <code className="font-mono text-xs">BASE_URL</code> with <code className="font-mono text-xs">http://127.0.0.1:3000</code> for local dev or your production URL.</p>
+                        <p className="text-vox-text-dim">All examples use a <strong>configurable base URL</strong>. Replace <code className="font-mono text-xs">BASE_URL</code> with <code className="font-mono text-xs">{API_BASE_URL}</code>.</p>
                     </InfoBox>
 
                     <CollapsibleExample title="cURL — Generate Speech" defaultOpen>

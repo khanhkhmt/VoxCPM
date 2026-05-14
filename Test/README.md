@@ -50,6 +50,85 @@ npm run dev
 Mở trình duyệt tại `http://localhost:5173`.
 
 ### 4. Build production
+Hãy refactor toàn bộ hệ thống API Documentation để không còn hardcode localhost hoặc domain cố định trong source code.
+
+Yêu cầu:
+
+1. Thay toàn bộ các URL dạng:
+
+* http://127.0.0.1:3000
+* http://localhost:3000
+* localhost
+* các base URL local khác
+
+thành:
+
+* https://103-214-9-83.nip.io
+
+2. Không được hardcode domain trực tiếp trong component hoặc page nữa.
+
+3. Tạo một cấu hình trung tâm để quản lý BASE_URL, ví dụ:
+
+* env variable
+* config.ts
+* runtime config
+* hoặc constants/api.ts
+
+Ví dụ:
+
+```ts
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "https://103-214-9-83.nip.io";
+```
+
+4. Toàn bộ API Documentation phải tự động lấy domain từ biến cấu hình này:
+
+* curl examples
+* fetch examples
+* websocket examples
+* API playground
+* code snippets
+* stream token examples
+* tất cả endpoint hiển thị trên UI
+
+5. Sau này khi đổi domain mới, chỉ cần sửa duy nhất:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=https://new-domain.com
+```
+
+mà toàn bộ docs và examples tự cập nhật.
+
+6. Kiểm tra toàn bộ project để đảm bảo:
+
+* không còn localhost hardcode
+* không còn 127.0.0.1 hardcode
+* không còn domain cũ hardcode
+
+7. Nếu project đang dùng:
+
+* Next.js
+* React
+* Vite
+* hoặc Node.js
+
+hãy dùng đúng convention env tương ứng.
+
+8. Sau khi refactor:
+
+* tất cả API docs phải hiển thị đúng domain production
+* code examples copy/paste chạy được ngay
+* websocket URL cũng tự động sync theo BASE_URL
+
+9. Bonus:
+   Tạo helper function:
+
+```ts
+getApiBaseUrl()
+```
+
+để sau này dễ maintain hơn.
 
 ```bash
 npm run build

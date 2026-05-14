@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
-import { User, Shield, Sun, Moon, Monitor, Save, Check, Loader2 } from "lucide-react";
+import { useI18n } from "@/i18n";
+import { Shield, Sun, Moon, Monitor, Save, Check, Loader2 } from "lucide-react";
+import LanguageSelector from "@/components/LanguageSelector";
 
 function SettingSection({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
     return (
@@ -38,6 +40,7 @@ function ReadonlyField({ value }: { value: string }) {
 export default function SettingsContent({ quota }: { quota: { limit: number; used: number; remaining: number; resetDate: string } }) {
     const { user } = useAuth();
     const { theme, setTheme } = useTheme();
+    const { t } = useI18n();
 
     const [displayName, setDisplayName] = useState(user?.name || "");
     const [saving, setSaving] = useState(false);
@@ -68,8 +71,8 @@ export default function SettingsContent({ quota }: { quota: { limit: number; use
 
     const handleChangePw = async () => {
         if (!currentPw || !newPw) return;
-        if (newPw !== confirmPw) { setPwMsg({ ok: false, text: "Passwords do not match." }); return; }
-        if (newPw.length < 6) { setPwMsg({ ok: false, text: "New password must be at least 6 characters." }); return; }
+        if (newPw !== confirmPw) { setPwMsg({ ok: false, text: t.settings.security.passwordsNoMatch }); return; }
+        if (newPw.length < 6) { setPwMsg({ ok: false, text: t.settings.security.passwordTooShort }); return; }
         setPwSaving(true);
         setPwMsg(null);
         try {
@@ -80,33 +83,33 @@ export default function SettingsContent({ quota }: { quota: { limit: number; use
             });
             const data = await res.json();
             if (res.ok) {
-                setPwMsg({ ok: true, text: "Password updated successfully." });
+                setPwMsg({ ok: true, text: t.settings.security.passwordUpdated });
                 setCurrentPw(""); setNewPw(""); setConfirmPw("");
             } else {
-                setPwMsg({ ok: false, text: data.error?.message || "Failed to update password." });
+                setPwMsg({ ok: false, text: data.error?.message || t.settings.security.failedUpdate });
             }
         } catch {
-            setPwMsg({ ok: false, text: "Network error." });
+            setPwMsg({ ok: false, text: t.settings.security.networkError });
         }
         setPwSaving(false);
     };
 
     const themeOptions = [
-        { value: "dark", label: "Dark", icon: Moon },
-        { value: "light", label: "Light", icon: Sun },
-        { value: "system", label: "System", icon: Monitor },
+        { value: "dark", label: t.settings.appearance.dark, icon: Moon },
+        { value: "light", label: t.settings.appearance.light, icon: Sun },
+        { value: "system", label: t.settings.appearance.system, icon: Monitor },
     ] as const;
 
     return (
         <div className="max-w-3xl mx-auto py-8 px-6">
             <header className="mb-8">
-                <h1 className="text-3xl font-bold text-vox-heading tracking-tight">Settings</h1>
-                <p className="text-vox-text-dim mt-2">Manage your account, security, and preferences.</p>
+                <h1 className="text-3xl font-bold text-vox-heading tracking-tight">{t.settings.title}</h1>
+                <p className="text-vox-text-dim mt-2">{t.settings.subtitle}</p>
             </header>
 
             <div className="flex flex-col gap-6">
                 {/* ── Profile ── */}
-                <SettingSection title="Profile" desc="Your public profile information.">
+                <SettingSection title={t.settings.profile.title} desc={t.settings.profile.desc}>
                     <div className="flex items-center gap-5 mb-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -120,50 +123,50 @@ export default function SettingsContent({ quota }: { quota: { limit: number; use
                         </div>
                     </div>
 
-                    <FieldRow label="Username" hint="Cannot be changed.">
+                    <FieldRow label={t.settings.profile.username} hint={t.settings.profile.usernameCantChange}>
                         <ReadonlyField value={user?.username || ""} />
                     </FieldRow>
 
-                    <FieldRow label="Display Name" hint="This is how your name appears across the platform.">
+                    <FieldRow label={t.settings.profile.displayName} hint={t.settings.profile.displayNameHint}>
                         <div className="flex gap-2">
                             <input value={displayName} onChange={e => setDisplayName(e.target.value)}
                                 className="flex-1 bg-vox-surface-low border border-vox-outline/20 rounded-xl px-4 py-2.5 text-sm text-vox-heading outline-none focus:border-vox-primary transition-colors" />
                             <button onClick={handleSaveProfile} disabled={saving || !displayName.trim()}
                                 className="flex items-center gap-2 px-4 py-2.5 bg-vox-primary text-white text-sm font-semibold rounded-xl hover:bg-vox-primary/90 transition-colors disabled:opacity-40">
                                 {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : <Save size={14} />}
-                                {saved ? "Saved" : "Save"}
+                                {saved ? t.common.saved : t.common.save}
                             </button>
                         </div>
                     </FieldRow>
                 </SettingSection>
 
                 {/* ── Security ── */}
-                <SettingSection title="Security" desc="Manage your password and account security.">
-                    <FieldRow label="Current Password">
+                <SettingSection title={t.settings.security.title} desc={t.settings.security.desc}>
+                    <FieldRow label={t.settings.security.currentPassword}>
                         <input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)}
-                            className="w-full bg-vox-surface-low border border-vox-outline/20 rounded-xl px-4 py-2.5 text-sm text-vox-heading outline-none focus:border-vox-primary transition-colors" placeholder="Enter current password" />
+                            className="w-full bg-vox-surface-low border border-vox-outline/20 rounded-xl px-4 py-2.5 text-sm text-vox-heading outline-none focus:border-vox-primary transition-colors" placeholder={t.settings.security.enterCurrentPassword} />
                     </FieldRow>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FieldRow label="New Password">
+                        <FieldRow label={t.settings.security.newPassword}>
                             <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)}
-                                className="w-full bg-vox-surface-low border border-vox-outline/20 rounded-xl px-4 py-2.5 text-sm text-vox-heading outline-none focus:border-vox-primary transition-colors" placeholder="Min 6 characters" />
+                                className="w-full bg-vox-surface-low border border-vox-outline/20 rounded-xl px-4 py-2.5 text-sm text-vox-heading outline-none focus:border-vox-primary transition-colors" placeholder={t.settings.security.minChars} />
                         </FieldRow>
-                        <FieldRow label="Confirm Password">
+                        <FieldRow label={t.settings.security.confirmPassword}>
                             <input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
-                                className="w-full bg-vox-surface-low border border-vox-outline/20 rounded-xl px-4 py-2.5 text-sm text-vox-heading outline-none focus:border-vox-primary transition-colors" placeholder="Re-enter new password" />
+                                className="w-full bg-vox-surface-low border border-vox-outline/20 rounded-xl px-4 py-2.5 text-sm text-vox-heading outline-none focus:border-vox-primary transition-colors" placeholder={t.settings.security.reenterPassword} />
                         </FieldRow>
                     </div>
                     {pwMsg && <p className={`text-sm ${pwMsg.ok ? "text-green-400" : "text-red-400"}`}>{pwMsg.text}</p>}
                     <button onClick={handleChangePw} disabled={pwSaving || !currentPw || !newPw}
                         className="flex items-center gap-2 px-4 py-2.5 bg-vox-surface-low border border-vox-outline/20 text-vox-heading text-sm font-semibold rounded-xl hover:bg-vox-surface-high transition-colors disabled:opacity-40">
                         {pwSaving ? <Loader2 size={14} className="animate-spin" /> : <Shield size={14} />}
-                        Update Password
+                        {t.settings.security.updatePassword}
                     </button>
                 </SettingSection>
 
                 {/* ── Appearance ── */}
-                <SettingSection title="Appearance" desc="Customize the look and feel.">
-                    <FieldRow label="Theme">
+                <SettingSection title={t.settings.appearance.title} desc={t.settings.appearance.desc}>
+                    <FieldRow label={t.settings.appearance.theme}>
                         <div className="flex gap-2">
                             {themeOptions.map(opt => (
                                 <button key={opt.value}
@@ -180,10 +183,17 @@ export default function SettingsContent({ quota }: { quota: { limit: number; use
                     </FieldRow>
                 </SettingSection>
 
+                {/* ── Language ── */}
+                <SettingSection title={t.settings.language.title} desc={t.settings.language.desc}>
+                    <FieldRow label={t.common.language}>
+                        <LanguageSelector variant="full" />
+                    </FieldRow>
+                </SettingSection>
+
                 {/* ── Usage Quota ── */}
-                <SettingSection title="Usage & Quota" desc="Your monthly character usage and limits.">
+                <SettingSection title={t.settings.usageQuota.title} desc={t.settings.usageQuota.desc}>
                     <div className="flex justify-between text-sm mb-1">
-                        <span className="text-vox-text-dim font-medium">Monthly Progress</span>
+                        <span className="text-vox-text-dim font-medium">{t.settings.usageQuota.monthlyProgress}</span>
                         <span className="text-vox-heading font-bold">{quota.used.toLocaleString()} / {quota.limit.toLocaleString()} chars</span>
                     </div>
                     <div className="w-full h-3 bg-vox-surface-low rounded-full overflow-hidden border border-vox-outline/10">
@@ -192,15 +202,15 @@ export default function SettingsContent({ quota }: { quota: { limit: number; use
                     </div>
                     <div className="grid grid-cols-3 gap-3 mt-2">
                         <div className="bg-vox-surface-low rounded-xl p-3 border border-vox-outline/10 text-center">
-                            <p className="text-xs text-vox-text-dim">Remaining</p>
+                            <p className="text-xs text-vox-text-dim">{t.settings.usageQuota.remaining}</p>
                             <p className="text-sm font-bold text-vox-heading">{quota.remaining.toLocaleString()}</p>
                         </div>
                         <div className="bg-vox-surface-low rounded-xl p-3 border border-vox-outline/10 text-center">
-                            <p className="text-xs text-vox-text-dim">Used</p>
+                            <p className="text-xs text-vox-text-dim">{t.settings.usageQuota.used}</p>
                             <p className="text-sm font-bold text-vox-heading">{quota.used.toLocaleString()}</p>
                         </div>
                         <div className="bg-vox-surface-low rounded-xl p-3 border border-vox-outline/10 text-center">
-                            <p className="text-xs text-vox-text-dim">Resets</p>
+                            <p className="text-xs text-vox-text-dim">{t.settings.usageQuota.resets}</p>
                             <p className="text-sm font-bold text-vox-heading">{new Date(quota.resetDate).toLocaleDateString()}</p>
                         </div>
                     </div>

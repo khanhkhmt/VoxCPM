@@ -5,6 +5,7 @@ import {
     Play, Loader2, Copy, Check, AlertTriangle, Volume2,
     TerminalSquare, ChevronDown,
 } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 interface VoiceWithKey {
     voiceId: string;
@@ -16,6 +17,7 @@ interface VoiceWithKey {
 }
 
 export default function PlaygroundPanel() {
+    const { t } = useI18n();
     const [voices, setVoices] = useState<VoiceWithKey[]>([]);
     const [selectedVoice, setSelectedVoice] = useState<VoiceWithKey | null>(null);
     const [text, setText] = useState("Hello, this is a test of my cloned voice.");
@@ -110,10 +112,10 @@ export default function PlaygroundPanel() {
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-vox-heading tracking-tight flex items-center gap-2">
-                    <TerminalSquare size={24} className="text-vox-secondary" /> Playground
+                    <TerminalSquare size={24} className="text-vox-secondary" /> {t.playground.title}
                 </h1>
                 <p className="text-sm text-vox-text-dim mt-1">
-                    Test your voice API keys live. No code required &mdash; results are real API responses.
+                    {t.playground.subtitle}
                 </p>
             </div>
 
@@ -121,8 +123,7 @@ export default function PlaygroundPanel() {
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-start gap-3">
                 <AlertTriangle size={16} className="text-amber-400 shrink-0 mt-0.5" />
                 <p className="text-sm text-vox-text-dim">
-                    Playground calls the real API. Each request deducts from your monthly quota.
-                    The API key is sent server-side &mdash; your key is never exposed in the browser.
+                    {t.playground.warning}
                 </p>
             </div>
 
@@ -130,12 +131,12 @@ export default function PlaygroundPanel() {
                 {/* Left — Input */}
                 <div className="bg-vox-surface border border-vox-outline/20 rounded-2xl overflow-hidden flex flex-col">
                     <div className="px-6 py-4 border-b border-vox-outline/10">
-                        <h2 className="text-base font-semibold text-vox-heading">Request</h2>
+                        <h2 className="text-base font-semibold text-vox-heading">{t.playground.request}</h2>
                     </div>
                     <div className="p-6 space-y-5 flex-1">
                         {/* Voice Selector */}
                         <div>
-                            <label className="block text-xs font-bold text-vox-text-dim uppercase tracking-wider mb-2">Voice</label>
+                            <label className="block text-xs font-bold text-vox-text-dim uppercase tracking-wider mb-2">{t.playground.voice}</label>
                             {loadingVoices ? (
                                 <div className="flex items-center gap-2 text-sm text-vox-text-dim"><Loader2 size={14} className="animate-spin" /> Loading voices&hellip;</div>
                             ) : voices.length === 0 ? (
@@ -144,7 +145,7 @@ export default function PlaygroundPanel() {
                                 <div className="relative">
                                     <button onClick={() => setDropdownOpen(!dropdownOpen)}
                                         className="w-full flex items-center justify-between bg-vox-surface-low border border-vox-outline/20 rounded-xl px-4 py-3 text-sm text-vox-heading hover:border-vox-primary/30 transition-colors">
-                                        <span>{selectedVoice?.voiceName || "Select a voice"}</span>
+                                        <span>{selectedVoice?.voiceName || t.playground.selectVoice}</span>
                                         <ChevronDown size={16} className={`text-vox-text-dim transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
                                     </button>
                                     {dropdownOpen && (
@@ -164,7 +165,7 @@ export default function PlaygroundPanel() {
 
                         {/* Text Input */}
                         <div>
-                            <label className="block text-xs font-bold text-vox-text-dim uppercase tracking-wider mb-2">Text</label>
+                            <label className="block text-xs font-bold text-vox-text-dim uppercase tracking-wider mb-2">{t.playground.text}</label>
                             <textarea value={text} onChange={(e) => setText(e.target.value)}
                                 placeholder="Enter text to synthesize..."
                                 rows={5}
@@ -174,15 +175,15 @@ export default function PlaygroundPanel() {
 
                         {/* Mode */}
                         <div>
-                            <label className="block text-xs font-bold text-vox-text-dim uppercase tracking-wider mb-2">Mode</label>
+                            <label className="block text-xs font-bold text-vox-text-dim uppercase tracking-wider mb-2">{t.playground.mode}</label>
                             <div className="flex gap-2">
                                 <button onClick={() => setMode("blocking")}
                                     className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${mode === "blocking" ? "bg-vox-primary/10 border-vox-primary/30 text-vox-primary" : "bg-vox-surface-low border-vox-outline/20 text-vox-text-dim hover:text-vox-heading"}`}>
-                                    Blocking
+                                    {t.playground.blocking}
                                 </button>
                                 <button onClick={() => setMode("streaming")}
                                     className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${mode === "streaming" ? "bg-vox-primary/10 border-vox-primary/30 text-vox-primary" : "bg-vox-surface-low border-vox-outline/20 text-vox-text-dim hover:text-vox-heading"}`}>
-                                    Streaming
+                                    {t.playground.streaming}
                                 </button>
                             </div>
                         </div>
@@ -192,7 +193,7 @@ export default function PlaygroundPanel() {
                     <div className="px-6 py-4 border-t border-vox-outline/10">
                         <button onClick={handleGenerate} disabled={loading || !selectedVoice || !text.trim()}
                             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-vox-primary text-white font-semibold rounded-xl hover:bg-vox-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm">
-                            {loading ? <><Loader2 size={16} className="animate-spin" /> Generating&hellip;</> : <><Play size={16} /> Generate Speech</>}
+                            {loading ? <><Loader2 size={16} className="animate-spin" /> {t.common.loading}</> : <><Play size={16} /> {t.playground.generateSpeech}</>}
                         </button>
                     </div>
                 </div>
@@ -200,7 +201,7 @@ export default function PlaygroundPanel() {
                 {/* Right — Response */}
                 <div className="bg-vox-surface border border-vox-outline/20 rounded-2xl overflow-hidden flex flex-col">
                     <div className="px-6 py-4 border-b border-vox-outline/10 flex items-center justify-between">
-                        <h2 className="text-base font-semibold text-vox-heading">Response</h2>
+                        <h2 className="text-base font-semibold text-vox-heading">{t.playground.response}</h2>
                         {result && (
                             <div className="flex items-center gap-2">
                                 <span className={`text-xs font-bold font-mono ${statusColor(result.status)}`}>{result.status}</span>
@@ -221,7 +222,7 @@ export default function PlaygroundPanel() {
                         {!loading && !result && !error && (
                             <div className="flex-1 flex flex-col items-center justify-center py-12 text-center">
                                 <TerminalSquare size={32} className="text-vox-text-dim opacity-30 mb-3" />
-                                <p className="text-sm text-vox-text-dim">Response will appear here after you generate speech.</p>
+                                <p className="text-sm text-vox-text-dim">{t.playground.responsePlaceholder}</p>
                             </div>
                         )}
 

@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { GlassCard } from "@/components/GlassCard";
 import { StreamingTTSPanel } from "@/components/studio/StreamingTTSPanel";
 import { useVoiceSelection } from "@/lib/stores/voice-selection";
+import { useI18n } from "@/i18n";
 import {
     SlidersHorizontal, Type, Play, Mic, Waves, Download,
     CheckCircle2, RotateCcw, History as HistoryIcon,
@@ -58,6 +59,7 @@ const EXAMPLES = [
 // ---------------------------------------------------------------------------
 export default function Workspace() {
     const { user } = useAuth();
+    const { t } = useI18n();
     const selectedLibraryVoice = useVoiceSelection((s) => s.selected);
     const setSelectedVoice = useVoiceSelection((s) => s.setSelected);
     const clearLibraryVoice = useCallback(() => setSelectedVoice(null), [setSelectedVoice]);
@@ -403,14 +405,14 @@ export default function Workspace() {
                     <GlassCard className="!p-4">
                         <label className="text-sm font-medium text-vox-text flex items-center gap-2 mb-3">
                             <FileAudio size={14} className="text-vox-secondary" />
-                            Reference Audio
-                            <span className="text-xs text-vox-text-dim ml-1">(optional — for voice cloning)</span>
+                            {t.studio.referenceAudio.title}
+                            <span className="text-xs text-vox-text-dim ml-1">({t.studio.referenceAudio.optional})</span>
                         </label>
 
                         {/* Voice Library Selector */}
                         {libraryVoices.length > 0 && (
                             <div className="mb-3">
-                                <label className="text-xs text-vox-text-dim mb-1 block">Pick from Voice Library</label>
+                                <label className="text-xs text-vox-text-dim mb-1 block">{t.studio.referenceAudio.pickFromLibrary}</label>
                                 <select
                                     value={selectedLibraryVoice?.id ?? ""}
                                     onChange={(e) => {
@@ -431,7 +433,7 @@ export default function Workspace() {
                                     }}
                                     className="w-full bg-vox-surface-lowest border border-vox-outline/30 rounded-xl px-3 py-2 text-sm text-vox-text outline-none focus:border-vox-primary transition-colors"
                                 >
-                                    <option value="">— None —</option>
+                                    <option value="">— {t.common.none} —</option>
                                     {libraryVoices.map((v) => (
                                         <option key={v.id} value={v.id}>
                                             {v.name} {v.featureUrl ? "\u26A1" : ""}
@@ -439,7 +441,7 @@ export default function Workspace() {
                                     ))}
                                 </select>
                                 <p className="text-xs text-vox-text-dim mt-1">
-                                    <Zap size={10} className="inline text-amber-400" /> = has feature cache (faster cloning)
+                                    <Zap size={10} className="inline text-amber-400" /> = {t.studio.referenceAudio.hasFeatureCache}
                                 </p>
                             </div>
                         )}
@@ -506,9 +508,9 @@ export default function Workspace() {
                             >
                                 <Upload size={24} className="mx-auto mb-2 text-vox-text-dim group-hover:text-vox-primary transition-colors" />
                                 <p className="text-sm text-vox-text-dim group-hover:text-vox-text transition-colors">
-                                    Drop audio file here or <span className="text-vox-secondary underline underline-offset-2">browse</span>
+                                    {t.studio.referenceAudio.dropAudio}
                                 </p>
-                                <p className="text-xs text-vox-text-dim mt-1">WAV, MP3, FLAC — max 30s recommended</p>
+                                <p className="text-xs text-vox-text-dim mt-1">{t.studio.referenceAudio.audioFormats}</p>
                             </div>
                         )}
                         <input
@@ -570,8 +572,8 @@ export default function Workspace() {
                         <div className="flex flex-col gap-2">
                             <label className="text-sm font-medium text-vox-text flex items-center gap-2">
                                 <SlidersHorizontal size={14} className="text-vox-primary" />
-                                Control Instruction
-                                <span className="text-xs text-vox-secondary ml-2 bg-vox-secondary/10 px-2 rounded-full hidden sm:inline-block">Voice Design</span>
+                                {t.studio.controlInstruction.title}
+                                <span className="text-xs text-vox-secondary ml-2 bg-vox-secondary/10 px-2 rounded-full hidden sm:inline-block">{t.studio.controlInstruction.voiceDesign}</span>
                                 {ultimateCloning && (
                                     <span className="text-xs text-amber-400 ml-auto">Disabled in Ultimate Cloning mode</span>
                                 )}
@@ -595,7 +597,7 @@ export default function Workspace() {
                         <div className="px-5 py-3 border-b border-vox-outline/20 flex justify-between items-center bg-vox-surface/50 rounded-t-2xl">
                             <div className="flex items-center gap-2 text-vox-text">
                                 <Type size={16} className="text-vox-secondary" />
-                                <span className="font-medium text-sm font-semibold tracking-wide">Target Text</span>
+                                <span className="font-medium text-sm font-semibold tracking-wide">{t.studio.targetText.title}</span>
                             </div>
                             <span className="text-xs text-vox-text-dim px-2 bg-vox-surface rounded-full border border-vox-outline/30">{text.length} / 4096</span>
                         </div>
@@ -615,16 +617,16 @@ export default function Workspace() {
                     <GlassCard className="!p-0 border-t-2 border-t-vox-primary">
                         <div className="p-5 border-b border-vox-outline/20 bg-gradient-to-r from-vox-surface to-transparent">
                             <h3 className="font-medium flex items-center gap-2">
-                                <Mic size={16} className="text-vox-secondary" /> Synthesis Settings
+                                <Mic size={16} className="text-vox-secondary" /> {t.studio.synthesisSettings.title}
                             </h3>
                         </div>
 
                         <div className="p-5 flex flex-col gap-6">
                             {/* Language Selection */}
                             <div>
-                                <label className="block text-xs font-medium text-vox-text-dim mb-1.5 ml-1 uppercase tracking-wider">🌐 Normalization Language</label>
+                                <label className="block text-xs font-medium text-vox-text-dim mb-1.5 ml-1 uppercase tracking-wider">🌐 {t.studio.synthesisSettings.normLanguage}</label>
                                 <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full bg-vox-surface border border-vox-outline/30 rounded-lg px-3 py-2 text-sm text-vox-text outline-none focus:border-vox-primary">
-                                    <option value="auto">Auto-Detect</option>
+                                    <option value="auto">{t.studio.synthesisSettings.autoDetect}</option>
                                     <option value="vi">Tiếng Việt</option>
                                     <option value="zh">中文 (Chinese)</option>
                                     <option value="en">English</option>
@@ -641,31 +643,31 @@ export default function Workspace() {
                                 {/* CFG */}
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
-                                        <label className="text-sm font-medium text-vox-text">Guidance Scale (CFG)</label>
+                                        <label className="text-sm font-medium text-vox-text">{t.studio.synthesisSettings.guidanceScale} (CFG)</label>
                                         <span className="text-xs font-mono text-vox-secondary bg-vox-surface px-2 py-0.5 rounded">{cfgValue.toFixed(1)}</span>
                                     </div>
                                     <input type="range" min="1.0" max="3.0" step="0.1" value={cfgValue} onChange={(e) => { const v = parseFloat(e.target.value); if (Number.isFinite(v)) setCfgValue(v); }} className="w-full accent-vox-primary h-1.5 bg-vox-surface-high rounded-full appearance-none outline-none cursor-pointer" />
                                     <div className="flex justify-between text-[10px] text-vox-text-dim mt-1">
-                                        <span>Creative</span><span>Accurate</span>
+                                        <span>{t.studio.synthesisSettings.creative}</span><span>{t.studio.synthesisSettings.accurate}</span>
                                     </div>
                                 </div>
 
                                 {/* Inference Steps */}
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
-                                        <label className="text-sm font-medium text-vox-text">Inference Steps</label>
+                                        <label className="text-sm font-medium text-vox-text">{t.studio.synthesisSettings.inferenceSteps}</label>
                                         <span className="text-xs font-mono text-vox-secondary bg-vox-surface px-2 py-0.5 rounded">{ditSteps}</span>
                                     </div>
                                     <input type="range" min="1" max="50" step="1" value={ditSteps} onChange={(e) => { const v = parseInt(e.target.value, 10); if (Number.isFinite(v)) setDitSteps(v); }} className="w-full accent-vox-primary h-1.5 bg-vox-surface-high rounded-full appearance-none outline-none cursor-pointer" />
                                     <div className="flex justify-between text-[10px] text-vox-text-dim mt-1">
-                                        <span>Faster</span><span>Higher quality</span>
+                                        <span>{t.studio.synthesisSettings.faster}</span><span>{t.studio.synthesisSettings.higherQuality}</span>
                                     </div>
                                 </div>
 
                                 {/* Denoise Toggle */}
                                 <div className="flex items-center justify-between p-3 bg-vox-surface-low rounded-xl border border-vox-outline/10">
                                     <div>
-                                        <div className="text-sm font-medium">Reference Audio Denoising</div>
+                                        <div className="text-sm font-medium">{t.studio.synthesisSettings.refAudioDenoising}</div>
                                         <div className="text-xs text-vox-text-dim">Apply ZipEnhancer before cloning</div>
                                     </div>
                                     <button
@@ -679,7 +681,7 @@ export default function Workspace() {
                                 {/* Normalize Toggle */}
                                 <div className="flex items-center justify-between p-3 bg-vox-surface-low rounded-xl border border-vox-outline/10">
                                     <div>
-                                        <div className="text-sm font-medium">Text Normalization</div>
+                                        <div className="text-sm font-medium">{t.studio.synthesisSettings.textNormalization}</div>
                                         <div className="text-xs text-vox-text-dim">Format numbers, dates, abbreviations</div>
                                     </div>
                                     <button
@@ -700,7 +702,7 @@ export default function Workspace() {
                             className="w-full p-4 flex items-center justify-between text-sm font-medium text-vox-text hover:bg-vox-surface-high/50 transition-colors rounded-2xl"
                         >
                             <span className="flex items-center gap-2">
-                                <Lightbulb size={14} className="text-amber-400" /> Example Prompts
+                                <Lightbulb size={14} className="text-amber-400" /> {t.studio.examplePrompts}
                             </span>
                             {showExamples ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                         </button>
@@ -740,13 +742,13 @@ export default function Workspace() {
                     onClick={() => setIsStreamingMode(false)}
                     className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${!isStreamingMode ? "bg-vox-primary text-white shadow-lg" : "bg-vox-surface-high text-vox-text-dim hover:text-vox-text hover:bg-vox-surface-highest"}`}
                 >
-                    Batch Mode
+                    {t.studio.batchMode}
                 </button>
                 <button
                     onClick={() => setIsStreamingMode(true)}
                     className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${isStreamingMode ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg" : "bg-vox-surface-high text-vox-text-dim hover:text-vox-text hover:bg-vox-surface-highest"}`}
                 >
-                    Streaming Mode ⚡
+                    {t.studio.streamingMode} ⚡
                 </button>
             </div>
 
@@ -755,7 +757,7 @@ export default function Workspace() {
                 {/* ========== ACTION BAR ========== */}
                 <div className="flex items-center justify-between bg-vox-surface/80 backdrop-blur-xl p-4 rounded-2xl border border-vox-outline/20 sticky bottom-6 shadow-2xl z-20">
                 <button onClick={handleClear} className="px-4 py-2 text-sm text-vox-text-dim hover:text-vox-heading flex items-center gap-2 transition-colors" disabled={isGenerating}>
-                    <RotateCcw size={16} /> Clear
+                    <RotateCcw size={16} /> {t.common.clear}
                 </button>
                 <button
                     onClick={handleGenerate}
@@ -769,7 +771,7 @@ export default function Workspace() {
                             </>
                         ) : (
                             <>
-                                <Waves size={18} /> Generate Speech
+                                <Waves size={18} /> {t.studio.generateSpeech}
                             </>
                         )}
                     </span>
@@ -783,7 +785,7 @@ export default function Workspace() {
                         "border-vox-outline/10"
                 }`}>
                 <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                    <Play className="text-vox-secondary" size={18} /> Generated Audio
+                    <Play className="text-vox-secondary" size={18} /> {t.studio.generatedAudio.title}
                 </h3>
 
                 {isGenerating ? (
@@ -815,7 +817,7 @@ export default function Workspace() {
                     /* Empty state */
                     <div className="flex flex-col items-center justify-center py-10 text-vox-text-dim">
                         <Waves size={32} className="mb-3 opacity-30" />
-                        <p className="text-sm">No audio generated yet.</p>
+                        <p className="text-sm">{t.studio.generatedAudio.noAudio}</p>
                         <p className="text-xs mt-1">Enter text above and click <strong className="text-vox-text">Generate Speech</strong> to begin.</p>
                     </div>
                 )}
@@ -844,7 +846,7 @@ export default function Workspace() {
             <div className="mt-4">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-vox-text-dim uppercase tracking-wider flex items-center gap-2">
-                        <HistoryIcon size={16} /> Recent Generations
+                        <HistoryIcon size={16} /> {t.studio.recentGenerations.title}
                     </h3>
                     {history.length > 0 && (
                         <button
@@ -862,7 +864,7 @@ export default function Workspace() {
                             }}
                             className="text-xs text-vox-text-dim hover:text-red-400 transition-colors px-2 py-1 rounded-lg hover:bg-red-500/10"
                         >
-                            🗑️ Clear all
+                            🗑️ {t.common.clearAll}
                         </button>
                     )}
                 </div>

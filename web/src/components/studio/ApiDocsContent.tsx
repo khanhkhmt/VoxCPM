@@ -9,19 +9,21 @@ import {
 } from "./docs/DocsComponents";
 import * as EX from "./docs/DocsExamples";
 import { API_BASE_URL } from "@/lib/config";
+import { useI18n } from "@/i18n";
 
 export default function ApiDocsContent() {
+    const { t } = useI18n();
     const NAV = [
-        { id: "quick-start", label: "Quick Start" },
-        { id: "overview", label: "Overview" },
-        { id: "auth", label: "Authentication" },
-        { id: "generate", label: "Generate Speech" },
-        { id: "stream-token", label: "Stream Token" },
-        { id: "ws-streaming", label: "WebSocket Streaming" },
-        { id: "usage", label: "Usage & Quota" },
-        { id: "errors", label: "Error Codes" },
-        { id: "examples", label: "Code Examples" },
-        { id: "troubleshooting", label: "Troubleshooting" },
+        { id: "quick-start", label: t.apiDocs.nav.quickStart },
+        { id: "overview", label: t.apiDocs.nav.overview },
+        { id: "auth", label: t.apiDocs.nav.authentication },
+        { id: "generate", label: t.apiDocs.nav.generateSpeech },
+        { id: "stream-token", label: t.apiDocs.nav.streamToken },
+        { id: "ws-streaming", label: t.apiDocs.nav.wsStreaming },
+        { id: "usage", label: t.apiDocs.nav.usageQuota },
+        { id: "errors", label: t.apiDocs.nav.errorCodes },
+        { id: "examples", label: t.apiDocs.nav.codeExamples },
+        { id: "troubleshooting", label: t.apiDocs.nav.troubleshooting },
     ];
 
     const [activeSection, setActiveSection] = useState("quick-start");
@@ -32,7 +34,7 @@ export default function ApiDocsContent() {
             {/* Sidebar */}
             <nav className="hidden lg:block w-56 flex-shrink-0 sticky top-24 self-start">
                 <div className="bg-vox-surface border border-vox-outline/20 rounded-2xl p-4 space-y-1">
-                    <p className="text-xs text-vox-text-dim uppercase tracking-wider font-bold mb-3 px-2">Navigation</p>
+                    <p className="text-xs text-vox-text-dim uppercase tracking-wider font-bold mb-3 px-2">{t.apiDocs.nav.navigation}</p>
                     {NAV.map(n => (
                         <button key={n.id} onClick={() => handleNavClick(n.id)}
                             className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${activeSection === n.id ? "bg-vox-primary/10 text-vox-primary font-semibold" : "text-vox-text-dim hover:text-vox-heading hover:bg-vox-surface-low"}`}>
@@ -47,13 +49,13 @@ export default function ApiDocsContent() {
                 {/* Header */}
                 <header>
                     <Link href="/studio/developer" className="inline-flex items-center gap-1.5 text-sm text-vox-text-dim hover:text-vox-primary transition-colors mb-4">
-                        <ArrowLeft size={16} /> Back to API Console
+                        <ArrowLeft size={16} /> {t.apiDocs.backToConsole}
                     </Link>
-                    <h1 className="text-3xl font-bold text-vox-heading tracking-tight">API Documentation</h1>
-                    <p className="text-vox-text-dim mt-2 text-lg">VoxCPM Voice Clone TTS API v1</p>
+                    <h1 className="text-3xl font-bold text-vox-heading tracking-tight">{t.apiDocs.title}</h1>
+                    <p className="text-vox-text-dim mt-2 text-lg">{t.apiDocs.versionLine}</p>
                     <div className="flex gap-2 mt-4">
                         <Link href="/studio/playground" className="inline-flex items-center gap-2 px-4 py-2 bg-vox-secondary/10 border border-vox-secondary/20 text-vox-secondary rounded-xl text-sm font-semibold hover:bg-vox-secondary/20 transition-colors">
-                            <TerminalSquare size={16} /> Test in Playground
+                            <TerminalSquare size={16} /> {t.apiDocs.testInPlayground}
                         </Link>
                     </div>
                 </header>
@@ -64,12 +66,12 @@ export default function ApiDocsContent() {
                 </nav>
 
                 {/* ── Quick Start ── */}
-                <SectionCard id="quick-start" icon={<Play size={20} />} title="Quick Start">
+                <SectionCard id="quick-start" icon={<Play size={20} />} title={t.apiDocs.quickStart.title}>
                     <p className="text-vox-text leading-relaxed">Get started with VoxCPM TTS in 3 steps. Each API key is bound to a specific cloned voice &mdash; you never need to pass <code className="text-xs bg-vox-surface px-1 py-0.5 rounded font-mono">voice_id</code>.</p>
                     <StepList steps={[
-                        { title: "Create a voice & get an API key", desc: "Upload audio in the Voice Library, then click \"Create API Key\" on any voice card. The key is shown only once — save it." },
-                        { title: "Configure your base URL", desc: `Production / Dev: ${API_BASE_URL}. All endpoints are relative to this URL.` },
-                        { title: "Make your first API call", desc: "Use the cURL command below, or copy any example from the Code Examples section." },
+                        { title: t.apiDocs.quickStart.step1title, desc: t.apiDocs.quickStart.step1desc },
+                        { title: t.apiDocs.quickStart.step2title, desc: `${t.apiDocs.quickStart.step2desc} ${API_BASE_URL}. All endpoints are relative to this URL.` },
+                        { title: t.apiDocs.quickStart.step3title, desc: t.apiDocs.quickStart.step3desc },
                     ]} />
                     <CopyBlock code={`# Replace BASE_URL and API key with your values
 curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
@@ -83,7 +85,7 @@ curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
                 </SectionCard>
 
                 {/* ── Overview ── */}
-                <SectionCard id="overview" icon={<Globe size={20} />} title="Overview">
+                <SectionCard id="overview" icon={<Globe size={20} />} title={t.apiDocs.overview.title}>
                     <p className="text-vox-text leading-relaxed">The VoxCPM API provides high-quality Text-to-Speech generation with voice cloning. Every voice clone has a dedicated API key for security and usage tracking.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
                         <div className="bg-vox-surface-low rounded-xl p-4 border border-vox-outline/10">
@@ -99,7 +101,7 @@ curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
                             <code className="text-sm font-mono text-vox-heading">vc_sk_live_xxx</code>
                         </div>
                     </div>
-                    <h3 className="text-sm font-bold text-vox-heading mt-2">Available Endpoints</h3>
+                    <h3 className="text-sm font-bold text-vox-heading mt-2">{t.apiDocs.overview.availableEndpoints}</h3>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead><tr className="border-b border-vox-outline/20 text-xs text-vox-text-dim uppercase">
@@ -120,7 +122,7 @@ curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
                 </SectionCard>
 
                 {/* ── Authentication ── */}
-                <SectionCard id="auth" icon={<Key size={20} />} title="Authentication">
+                <SectionCard id="auth" icon={<Key size={20} />} title={t.apiDocs.auth.title}>
                     <p className="text-vox-text leading-relaxed">All API requests require a <code className="font-mono text-xs">Bearer</code> token in the <code className="font-mono text-xs">Authorization</code> header. Generate keys from the <Link href="/studio/developer" className="text-vox-primary hover:underline">API Console</Link> or from voice cards in the <Link href="/studio/voices" className="text-vox-primary hover:underline">Voice Library</Link>.</p>
                     <CopyBlock language="http" code={`Authorization: Bearer vc_sk_live_xxxxx\nContent-Type: application/json`} />
                     <div className="bg-vox-surface-low rounded-xl p-4 border border-vox-outline/10 space-y-2 text-sm">
@@ -138,7 +140,7 @@ curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
                 </SectionCard>
 
                 {/* ── Generate Speech ── */}
-                <SectionCard id="generate" icon={<Zap size={20} />} title="Generate Speech">
+                <SectionCard id="generate" icon={<Zap size={20} />} title={t.apiDocs.generate.title}>
                     <EndpointHeader method="POST" path="/api/v1/tts/generate" desc="Generate audio from text using your cloned voice. Voice is automatically resolved from the API key." />
                     <h3 className="text-sm font-bold text-vox-heading mt-4">Request Body (JSON)</h3>
                     <ParamTable>
@@ -159,7 +161,7 @@ curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
                 </SectionCard>
 
                 {/* ── Stream Token ── */}
-                <SectionCard id="stream-token" icon={<Key size={20} />} title="Stream Token">
+                <SectionCard id="stream-token" icon={<Key size={20} />} title={t.apiDocs.streamToken.title}>
                     <EndpointHeader method="POST" path="/api/v1/tts/stream-token" desc="Get a short-lived JWT token for WebSocket streaming. Quota is deducted upfront based on text_length." />
                     <ParamTable>
                         <ParamRow name="text_length" type="number" required desc="Number of characters you plan to stream. Must be > 0 and ≤ 10,000. Quota is deducted immediately." />
@@ -175,7 +177,7 @@ curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
                 </SectionCard>
 
                 {/* ── WebSocket Streaming ── */}
-                <SectionCard id="ws-streaming" icon={<Wifi size={20} />} title="WebSocket Streaming">
+                <SectionCard id="ws-streaming" icon={<Wifi size={20} />} title={t.apiDocs.wsStreaming.title}>
                     <EndpointHeader method="WS" path="/ws/tts/stream?token=<stream_token>" desc="Real-time TTS streaming. Sends PCM16 audio chunks as they are generated." />
                     <h3 className="text-sm font-bold text-vox-heading mt-4">Connection Flow</h3>
                     <StepList steps={[
@@ -196,7 +198,7 @@ curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
                 </SectionCard>
 
                 {/* ── Usage & Quota ── */}
-                <SectionCard id="usage" icon={<BarChart3 size={20} />} title="Usage & Quota">
+                <SectionCard id="usage" icon={<BarChart3 size={20} />} title={t.apiDocs.usage.title}>
                     <EndpointHeader method="GET" path="/api/v1/usage" desc="Check your current quota usage, limits, and reset date." />
                     <h3 className="text-sm font-bold text-vox-heading mt-4">Example Request</h3>
                     <CopyBlock code={EX.CURL_USAGE} />
@@ -222,7 +224,7 @@ curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
                 </SectionCard>
 
                 {/* ── Error Codes ── */}
-                <SectionCard id="errors" icon={<Server size={20} />} title="Error Codes">
+                <SectionCard id="errors" icon={<Server size={20} />} title={t.apiDocs.errors.title}>
                     <p className="text-sm text-vox-text mb-2">All errors follow a consistent JSON envelope:</p>
                     <CopyBlock language="json" code={EX.RESPONSE_ERROR} />
                     <h3 className="text-sm font-bold text-vox-heading mt-2">Error Code Reference</h3>
@@ -230,7 +232,7 @@ curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
                 </SectionCard>
 
                 {/* ── Code Examples ── */}
-                <SectionCard id="examples" icon={<Code2 size={20} />} title="Code Examples">
+                <SectionCard id="examples" icon={<Code2 size={20} />} title={t.apiDocs.examples.title}>
                     <InfoBox>
                         <p className="text-vox-text-dim">All examples use a <strong>configurable base URL</strong>. Replace <code className="font-mono text-xs">BASE_URL</code> with <code className="font-mono text-xs">{API_BASE_URL}</code>.</p>
                     </InfoBox>
@@ -259,7 +261,7 @@ curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
                 </SectionCard>
 
                 {/* ── Troubleshooting ── */}
-                <SectionCard id="troubleshooting" icon={<Server size={20} />} title="Troubleshooting">
+                <SectionCard id="troubleshooting" icon={<Server size={20} />} title={t.apiDocs.troubleshooting.title}>
                     <div className="space-y-4">
                         {[
                             { q: "401 — Missing or invalid Authorization Bearer token", a: "Ensure your request includes the header: Authorization: Bearer vc_sk_live_xxx. The key must be active and not revoked." },

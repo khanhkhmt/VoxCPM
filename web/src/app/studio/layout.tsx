@@ -1,13 +1,27 @@
 "use client";
 
 import { useAuth } from "@/lib/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import Sidebar from "@/components/studio/Sidebar";
+import { useI18n } from "@/i18n";
 
 export default function StudioLayout({ children }: { children: React.ReactNode }) {
     const { status } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
+    const { t } = useI18n();
+
+    const breadcrumbMap: Record<string, string> = {
+        "/studio": t.studio.newSynthesis.title,
+        "/studio/voices": t.sidebar.voiceLibrary,
+        "/studio/developer": t.sidebar.apiConsole,
+        "/studio/playground": t.sidebar.playground,
+        "/studio/api-docs": t.sidebar.apiDocs,
+        "/studio/history": t.sidebar.history,
+        "/studio/settings": t.sidebar.settings,
+    };
+    const currentPage = breadcrumbMap[pathname] || t.studio.newSynthesis.title;
 
     useEffect(() => {
         // Redirection should primarily be handled by middleware.ts,
@@ -64,7 +78,7 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
                     <div className="flex items-center gap-2 text-sm">
                         <span className="text-vox-text-dim">Studio</span>
                         <span className="text-vox-text-dim">/</span>
-                        <span className="text-vox-heading font-medium">New Synthesis</span>
+                        <span className="text-vox-heading font-medium">{currentPage}</span>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="px-3 py-1 rounded-full bg-vox-surface text-xs font-mono text-vox-secondary border border-vox-secondary/20">

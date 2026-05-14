@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
+import { useI18n } from "@/i18n";
 import {
     Mic, LayoutDashboard, History, Settings, PanelLeftClose, PanelLeft,
     LogOut, Sun, Moon, Code2, TerminalSquare, BookOpen, ChevronDown, Layers,
@@ -16,6 +17,7 @@ const API_PLATFORM_PATHS = ["/studio/developer", "/studio/playground", "/studio/
 export default function Sidebar() {
     const { user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
+    const { t } = useI18n();
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
 
@@ -33,9 +35,9 @@ export default function Sidebar() {
         isActive(href) ? "text-vox-primary" : "text-vox-text-dim group-hover:text-vox-secondary";
 
     const apiSubLinks = [
-        { name: "API Console", href: "/studio/developer", icon: Code2 },
-        { name: "Playground", href: "/studio/playground", icon: TerminalSquare },
-        { name: "API Docs", href: "/studio/api-docs", icon: BookOpen },
+        { name: t.sidebar.apiConsole, href: "/studio/developer", icon: Code2 },
+        { name: t.sidebar.playground, href: "/studio/playground", icon: TerminalSquare },
+        { name: t.sidebar.apiDocs, href: "/studio/api-docs", icon: BookOpen },
     ];
 
     return (
@@ -55,13 +57,13 @@ export default function Sidebar() {
                 {/* Studio */}
                 <Link href="/studio" className={linkCls("/studio")}>
                     <LayoutDashboard size={20} className={iconCls("/studio")} />
-                    {!collapsed && <span className="font-medium text-sm">Studio</span>}
+                    {!collapsed && <span className="font-medium text-sm">{t.sidebar.studio}</span>}
                 </Link>
 
                 {/* Voice Library */}
                 <Link href="/studio/voices" className={linkCls("/studio/voices")}>
                     <Mic size={20} className={iconCls("/studio/voices")} />
-                    {!collapsed && <span className="font-medium text-sm">Voice Library</span>}
+                    {!collapsed && <span className="font-medium text-sm">{t.sidebar.voiceLibrary}</span>}
                 </Link>
 
                 {/* Divider */}
@@ -85,7 +87,7 @@ export default function Sidebar() {
                             }`}
                         >
                             <Layers size={20} className={isApiPlatformActive ? "text-vox-primary" : "text-vox-text-dim group-hover:text-vox-secondary"} />
-                            <span className="font-medium text-sm flex-1 text-left">API Platform</span>
+                            <span className="font-medium text-sm flex-1 text-left">{t.sidebar.apiPlatform}</span>
                             <ChevronDown size={14} className={`text-vox-text-dim transition-transform duration-200 ${apiOpen ? "rotate-0" : "-rotate-90"}`} />
                         </button>
                         {apiOpen && (
@@ -111,7 +113,7 @@ export default function Sidebar() {
                 {/* History */}
                 <Link href="/studio/history" className={linkCls("/studio/history")}>
                     <History size={20} className={iconCls("/studio/history")} />
-                    {!collapsed && <span className="font-medium text-sm">History</span>}
+                    {!collapsed && <span className="font-medium text-sm">{t.sidebar.history}</span>}
                 </Link>
             </div>
 
@@ -121,10 +123,10 @@ export default function Sidebar() {
                 <button
                     onClick={toggleTheme}
                     className={`w-full flex items-center ${collapsed ? "justify-center" : "gap-3"} px-3 py-2 text-sm text-vox-text-dim hover:text-vox-heading hover:bg-vox-surface rounded-lg transition-colors`}
-                    title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    title={theme === "dark" ? t.sidebar.lightMode : t.sidebar.darkMode}
                 >
                     {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-                    {!collapsed && <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
+                    {!collapsed && <span>{theme === "dark" ? t.sidebar.lightMode : t.sidebar.darkMode}</span>}
                 </button>
 
                 {/* Settings */}
@@ -133,7 +135,7 @@ export default function Sidebar() {
                         isActive("/studio/settings") ? "bg-vox-primary/10 text-vox-heading" : "text-vox-text-dim hover:text-vox-heading hover:bg-vox-surface"
                     }`}>
                     <Settings size={18} className={isActive("/studio/settings") ? "text-vox-primary" : ""} />
-                    {!collapsed && <span>Settings</span>}
+                    {!collapsed && <span>{t.sidebar.settings}</span>}
                 </Link>
 
                 {/* User Profile Card */}
@@ -156,7 +158,7 @@ export default function Sidebar() {
                 {/* Sign out */}
                 {!collapsed && (
                     <button onClick={logout} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-vox-text-dim hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors">
-                        <LogOut size={16} /> Sign out
+                        <LogOut size={16} /> {t.sidebar.signOut}
                     </button>
                 )}
             </div>

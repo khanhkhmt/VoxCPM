@@ -228,14 +228,14 @@ export default function VoiceLibrary() {
   if (loading && !data) return (
     <div className="flex flex-col items-center justify-center py-20 gap-4">
       <Loader2 size={32} className="animate-spin text-vox-primary" />
-      <p className="text-sm text-vox-text-dim">Loading voice library&hellip;</p>
+      <p className="text-sm text-vox-text-dim">{t.voiceLibrary.loadingLibrary}</p>
     </div>
   );
 
   if (error) return (
     <div className="bg-red-500/10 border border-red-500/30 text-red-200 p-6 rounded-xl flex items-start gap-3">
       <AlertTriangle size={20} className="text-red-400 mt-0.5 shrink-0" />
-      <div><p className="font-semibold text-red-400">Error</p><p className="text-sm">{error}</p></div>
+      <div><p className="font-semibold text-red-400">{t.common.error}</p><p className="text-sm">{error}</p></div>
     </div>
   );
 
@@ -259,8 +259,8 @@ export default function VoiceLibrary() {
               <div className="w-16 h-16 rounded-full bg-vox-primary/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-vox-primary/20 transition-colors">
                 <Upload size={28} className="text-vox-primary" />
               </div>
-              <p className="text-sm text-vox-text font-medium">Drop an audio file here or <span className="text-vox-secondary underline underline-offset-2">browse</span></p>
-              <p className="text-xs text-vox-text-dim mt-1">WAV, MP3, FLAC &mdash; max 10MB &middot; auto-trimmed to 7s</p>
+              <p className="text-sm text-vox-text font-medium">{t.voiceLibrary.dropAudioFull} <span className="text-vox-secondary underline underline-offset-2">{t.voiceLibrary.browse}</span></p>
+              <p className="text-xs text-vox-text-dim mt-1">{t.voiceLibrary.audioFormats}</p>
             </>
           )}
         </div>
@@ -271,15 +271,15 @@ export default function VoiceLibrary() {
       {data && data.total > 0 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-vox-text-dim">{t.voiceLibrary.voiceCount(data.total)}</p>
-          <p className="text-xs text-vox-text-dim hidden sm:block">One Voice = One Product &middot; Each voice gets its own API key</p>
+          <p className="text-xs text-vox-text-dim hidden sm:block">{t.voiceLibrary.oneVoiceOneProduct}</p>
         </div>
       )}
 
       {!data || data.items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="w-20 h-20 rounded-full bg-vox-surface flex items-center justify-center mb-4"><Mic size={32} className="text-vox-text-dim opacity-50" /></div>
-          <h3 className="text-lg font-medium text-vox-heading mb-2">No Voices Yet</h3>
-          <p className="text-sm text-vox-text-dim max-w-md">Upload your first voice reference to start building your voice library. Each voice becomes an API product with its own key.</p>
+          <h3 className="text-lg font-medium text-vox-heading mb-2">{t.voiceLibrary.noVoicesTitle}</h3>
+          <p className="text-sm text-vox-text-dim max-w-md">{t.voiceLibrary.noVoicesDesc}</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -377,12 +377,12 @@ export default function VoiceLibrary() {
         <div className="flex items-center justify-center gap-3 pt-2">
           <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1 || loading}
             className="flex items-center gap-1 px-3 py-2 text-sm text-vox-text-dim hover:text-vox-heading bg-vox-surface rounded-lg border border-vox-outline/20 transition-colors disabled:opacity-30">
-            <ChevronLeft size={16} /> Previous
+            <ChevronLeft size={16} /> {t.common.previous}
           </button>
-          <span className="text-sm text-vox-text-dim px-3">Page <span className="text-vox-heading font-medium">{data.page}</span> of <span className="text-vox-heading font-medium">{data.totalPages}</span></span>
+          <span className="text-sm text-vox-text-dim px-3">{t.common.page} <span className="text-vox-heading font-medium">{data.page}</span> {t.common.of} <span className="text-vox-heading font-medium">{data.totalPages}</span></span>
           <button onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))} disabled={page >= data.totalPages || loading}
             className="flex items-center gap-1 px-3 py-2 text-sm text-vox-text-dim hover:text-vox-heading bg-vox-surface rounded-lg border border-vox-outline/20 transition-colors disabled:opacity-30">
-            Next <ChevronRight size={16} />
+            {t.common.next} <ChevronRight size={16} />
           </button>
         </div>
       )}

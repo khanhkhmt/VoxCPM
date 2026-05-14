@@ -454,18 +454,18 @@ export default function Workspace() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm text-vox-text font-medium truncate">
-                                        Using: {selectedLibraryVoice.name}
+                                        {t.studio.referenceAudio.using} {selectedLibraryVoice.name}
                                     </p>
                                     {selectedLibraryVoice.featureUrl && (
                                         <p className="text-xs text-amber-400 flex items-center gap-1">
-                                            <Zap size={10} /> Feature cached
+                                            <Zap size={10} /> {t.studio.referenceAudio.featureCached}
                                         </p>
                                     )}
                                 </div>
                                 <button
                                     onClick={clearLibraryVoice}
                                     className="p-1.5 rounded-lg hover:bg-red-500/10 text-vox-text-dim hover:text-red-400 transition-colors"
-                                    title="Clear selection"
+                                    title={t.studio.referenceAudio.clearSelection}
                                 >
                                     <X size={16} />
                                 </button>
@@ -486,10 +486,10 @@ export default function Workspace() {
                                     onClick={handleSaveReferenceToLibrary}
                                     disabled={isSavingVoice}
                                     className="p-1.5 px-3 rounded-lg bg-vox-secondary/20 hover:bg-vox-secondary/30 text-xs flex items-center gap-1 text-vox-secondary transition-colors disabled:opacity-50"
-                                    title="Save to Voice Library"
+                                    title={t.studio.referenceAudio.saveToLibrary}
                                 >
                                     {isSavingVoice ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-                                    <span className="hidden sm:inline">Save</span>
+                                    <span className="hidden sm:inline">{t.common.save}</span>
                                 </button>
                                 <button
                                     onClick={clearRefAudio}
@@ -531,10 +531,10 @@ export default function Workspace() {
                                 <div className="flex items-center justify-between p-3 bg-vox-surface rounded-xl border border-vox-outline/10">
                                     <div>
                                         <div className="text-sm font-medium flex items-center gap-2">
-                                            🎙️ Ultimate Cloning Mode
+                                            🎙️ {t.studio.ultimateCloning.title}
                                         </div>
                                         <div className="text-xs text-vox-text-dim mt-0.5 max-w-xs">
-                                            Reproduces every vocal nuance through audio continuation. Disables Control Instruction.
+                                            {t.studio.ultimateCloning.desc}
                                         </div>
                                     </div>
                                     <button
@@ -549,17 +549,17 @@ export default function Workspace() {
                                 {ultimateCloning && (
                                     <div className="bg-vox-surface-lowest border border-vox-outline/20 rounded-xl p-4 space-y-2">
                                         <label className="text-sm font-medium text-vox-text flex items-center gap-2">
-                                            Transcript of Reference Audio
-                                            <span className="text-[10px] text-vox-text-dim bg-vox-surface px-2 py-0.5 rounded-full">editable</span>
+                                            {t.studio.ultimateCloning.transcriptTitle}
+                                            <span className="text-[10px] text-vox-text-dim bg-vox-surface px-2 py-0.5 rounded-full">{t.studio.ultimateCloning.editable}</span>
                                         </label>
                                         <textarea
                                             className="w-full bg-transparent border border-vox-outline/20 rounded-lg px-4 py-2.5 text-sm text-vox-text outline-none focus:border-vox-secondary transition-colors resize-none min-h-[80px]"
-                                            placeholder="Paste or type the transcript of your reference audio here. If you're unsure, leave blank and the model will still attempt continuation."
+                                            placeholder={t.studio.ultimateCloning.transcriptPlaceholder}
                                             value={promptText}
                                             onChange={(e) => setPromptText(e.target.value)}
                                         />
                                         <p className="text-[11px] text-vox-text-dim">
-                                            💡 For best results, provide an accurate transcript so the model knows exactly where the reference audio ends.
+                                            💡 {t.studio.ultimateCloning.transcriptHint}
                                         </p>
                                     </div>
                                 )}
@@ -575,7 +575,7 @@ export default function Workspace() {
                                 {t.studio.controlInstruction.title}
                                 <span className="text-xs text-vox-secondary ml-2 bg-vox-secondary/10 px-2 rounded-full hidden sm:inline-block">{t.studio.controlInstruction.voiceDesign}</span>
                                 {ultimateCloning && (
-                                    <span className="text-xs text-amber-400 ml-auto">Disabled in Ultimate Cloning mode</span>
+                                    <span className="text-xs text-amber-400 ml-auto">{t.studio.ultimateCloning.disabled}</span>
                                 )}
                             </label>
                             <input
@@ -587,7 +587,7 @@ export default function Workspace() {
                                 disabled={ultimateCloning}
                             />
                             <p className="text-xs text-vox-text-dim mt-1 ml-1">
-                                Describe the target timbre, emotion, age, or style. This is prepended to the target text as <code className="text-vox-secondary">(instruction)text</code>.
+                                {t.studio.controlInstruction.desc} <code className="text-vox-secondary">(instruction)text</code>.
                             </p>
                         </div>
                     </GlassCard>
@@ -603,7 +603,7 @@ export default function Workspace() {
                         </div>
                         <textarea
                             className="w-full flex-1 bg-transparent border-none outline-none resize-none p-5 text-vox-text placeholder-vox-text-dim/50 leading-relaxed"
-                            placeholder="Enter the text you want to synthesize here. Use natural phrasing and punctuation for best results..."
+                            placeholder={t.studio.targetText.placeholder}
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                         />
@@ -632,7 +632,7 @@ export default function Workspace() {
                                     <option value="en">English</option>
                                 </select>
                                 <p className="text-[10px] text-vox-text-dim mt-1 ml-1">
-                                    Selects which text normalizer to use (numbers, dates, currency → words). Enable &quot;Text Normalization&quot; below for this to take effect.
+                                    {t.studio.synthesisSettings.normLanguageHint}
                                 </p>
                             </div>
 
@@ -668,7 +668,7 @@ export default function Workspace() {
                                 <div className="flex items-center justify-between p-3 bg-vox-surface-low rounded-xl border border-vox-outline/10">
                                     <div>
                                         <div className="text-sm font-medium">{t.studio.synthesisSettings.refAudioDenoising}</div>
-                                        <div className="text-xs text-vox-text-dim">Apply ZipEnhancer before cloning</div>
+                                        <div className="text-xs text-vox-text-dim">{t.studio.synthesisSettings.refAudioDenoisingDesc}</div>
                                     </div>
                                     <button
                                         onClick={() => setDenoise(!denoise)}
@@ -682,7 +682,7 @@ export default function Workspace() {
                                 <div className="flex items-center justify-between p-3 bg-vox-surface-low rounded-xl border border-vox-outline/10">
                                     <div>
                                         <div className="text-sm font-medium">{t.studio.synthesisSettings.textNormalization}</div>
-                                        <div className="text-xs text-vox-text-dim">Format numbers, dates, abbreviations</div>
+                                        <div className="text-xs text-vox-text-dim">{t.studio.synthesisSettings.textNormalizationDesc}</div>
                                     </div>
                                     <button
                                         onClick={() => setDoNormalize(!doNormalize)}
@@ -730,7 +730,7 @@ export default function Workspace() {
                 <div className="w-full bg-red-500/10 border border-red-500/30 text-red-200 p-4 rounded-xl text-sm flex items-start gap-3">
                     <AlertTriangle size={18} className="text-red-400 mt-0.5 shrink-0" />
                     <div>
-                        <p className="font-semibold text-red-400">Generation Failed</p>
+                        <p className="font-semibold text-red-400">{t.studio.generationFailed}</p>
                         <p>{error}</p>
                     </div>
                 </div>
@@ -767,7 +767,7 @@ export default function Workspace() {
                     <span className="relative z-10 flex items-center gap-2">
                         {isGenerating ? (
                             <>
-                                <Loader2 size={18} className="animate-spin" /> Synthesizing…
+                                <Loader2 size={18} className="animate-spin" /> {t.studio.synthesizing}
                             </>
                         ) : (
                             <>
@@ -796,14 +796,14 @@ export default function Workspace() {
                                 <div key={i} className="w-1 bg-vox-primary rounded-full animate-pulse" style={{ height: `${12 + Math.random() * 20}px`, animationDelay: `${i * 0.1}s` }} />
                             ))}
                         </div>
-                        <p className="text-sm text-vox-text-dim">Generating audio… this may take a moment.</p>
+                        <p className="text-sm text-vox-text-dim">{t.studio.generatedAudio.generatingMsg}</p>
                     </div>
                 ) : currentAudio ? (
                     /* Success state */
                     <>
                         <div className="absolute top-4 right-4">
                             <div className="flex items-center gap-1 text-xs text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full border border-emerald-400/20">
-                                <CheckCircle2 size={12} /> Ready
+                                <CheckCircle2 size={12} /> {t.studio.generatedAudio.ready}
                             </div>
                         </div>
                         <div className="w-full bg-vox-surface-lowest rounded-xl p-4 flex items-center gap-4">
@@ -818,7 +818,7 @@ export default function Workspace() {
                     <div className="flex flex-col items-center justify-center py-10 text-vox-text-dim">
                         <Waves size={32} className="mb-3 opacity-30" />
                         <p className="text-sm">{t.studio.generatedAudio.noAudio}</p>
-                        <p className="text-xs mt-1">Enter text above and click <strong className="text-vox-text">Generate Speech</strong> to begin.</p>
+                        <p className="text-xs mt-1">{t.studio.generatedAudio.noAudioHint}</p>
                     </div>
                 )}
             </GlassCard>
@@ -908,7 +908,7 @@ export default function Workspace() {
                     </div>
                 ) : (
                     <div className="p-8 text-center bg-vox-surface/30 rounded-2xl border border-dashed border-vox-outline/20">
-                        <p className="text-vox-text-dim text-sm">No recent generations. Your synthesis history will appear here.</p>
+                        <p className="text-vox-text-dim text-sm">{t.studio.recentGenerations.noHistory}</p>
                     </div>
                 )}
             </div>

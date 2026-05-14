@@ -9,7 +9,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 
 function SettingSection({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
     return (
-        <section className="bg-vox-surface border border-vox-outline/20 rounded-2xl overflow-hidden">
+        <section className="bg-vox-surface border border-vox-outline/20 rounded-2xl overflow-visible">
             <div className="px-6 py-5 border-b border-vox-outline/10">
                 <h2 className="text-lg font-semibold text-vox-heading">{title}</h2>
                 {desc && <p className="text-sm text-vox-text-dim mt-0.5">{desc}</p>}
@@ -185,7 +185,7 @@ export default function SettingsContent({ quota }: { quota: { limit: number; use
 
                 {/* ── Language ── */}
                 <SettingSection title={t.settings.language.title} desc={t.settings.language.desc}>
-                    <FieldRow label={t.common.language}>
+                    <FieldRow label={t.settings.language.label}>
                         <LanguageSelector variant="full" />
                     </FieldRow>
                 </SettingSection>

@@ -19,7 +19,7 @@ export default function ApiDocsContent() {
         { id: "auth", label: t.apiDocs.nav.authentication },
         { id: "generate", label: t.apiDocs.nav.generateSpeech },
         { id: "stream-token", label: t.apiDocs.nav.streamToken },
-        { id: "ws-streaming", label: t.apiDocs.nav.wsStreaming },
+        { id: "ws-streaming", label: t.apiDocs.nav.websocketStreaming },
         { id: "usage", label: t.apiDocs.nav.usageQuota },
         { id: "errors", label: t.apiDocs.nav.errorCodes },
         { id: "examples", label: t.apiDocs.nav.codeExamples },
@@ -67,11 +67,11 @@ export default function ApiDocsContent() {
 
                 {/* ── Quick Start ── */}
                 <SectionCard id="quick-start" icon={<Play size={20} />} title={t.apiDocs.quickStart.title}>
-                    <p className="text-vox-text leading-relaxed">Get started with VoxCPM TTS in 3 steps. Each API key is bound to a specific cloned voice &mdash; you never need to pass <code className="text-xs bg-vox-surface px-1 py-0.5 rounded font-mono">voice_id</code>.</p>
+                    <p className="text-vox-text leading-relaxed">{t.apiDocs.quickStart.description}</p>
                     <StepList steps={[
-                        { title: t.apiDocs.quickStart.step1title, desc: t.apiDocs.quickStart.step1desc },
-                        { title: t.apiDocs.quickStart.step2title, desc: `${t.apiDocs.quickStart.step2desc} ${API_BASE_URL}. All endpoints are relative to this URL.` },
-                        { title: t.apiDocs.quickStart.step3title, desc: t.apiDocs.quickStart.step3desc },
+                        { title: t.apiDocs.quickStart.step1.title, desc: t.apiDocs.quickStart.step1.description },
+                        { title: t.apiDocs.quickStart.step2.title, desc: `${t.apiDocs.quickStart.step2.description}${API_BASE_URL}${t.apiDocs.quickStart.step2.descriptionSuffix}` },
+                        { title: t.apiDocs.quickStart.step3.title, desc: t.apiDocs.quickStart.step3.description },
                     ]} />
                     <CopyBlock code={`# Replace BASE_URL and API key with your values
 curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
@@ -79,25 +79,25 @@ curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
   -H "Content-Type: application/json" \\
   -d '{"text": "Hello world!", "language": "auto", "format": "mp3"}'`} />
                     <InfoBox>
-                        <p className="font-semibold text-vox-heading mb-1">💡 No voice_id needed</p>
-                        <p className="text-vox-text-dim">Each API key is permanently linked to one cloned voice. The server resolves the voice automatically from your key. To use a different voice, create a separate API key.</p>
+                        <p className="font-semibold text-vox-heading mb-1">💡 {t.apiDocs.quickStart.noVoiceId.title}</p>
+                        <p className="text-vox-text-dim">{t.apiDocs.quickStart.noVoiceId.description}</p>
                     </InfoBox>
                 </SectionCard>
 
                 {/* ── Overview ── */}
                 <SectionCard id="overview" icon={<Globe size={20} />} title={t.apiDocs.overview.title}>
-                    <p className="text-vox-text leading-relaxed">The VoxCPM API provides high-quality Text-to-Speech generation with voice cloning. Every voice clone has a dedicated API key for security and usage tracking.</p>
+                    <p className="text-vox-text leading-relaxed">{t.apiDocs.overview.description}</p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
                         <div className="bg-vox-surface-low rounded-xl p-4 border border-vox-outline/10">
-                            <p className="text-xs text-vox-text-dim mb-1">Base URL (Local)</p>
+                            <p className="text-xs text-vox-text-dim mb-1">{t.apiDocs.overview.baseUrl}</p>
                             <code className="text-sm font-mono text-vox-heading">{API_BASE_URL}</code>
                         </div>
                         <div className="bg-vox-surface-low rounded-xl p-4 border border-vox-outline/10">
-                            <p className="text-xs text-vox-text-dim mb-1">Content Type</p>
+                            <p className="text-xs text-vox-text-dim mb-1">{t.apiDocs.overview.contentType}</p>
                             <code className="text-sm font-mono text-vox-heading">application/json</code>
                         </div>
                         <div className="bg-vox-surface-low rounded-xl p-4 border border-vox-outline/10">
-                            <p className="text-xs text-vox-text-dim mb-1">Key Format</p>
+                            <p className="text-xs text-vox-text-dim mb-1">{t.apiDocs.overview.keyFormat}</p>
                             <code className="text-sm font-mono text-vox-heading">vc_sk_live_xxx</code>
                         </div>
                     </div>
@@ -105,157 +105,157 @@ curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead><tr className="border-b border-vox-outline/20 text-xs text-vox-text-dim uppercase">
-                                <th className="py-2 pr-3">Method</th><th className="py-2 pr-3">Endpoint</th><th className="py-2">Description</th>
+                                <th className="py-2 pr-3">{t.apiDocs.overview.table.method}</th><th className="py-2 pr-3">{t.apiDocs.overview.table.endpoint}</th><th className="py-2">{t.apiDocs.overview.table.description}</th>
                             </tr></thead>
                             <tbody className="text-vox-text">
-                                <tr className="border-b border-vox-outline/10"><td className="py-2.5 pr-3"><code className="text-xs text-blue-400">POST</code></td><td className="py-2.5 pr-3 font-mono text-xs">/api/v1/tts/generate</td><td className="py-2.5">Generate speech from text (blocking)</td></tr>
-                                <tr className="border-b border-vox-outline/10"><td className="py-2.5 pr-3"><code className="text-xs text-blue-400">POST</code></td><td className="py-2.5 pr-3 font-mono text-xs">/api/v1/tts/stream-token</td><td className="py-2.5">Get a one-time token for WebSocket streaming</td></tr>
-                                <tr className="border-b border-vox-outline/10"><td className="py-2.5 pr-3"><code className="text-xs text-purple-400">WS</code></td><td className="py-2.5 pr-3 font-mono text-xs">/ws/tts/stream?token=...</td><td className="py-2.5">Real-time streaming via WebSocket</td></tr>
-                                <tr><td className="py-2.5 pr-3"><code className="text-xs text-green-400">GET</code></td><td className="py-2.5 pr-3 font-mono text-xs">/api/v1/usage</td><td className="py-2.5">Check quota and usage</td></tr>
+                                <tr className="border-b border-vox-outline/10"><td className="py-2.5 pr-3"><code className="text-xs text-blue-400">POST</code></td><td className="py-2.5 pr-3 font-mono text-xs">/api/v1/tts/generate</td><td className="py-2.5">{t.apiDocs.overview.endpoint.generate}</td></tr>
+                                <tr className="border-b border-vox-outline/10"><td className="py-2.5 pr-3"><code className="text-xs text-blue-400">POST</code></td><td className="py-2.5 pr-3 font-mono text-xs">/api/v1/tts/stream-token</td><td className="py-2.5">{t.apiDocs.overview.endpoint.streamToken}</td></tr>
+                                <tr className="border-b border-vox-outline/10"><td className="py-2.5 pr-3"><code className="text-xs text-purple-400">WS</code></td><td className="py-2.5 pr-3 font-mono text-xs">/ws/tts/stream?token=...</td><td className="py-2.5">{t.apiDocs.overview.endpoint.websocket}</td></tr>
+                                <tr><td className="py-2.5 pr-3"><code className="text-xs text-green-400">GET</code></td><td className="py-2.5 pr-3 font-mono text-xs">/api/v1/usage</td><td className="py-2.5">{t.apiDocs.overview.endpoint.usage}</td></tr>
                             </tbody>
                         </table>
                     </div>
                     <InfoBox>
-                        <p className="font-semibold text-vox-heading mb-1">🔗 Dynamic Base URL</p>
-                        <p className="text-vox-text-dim">All examples use a configurable base URL. Currently configured as <code className="font-mono text-xs">{API_BASE_URL}</code>. The Test app sidebar lets you change this at runtime.</p>
+                        <p className="font-semibold text-vox-heading mb-1">🔗 {t.apiDocs.overview.dynamicBaseUrl.title}</p>
+                        <p className="text-vox-text-dim">{t.apiDocs.overview.dynamicBaseUrl.description}<code className="font-mono text-xs">{API_BASE_URL}</code>{t.apiDocs.overview.dynamicBaseUrl.descriptionSuffix}</p>
                     </InfoBox>
                 </SectionCard>
 
                 {/* ── Authentication ── */}
-                <SectionCard id="auth" icon={<Key size={20} />} title={t.apiDocs.auth.title}>
-                    <p className="text-vox-text leading-relaxed">All API requests require a <code className="font-mono text-xs">Bearer</code> token in the <code className="font-mono text-xs">Authorization</code> header. Generate keys from the <Link href="/studio/developer" className="text-vox-primary hover:underline">API Console</Link> or from voice cards in the <Link href="/studio/voices" className="text-vox-primary hover:underline">Voice Library</Link>.</p>
+                <SectionCard id="auth" icon={<Key size={20} />} title={t.apiDocs.authentication.title}>
+                    <p className="text-vox-text leading-relaxed">{t.apiDocs.authentication.description}</p>
                     <CopyBlock language="http" code={`Authorization: Bearer vc_sk_live_xxxxx\nContent-Type: application/json`} />
                     <div className="bg-vox-surface-low rounded-xl p-4 border border-vox-outline/10 space-y-2 text-sm">
-                        <p className="font-semibold text-vox-heading">Key anatomy</p>
+                        <p className="font-semibold text-vox-heading">{t.apiDocs.authentication.keyAnatomy.title}</p>
                         <p className="text-vox-text font-mono text-xs">vc_sk_live_&lt;random_base64url&gt;</p>
                         <p className="text-vox-text-dim"><code className="font-mono text-xs">vc</code> = Voice Clone · <code className="font-mono text-xs">sk</code> = Secret Key · <code className="font-mono text-xs">live</code> = Production</p>
                     </div>
                     <div className="bg-vox-surface-low rounded-xl p-4 border border-vox-outline/10 space-y-2 text-sm">
-                        <p className="font-semibold text-vox-heading">Scopes</p>
-                        <p className="text-vox-text-dim">Each key includes scopes that control access. Default scopes: <code className="font-mono text-xs">tts.generate</code>, <code className="font-mono text-xs">tts.stream</code>, <code className="font-mono text-xs">usage.read</code></p>
+                        <p className="font-semibold text-vox-heading">{t.apiDocs.authentication.scopes.title}</p>
+                        <p className="text-vox-text-dim">{t.apiDocs.authentication.scopes.description}</p>
                     </div>
-                    <WarningBox title="Security">
-                        <p>Your API key is shown <strong>only once</strong> when created. We store only a SHA-256 hash. If lost, revoke and regenerate. Never expose keys in client-side code.</p>
+                    <WarningBox title={t.apiDocs.authentication.security.title}>
+                        <p>{t.apiDocs.authentication.security.description}</p>
                     </WarningBox>
                 </SectionCard>
 
                 {/* ── Generate Speech ── */}
-                <SectionCard id="generate" icon={<Zap size={20} />} title={t.apiDocs.generate.title}>
-                    <EndpointHeader method="POST" path="/api/v1/tts/generate" desc="Generate audio from text using your cloned voice. Voice is automatically resolved from the API key." />
-                    <h3 className="text-sm font-bold text-vox-heading mt-4">Request Body (JSON)</h3>
+                <SectionCard id="generate" icon={<Zap size={20} />} title={t.apiDocs.generateSpeech.title}>
+                    <EndpointHeader method="POST" path="/api/v1/tts/generate" desc={t.apiDocs.generateSpeech.description} />
+                    <h3 className="text-sm font-bold text-vox-heading mt-4">{t.apiDocs.generateSpeech.requestBody}</h3>
                     <ParamTable>
-                        <ParamRow name="text" type="string" required desc="Text to synthesize into speech (max 5,000 chars)." />
-                        <ParamRow name="language" type="string" desc="Language hint: vi, en, zh, ja, ko, fr, de, es." def='"auto"' />
-                        <ParamRow name="format" type="string" desc='Output format: "mp3" or "wav".' def='"mp3"' />
-                        <ParamRow name="speed" type="number" desc="Playback speed multiplier (0.5–2.0)." def="1.0" />
-                        <ParamRow name="control_instruction" type="string" desc="Voice style/prosody control. Example: Young female, warm and gentle." def='""' />
-                        <ParamRow name="cfg_value" type="number" desc="Classifier-free guidance scale (0.1–10.0). Higher = closer to reference voice." def="2.0" />
-                        <ParamRow name="dit_steps" type="number" desc="DiT inference steps (1–50). More steps = better quality but slower." def="6" />
+                        <ParamRow name="text" type="string" required desc={t.apiDocs.generateSpeech.fields.text} />
+                        <ParamRow name="language" type="string" desc={t.apiDocs.generateSpeech.fields.language} />
+                        <ParamRow name="format" type="string" desc={t.apiDocs.generateSpeech.fields.format} />
+                        <ParamRow name="speed" type="number" desc={t.apiDocs.generateSpeech.fields.speed} />
+                        <ParamRow name="control_instruction" type="string" desc={t.apiDocs.generateSpeech.fields.controlInstruction} />
+                        <ParamRow name="cfg_value" type="number" desc={t.apiDocs.generateSpeech.fields.cfgValue} />
+                        <ParamRow name="dit_steps" type="number" desc={t.apiDocs.generateSpeech.fields.ditSteps} />
                     </ParamTable>
-                    <h3 className="text-sm font-bold text-vox-heading">Example Request</h3>
+                    <h3 className="text-sm font-bold text-vox-heading">{t.apiDocs.exampleRequest}</h3>
                     <CopyBlock code={EX.CURL_GENERATE} />
-                    <h3 className="text-sm font-bold text-vox-heading">Success Response (200)</h3>
+                    <h3 className="text-sm font-bold text-vox-heading">{t.apiDocs.successResponse}</h3>
                     <CopyBlock language="json" code={EX.RESPONSE_GENERATE} />
-                    <h3 className="text-sm font-bold text-vox-heading">Error Response</h3>
+                    <h3 className="text-sm font-bold text-vox-heading">{t.apiDocs.errorResponse}</h3>
                     <CopyBlock language="json" code={EX.RESPONSE_ERROR} />
                 </SectionCard>
 
                 {/* ── Stream Token ── */}
                 <SectionCard id="stream-token" icon={<Key size={20} />} title={t.apiDocs.streamToken.title}>
-                    <EndpointHeader method="POST" path="/api/v1/tts/stream-token" desc="Get a short-lived JWT token for WebSocket streaming. Quota is deducted upfront based on text_length." />
+                    <EndpointHeader method="POST" path="/api/v1/tts/stream-token" desc={t.apiDocs.streamToken.description} />
                     <ParamTable>
-                        <ParamRow name="text_length" type="number" required desc="Number of characters you plan to stream. Must be > 0 and ≤ 10,000. Quota is deducted immediately." />
+                        <ParamRow name="text_length" type="number" required desc={t.apiDocs.streamToken.fields.textLength} />
                     </ParamTable>
-                    <h3 className="text-sm font-bold text-vox-heading">Example Request</h3>
+                    <h3 className="text-sm font-bold text-vox-heading">{t.apiDocs.exampleRequest}</h3>
                     <CopyBlock code={EX.CURL_STREAM_TOKEN} />
-                    <h3 className="text-sm font-bold text-vox-heading">Success Response (200)</h3>
+                    <h3 className="text-sm font-bold text-vox-heading">{t.apiDocs.successResponse}</h3>
                     <CopyBlock language="json" code={EX.RESPONSE_STREAM_TOKEN} />
                     <InfoBox>
-                        <p className="font-semibold text-vox-heading mb-1">⏱️ Token Expiry</p>
-                        <p className="text-vox-text-dim">Stream tokens expire in <strong>60 seconds</strong>. Connect to the WebSocket immediately after receiving the token. The <code className="font-mono text-xs">ws_url</code> in the response points directly to the backend WebSocket endpoint.</p>
+                        <p className="font-semibold text-vox-heading mb-1">⏱️ {t.apiDocs.streamToken.tokenExpiry.title}</p>
+                        <p className="text-vox-text-dim">{t.apiDocs.streamToken.tokenExpiry.description}</p>
                     </InfoBox>
                 </SectionCard>
 
                 {/* ── WebSocket Streaming ── */}
-                <SectionCard id="ws-streaming" icon={<Wifi size={20} />} title={t.apiDocs.wsStreaming.title}>
-                    <EndpointHeader method="WS" path="/ws/tts/stream?token=<stream_token>" desc="Real-time TTS streaming. Sends PCM16 audio chunks as they are generated." />
-                    <h3 className="text-sm font-bold text-vox-heading mt-4">Connection Flow</h3>
+                <SectionCard id="ws-streaming" icon={<Wifi size={20} />} title={t.apiDocs.websocket.title}>
+                    <EndpointHeader method="WS" path="/ws/tts/stream?token=<stream_token>" desc={t.apiDocs.websocket.description} />
+                    <h3 className="text-sm font-bold text-vox-heading mt-4">{t.apiDocs.websocket.connectionFlow}</h3>
                     <StepList steps={[
-                        { title: "Get a stream token", desc: "POST /api/v1/tts/stream-token with your API key. Save the stream_token and ws_url." },
-                        { title: "Open WebSocket", desc: "Connect to ws_url with ?token=<stream_token> query parameter." },
-                        { title: "Send \"start\" message", desc: "Send a JSON message with type, text, and voice parameters to begin streaming." },
-                        { title: "Receive audio chunks", desc: "Binary frames contain raw PCM16 audio data. Text frames contain JSON status events." },
-                        { title: "Handle completion", desc: "Server sends {type: \"done\"} with audio_url when complete, or {type: \"error\"} on failure." },
+                        { title: t.apiDocs.websocket.step1.title, desc: t.apiDocs.websocket.step1.description },
+                        { title: t.apiDocs.websocket.step2.title, desc: t.apiDocs.websocket.step2.description },
+                        { title: t.apiDocs.websocket.step3.title, desc: t.apiDocs.websocket.step3.description },
+                        { title: t.apiDocs.websocket.step4.title, desc: t.apiDocs.websocket.step4.description },
+                        { title: t.apiDocs.websocket.step5.title, desc: t.apiDocs.websocket.step5.description },
                     ]} />
-                    <h3 className="text-sm font-bold text-vox-heading">Start Message Format</h3>
+                    <h3 className="text-sm font-bold text-vox-heading">{t.apiDocs.websocket.startMessageFormat}</h3>
                     <CopyBlock language="json" code={EX.WS_START_MSG} />
-                    <h3 className="text-sm font-bold text-vox-heading">Server Events</h3>
+                    <h3 className="text-sm font-bold text-vox-heading">{t.apiDocs.websocket.serverEvents}</h3>
                     <CopyBlock language="javascript" code={EX.WS_EVENTS} />
                     <InfoBox>
-                        <p className="font-semibold text-vox-heading mb-1">🔊 Real-time Playback</p>
-                        <p className="text-vox-text-dim">Audio chunks are PCM16 little-endian at the sample rate specified in the <code className="font-mono text-xs">start</code> event (typically 24000 Hz). Use Web Audio API to play chunks as they arrive for low-latency playback. See the JavaScript WebSocket example in Code Examples.</p>
+                        <p className="font-semibold text-vox-heading mb-1">🔊 {t.apiDocs.websocket.realTimePlayback.title}</p>
+                        <p className="text-vox-text-dim">{t.apiDocs.websocket.realTimePlayback.description}</p>
                     </InfoBox>
                 </SectionCard>
 
                 {/* ── Usage & Quota ── */}
                 <SectionCard id="usage" icon={<BarChart3 size={20} />} title={t.apiDocs.usage.title}>
-                    <EndpointHeader method="GET" path="/api/v1/usage" desc="Check your current quota usage, limits, and reset date." />
-                    <h3 className="text-sm font-bold text-vox-heading mt-4">Example Request</h3>
+                    <EndpointHeader method="GET" path="/api/v1/usage" desc={t.apiDocs.usage.description} />
+                    <h3 className="text-sm font-bold text-vox-heading mt-4">{t.apiDocs.exampleRequest}</h3>
                     <CopyBlock code={EX.CURL_USAGE} />
-                    <h3 className="text-sm font-bold text-vox-heading">Success Response (200)</h3>
+                    <h3 className="text-sm font-bold text-vox-heading">{t.apiDocs.successResponse}</h3>
                     <CopyBlock language="json" code={EX.RESPONSE_USAGE} />
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                         <div className="bg-vox-surface-low rounded-xl p-4 border border-vox-outline/10">
-                            <p className="text-xs text-vox-text-dim mb-1">Charging</p>
-                            <p className="font-semibold text-vox-heading text-sm">Per-character</p>
-                            <p className="text-xs text-vox-text-dim mt-1">Deducted at request time based on input text length.</p>
+                            <p className="text-xs text-vox-text-dim mb-1">{t.apiDocs.usage.charging.title}</p>
+                            <p className="font-semibold text-vox-heading text-sm">{t.apiDocs.usage.charging.subtitle}</p>
+                            <p className="text-xs text-vox-text-dim mt-1">{t.apiDocs.usage.charging.description}</p>
                         </div>
                         <div className="bg-vox-surface-low rounded-xl p-4 border border-vox-outline/10">
-                            <p className="text-xs text-vox-text-dim mb-1">Rate Limit</p>
-                            <p className="font-semibold text-vox-heading text-sm">100 req/min per key</p>
-                            <p className="text-xs text-vox-text-dim mt-1">Each API key has independent rate limiting.</p>
+                            <p className="text-xs text-vox-text-dim mb-1">{t.apiDocs.usage.rateLimit.title}</p>
+                            <p className="font-semibold text-vox-heading text-sm">{t.apiDocs.usage.rateLimit.subtitle}</p>
+                            <p className="text-xs text-vox-text-dim mt-1">{t.apiDocs.usage.rateLimit.description}</p>
                         </div>
                         <div className="bg-vox-surface-low rounded-xl p-4 border border-vox-outline/10">
-                            <p className="text-xs text-vox-text-dim mb-1">Reset</p>
-                            <p className="font-semibold text-vox-heading text-sm">Monthly (1st)</p>
-                            <p className="text-xs text-vox-text-dim mt-1">Counter resets automatically on the 1st of each month.</p>
+                            <p className="text-xs text-vox-text-dim mb-1">{t.apiDocs.usage.reset.title}</p>
+                            <p className="font-semibold text-vox-heading text-sm">{t.apiDocs.usage.reset.subtitle}</p>
+                            <p className="text-xs text-vox-text-dim mt-1">{t.apiDocs.usage.reset.description}</p>
                         </div>
                     </div>
                 </SectionCard>
 
                 {/* ── Error Codes ── */}
                 <SectionCard id="errors" icon={<Server size={20} />} title={t.apiDocs.errors.title}>
-                    <p className="text-sm text-vox-text mb-2">All errors follow a consistent JSON envelope:</p>
+                    <p className="text-sm text-vox-text mb-2">{t.apiDocs.errors.envelope}</p>
                     <CopyBlock language="json" code={EX.RESPONSE_ERROR} />
-                    <h3 className="text-sm font-bold text-vox-heading mt-2">Error Code Reference</h3>
+                    <h3 className="text-sm font-bold text-vox-heading mt-2">{t.apiDocs.errors.title}</h3>
                     <ErrorTable />
                 </SectionCard>
 
                 {/* ── Code Examples ── */}
-                <SectionCard id="examples" icon={<Code2 size={20} />} title={t.apiDocs.examples.title}>
+                <SectionCard id="examples" icon={<Code2 size={20} />} title={t.apiDocs.codeExamples.title}>
                     <InfoBox>
-                        <p className="text-vox-text-dim">All examples use a <strong>configurable base URL</strong>. Replace <code className="font-mono text-xs">BASE_URL</code> with <code className="font-mono text-xs">{API_BASE_URL}</code>.</p>
+                        <p className="text-vox-text-dim">{t.apiDocs.codeExamples.descriptionPrefix}<code className="font-mono text-xs">{API_BASE_URL}</code>{t.apiDocs.codeExamples.descriptionSuffix}</p>
                     </InfoBox>
 
-                    <CollapsibleExample title="cURL — Generate Speech" defaultOpen>
+                    <CollapsibleExample title={t.apiDocs.codeExamples.curlGenerateSpeech} defaultOpen>
                         <CopyBlock code={EX.CURL_GENERATE} />
                     </CollapsibleExample>
-                    <CollapsibleExample title="cURL — Check Quota">
+                    <CollapsibleExample title={t.apiDocs.codeExamples.curlCheckQuota}>
                         <CopyBlock code={EX.CURL_USAGE} />
                     </CollapsibleExample>
-                    <CollapsibleExample title="cURL — Get Stream Token">
+                    <CollapsibleExample title={t.apiDocs.codeExamples.curlStreamToken}>
                         <CopyBlock code={EX.CURL_STREAM_TOKEN} />
                     </CollapsibleExample>
-                    <CollapsibleExample title="Python — Generate Speech">
+                    <CollapsibleExample title={t.apiDocs.codeExamples.pythonGenerateSpeech}>
                         <CopyBlock language="python" code={EX.PYTHON_GENERATE} />
                     </CollapsibleExample>
-                    <CollapsibleExample title="Python — WebSocket Streaming (Full Flow)">
+                    <CollapsibleExample title={t.apiDocs.codeExamples.pythonWebsocket}>
                         <CopyBlock language="python" code={EX.PYTHON_WEBSOCKET} />
                     </CollapsibleExample>
-                    <CollapsibleExample title="JavaScript — Generate Speech">
+                    <CollapsibleExample title={t.apiDocs.codeExamples.jsGenerateSpeech}>
                         <CopyBlock language="javascript" code={EX.JS_GENERATE} />
                     </CollapsibleExample>
-                    <CollapsibleExample title="JavaScript — WebSocket Streaming with Real-time Playback">
+                    <CollapsibleExample title={t.apiDocs.codeExamples.jsWebsocket}>
                         <CopyBlock language="javascript" code={EX.JS_WEBSOCKET} />
                     </CollapsibleExample>
                 </SectionCard>
@@ -264,13 +264,13 @@ curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
                 <SectionCard id="troubleshooting" icon={<Server size={20} />} title={t.apiDocs.troubleshooting.title}>
                     <div className="space-y-4">
                         {[
-                            { q: "401 — Missing or invalid Authorization Bearer token", a: "Ensure your request includes the header: Authorization: Bearer vc_sk_live_xxx. The key must be active and not revoked." },
-                            { q: "403 — Missing required scope: tts.generate", a: "Your API key doesn't have the required permission. Keys created via the UI include all scopes by default. If you created the key manually, ensure it includes tts.generate, tts.stream, and usage.read." },
-                            { q: "403 — QUOTA_EXCEEDED", a: "You've used all your monthly characters. Check GET /api/v1/usage to see remaining quota. Quota resets on the 1st of each month." },
-                            { q: "500 — TTS generation failed: No such file or directory", a: "The backend's .runtime/uploads or .runtime/outputs directory is missing. Create them: mkdir -p .runtime/uploads .runtime/outputs" },
-                            { q: "500 — BACKEND_ERROR / fetch failed", a: "The TTS backend (port 8808) is not running or crashed. Start it with: export TTS_INTERNAL_SECRET=\"dev-internal-secret-change-me\" && python3 app.py --port 8808" },
-                            { q: "WebSocket closes immediately", a: "Stream token may be expired (60s TTL). Request a fresh token via POST /api/v1/tts/stream-token and connect immediately." },
-                            { q: "No audio playback in browser", a: "Web Audio API requires a user gesture before playing. Ensure you call audioContext.resume() after a click event. Also verify the sample rate matches the start event (typically 24000)." },
+                            { q: t.apiDocs.troubleshooting.invalidBearer.title, a: t.apiDocs.troubleshooting.invalidBearer.description },
+                            { q: t.apiDocs.troubleshooting.missingScope.title, a: t.apiDocs.troubleshooting.missingScope.description },
+                            { q: t.apiDocs.troubleshooting.quotaExceeded.title, a: t.apiDocs.troubleshooting.quotaExceeded.description },
+                            { q: t.apiDocs.troubleshooting.noDirectory.title, a: t.apiDocs.troubleshooting.noDirectory.description },
+                            { q: t.apiDocs.troubleshooting.backendFetch.title, a: t.apiDocs.troubleshooting.backendFetch.description },
+                            { q: t.apiDocs.troubleshooting.websocketClose.title, a: t.apiDocs.troubleshooting.websocketClose.description },
+                            { q: t.apiDocs.troubleshooting.noAudio.title, a: t.apiDocs.troubleshooting.noAudio.description },
                         ].map((item, i) => (
                             <div key={i} className="bg-vox-surface-low rounded-xl p-4 border border-vox-outline/10">
                                 <p className="text-sm font-semibold text-vox-heading mb-1">{item.q}</p>
@@ -282,11 +282,11 @@ curl -X POST ${API_BASE_URL}/api/v1/tts/generate \\
 
                 {/* Footer CTA */}
                 <div className="bg-vox-surface border border-vox-outline/20 rounded-2xl p-8 text-center">
-                    <h3 className="text-lg font-bold text-vox-heading mb-2">Ready to build?</h3>
-                    <p className="text-sm text-vox-text-dim mb-4">Test your API keys live in the Playground, or head to the API Console to manage voices and keys.</p>
+                    <h3 className="text-lg font-bold text-vox-heading mb-2">{t.apiDocs.readyToBuild}</h3>
+                    <p className="text-sm text-vox-text-dim mb-4">{t.apiDocs.readyToBuildDesc}</p>
                     <div className="flex items-center justify-center gap-3">
                         <Link href="/studio/playground" className="inline-flex items-center gap-2 px-5 py-2.5 bg-vox-primary text-white rounded-xl text-sm font-semibold hover:bg-vox-primary/90 transition-colors">
-                            <TerminalSquare size={16} /> Test in Playground
+                            <TerminalSquare size={16} /> {t.apiDocs.testInPlayground}
                         </Link>
                         <Link href="/studio/developer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-vox-surface-low border border-vox-outline/20 text-vox-heading rounded-xl text-sm font-semibold hover:bg-vox-surface-high transition-colors">
                             <Key size={16} /> API Console

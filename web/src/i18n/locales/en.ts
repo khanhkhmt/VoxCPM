@@ -10,7 +10,7 @@ const en = {
     loading: "Loading...",
     language: "Language",
     english: "English",
-    vietnamese: "Tiếng Việt",
+    vietnamese: "Vietnamese",
     goToStudio: "Go to Studio",
     join: "Join",
     clear: "Clear",
@@ -27,6 +27,13 @@ const en = {
     orContinueWith: "or continue with",
     signInWithGoogle: "Sign in with Google",
     signUpWithGoogle: "Sign up with Google",
+    error: "Error",
+    previous: "Previous",
+    next: "Next",
+    page: "Page",
+    of: "of",
+    chars: "chars",
+    characters: "characters",
   },
 
   // ── Landing ──
@@ -132,15 +139,29 @@ const en = {
       dropAudio: "Drop audio file here or browse",
       audioFormats: "WAV, MP3, FLAC — max 30s recommended",
       hasFeatureCache: "has feature cache",
+      using: "Using:",
+      featureCached: "Feature cached",
+      clearSelection: "Clear selection",
+      saveToLibrary: "Save to Voice Library",
+    },
+    ultimateCloning: {
+      title: "Ultimate Cloning Mode",
+      desc: "Reproduces every vocal nuance through audio continuation. Disables Control Instruction.",
+      disabled: "Disabled in Ultimate Cloning mode",
+      transcriptTitle: "Transcript of Reference Audio",
+      editable: "editable",
+      transcriptPlaceholder: "Paste or type the transcript of your reference audio here. If you're unsure, leave blank and the model will still attempt continuation.",
+      transcriptHint: "For best results, provide an accurate transcript so the model knows exactly where the reference audio ends.",
     },
     controlInstruction: {
       title: "Control Instruction",
       voiceDesign: "Voice Design",
       placeholder: "Describe the target timbre, emotion, age, or style...",
+      desc: "Describe the target timbre, emotion, age, or style. This is prepended to the target text as",
     },
     targetText: {
       title: "Target Text",
-      placeholder: "Enter the text you want to synthesize here...",
+      placeholder: "Enter the text you want to synthesize here. Use natural phrasing and punctuation for best results...",
     },
     synthesisSettings: {
       title: "Synthesis Settings",
@@ -153,18 +174,27 @@ const en = {
       faster: "Faster",
       higherQuality: "Higher quality",
       refAudioDenoising: "Reference Audio Denoising",
+      refAudioDenoisingDesc: "Apply ZipEnhancer before cloning",
       textNormalization: "Text Normalization",
+      textNormalizationDesc: "Format numbers, dates, abbreviations",
+      normLanguageHint: "Selects which text normalizer to use (numbers, dates, currency → words). Enable \"Text Normalization\" below for this to take effect.",
     },
     examplePrompts: "Example Prompts",
     batchMode: "Batch Mode",
     streamingMode: "Streaming Mode",
     generateSpeech: "Generate Speech",
+    synthesizing: "Synthesizing…",
     generatedAudio: {
       title: "Generated Audio",
       noAudio: "No audio generated yet.",
+      noAudioHint: "Enter text above and click Generate Speech to begin.",
+      ready: "Ready",
+      generatingMsg: "Generating audio… this may take a moment.",
     },
+    generationFailed: "Generation Failed",
     recentGenerations: {
       title: "Recent Generations",
+      noHistory: "No recent generations. Your synthesis history will appear here.",
     },
   },
 
@@ -173,7 +203,11 @@ const en = {
     title: "Voice Library",
     subtitle: "Upload and manage reference voices for speech synthesis.",
     dropAudio: "Drop an audio file here or browse",
+    dropAudioFull: "Drop an audio file here or",
+    browse: "browse",
+    audioFormats: "WAV, MP3, FLAC — max 10MB · auto-trimmed to 7s",
     voiceCount: (count: number) => `${count} voice${count !== 1 ? 's' : ''} in your library`,
+    oneVoiceOneProduct: "One Voice = One Product · Each voice gets its own API key",
     apiReady: "API Ready",
     apiKey: "API KEY",
     requests: "requests",
@@ -184,6 +218,13 @@ const en = {
     active: "Active",
     createApiKey: "Create API Key",
     generating: "Generating...",
+    noVoicesTitle: "No Voices Yet",
+    noVoicesDesc: "Upload your first voice reference to start building your voice library. Each voice becomes an API product with its own key.",
+    loadingLibrary: "Loading voice library…",
+    processingAudio: "Processing audio…",
+    uploading: "Uploading…",
+    done: "Done!",
+    enterNamePrompt: "Enter a name for this voice:",
   },
 
   // ── API Console ──
@@ -213,6 +254,18 @@ const en = {
       noActiveKeysDesc: "Upload a voice in the Voice Library and create an API key to get started.",
       goToVoiceLibrary: "Go to Voice Library",
       revokedKeys: "Revoked Keys",
+      loadingKeys: "Loading API keys…",
+      usage: "Usage",
+      created: "Created",
+      rateLimit: "Rate Limit",
+      revoked: "Revoked",
+      docs: "Docs",
+      rotateKey: "Rotate Key",
+      revokeKey: "Revoke",
+      deleteKey: "Delete",
+      confirmRevoke: "Revoke this API key? It will stop working immediately.",
+      confirmRegenerate: "Regenerate will invalidate the current key and create a new one. Continue?",
+      confirmDelete: "Permanently delete this API key? This cannot be undone.",
     },
   },
 
@@ -232,6 +285,13 @@ const en = {
     responsePlaceholder: "Response will appear here after you generate speech.",
     noVoices: "No voices with API keys found. Create a voice and API key in the Voice Library first.",
     selectVoice: "Select a voice",
+    loadingVoices: "Loading voices…",
+    noVoicesShort: "No voices with active API keys.",
+    createOne: "Create one",
+    enterText: "Enter text to synthesize...",
+    callingApi: "Calling API…",
+    audioOutput: "Audio Output",
+    downloadAudio: "Download audio file",
   },
 
   // ── Settings ──
@@ -273,6 +333,7 @@ const en = {
     language: {
       title: "Language",
       desc: "Choose the display language for the interface.",
+      label: "Display language",
     },
     usageQuota: {
       title: "Usage & Quota",
@@ -305,73 +366,252 @@ const en = {
     versionLine: "VoxCPM Voice Clone TTS API v1",
     backToConsole: "Back to API Console",
     testInPlayground: "Test in Playground",
+    copy: "Copy",
+    required: "Required",
+    optional: "Optional",
+    successResponse: "Success Response (200)",
+    errorResponse: "Error Response",
+    exampleRequest: "Example Request",
+    requestBody: "Request Body (JSON)",
+    serverEvents: "Server Events",
+    startMessageFormat: "Start Message Format",
+    connectionFlow: "Connection Flow",
+    realTimePlayback: {
+      title: "Real-time Playback",
+      description: "Audio chunks are PCM16 little-endian at the sample rate specified in the start event (typically 24000 Hz). Use Web Audio API to play chunks as they arrive for low-latency playback. See the JavaScript WebSocket example in Code Examples.",
+    },
+    tokenExpiry: {
+      title: "Token Expiry",
+      description: "Stream tokens expire in 60 seconds. Connect to the WebSocket immediately after receiving the token. The ws_url in the response points directly to the backend WebSocket endpoint.",
+    },
+
     nav: {
+      navigation: "Navigation",
       quickStart: "Quick Start",
       overview: "Overview",
       authentication: "Authentication",
       generateSpeech: "Generate Speech",
       streamToken: "Stream Token",
-      wsStreaming: "WebSocket Streaming",
+      websocketStreaming: "WebSocket Streaming",
       usageQuota: "Usage & Quota",
       errorCodes: "Error Codes",
       codeExamples: "Code Examples",
       troubleshooting: "Troubleshooting",
-      navigation: "Navigation",
     },
+
     quickStart: {
       title: "Quick Start",
-      intro: "Get started with VoxCPM TTS in 3 steps. Each API key is bound to a specific cloned voice — you never need to pass",
-      step1title: "Create a voice & get an API key",
-      step1desc: 'Upload audio in the Voice Library, then click "Create API Key" on any voice card. The key is shown only once — save it.',
-      step2title: "Configure your base URL",
-      step2desc: "Production / Dev:",
-      step3title: "Make your first API call",
-      step3desc: "Use the cURL command below, or copy any example from the Code Examples section.",
-      noVoiceIdNeeded: "No voice_id needed — every key is bound to exactly one voice. Just send your text.",
+      description: "Get started with VoxCPM TTS in 3 steps. Each API key is bound to a specific cloned voice — you never need to pass voice_id.",
+      step1: {
+        title: "Create a voice & get an API key",
+        description: "Upload audio in the Voice Library, then click \"Create API Key\" on any voice card. The key is shown only once — save it.",
+      },
+      step2: {
+        title: "Configure your base URL",
+        description: "Production / Dev: ",
+        descriptionSuffix: ". All endpoints are relative to this URL.",
+      },
+      step3: {
+        title: "Make your first API call",
+        description: "Use the cURL command below, or copy any example from the Code Examples section.",
+      },
+      noVoiceId: {
+        title: "No voice_id needed",
+        description: "Each API key is permanently linked to one cloned voice. The server resolves the voice automatically from your key. To use a different voice, create a separate API key.",
+      },
     },
+
     overview: {
       title: "Overview",
+      description: "The VoxCPM API provides high-quality Text-to-Speech generation with voice cloning. Every voice clone has a dedicated API key for security and usage tracking.",
+      baseUrl: "Base URL (Local)",
+      contentType: "Content Type",
+      keyFormat: "Key Format",
       availableEndpoints: "Available Endpoints",
-      endpoint: "Endpoint",
-      method: "Method",
-      description: "Description",
-      generateDesc: "Generate speech from text",
-      streamTokenDesc: "Get a short-lived WebSocket token",
-      wsStreamDesc: "Stream audio chunks in real time",
-      usageDesc: "Check quota and usage",
-      dynamicBaseUrl: "Dynamic Base URL",
-      dynamicBaseUrlDesc: "All API requests require",
+      table: {
+        method: "METHOD",
+        endpoint: "ENDPOINT",
+        description: "DESCRIPTION",
+      },
+      endpoint: {
+        generate: "Generate speech from text (blocking)",
+        streamToken: "Get a one-time token for WebSocket streaming",
+        websocket: "Real-time streaming via WebSocket",
+        usage: "Check quota and usage",
+      },
+      dynamicBaseUrl: {
+        title: "Dynamic Base URL",
+        description: "All examples use a configurable base URL. Currently configured as ",
+        descriptionSuffix: ". The Test app sidebar lets you change this at runtime.",
+      },
     },
-    auth: {
+
+    authentication: {
       title: "Authentication",
-      desc: "All API requests require",
-      security: "Security",
-      scopes: "Scopes",
+      description: "All API requests require a Bearer token in the Authorization header. Generate keys from the API Console or from voice cards in the Voice Library.",
+      keyAnatomy: {
+        title: "Key anatomy",
+      },
+      scopes: {
+        title: "Scopes",
+        description: "Each key includes scopes that control access. Default scopes: tts.generate, tts.stream, usage.read.",
+      },
+      security: {
+        title: "Security",
+        description: "Your API key is shown only once when created. We store only a SHA-256 hash. If lost, revoke and regenerate. Never expose keys in client-side code.",
+      },
     },
-    generate: {
+
+    generateSpeech: {
       title: "Generate Speech",
-      requestBody: "Request Body",
-      required: "Required",
-      optional: "Optional",
+      description: "Generate audio from text using your cloned voice. Voice is automatically resolved from the API key.",
+      requestBody: "Request Body (JSON)",
+      table: {
+        param: "PARAM",
+        type: "TYPE",
+        required: "REQUIRED",
+        description: "DESCRIPTION",
+      },
+      fields: {
+        text: "Text to synthesize into speech (max 5,000 chars).",
+        language: "Language hint: vi, en, zh, ja, ko, fr, de, es. (default: \"auto\")",
+        format: "Output format: \"mp3\" or \"wav\". (default: \"mp3\")",
+        speed: "Playback speed multiplier (0.5–2.0). (default: 1.0)",
+        controlInstruction: "Voice style/prosody control. Example: Young female, warm and gentle. (default: \"\")",
+        cfgValue: "Classifier-free guidance scale (0.1–10.0). Higher = closer to reference voice. (default: 2.0)",
+        ditSteps: "DiT inference steps (1–50). More steps = better quality but slower. (default: 6)",
+      },
     },
+
     streamToken: {
       title: "Stream Token",
+      description: "Get a short-lived JWT token for WebSocket streaming. Quota is deducted upfront based on text_length.",
+      fields: {
+        textLength: "Number of characters you plan to stream. Must be > 0 and ≤ 10,000. Quota is deducted immediately.",
+      },
+      tokenExpiry: {
+        title: "Token Expiry",
+        description: "Stream tokens expire in 60 seconds. Connect to the WebSocket immediately after receiving the token. The ws_url in the response points directly to the backend WebSocket endpoint.",
+      },
     },
-    wsStreaming: {
+
+    websocket: {
       title: "WebSocket Streaming",
+      description: "Real-time TTS streaming. Sends PCM16 audio chunks as they are generated.",
+      connectionFlow: "Connection Flow",
+      step1: {
+        title: "Get a stream token",
+        description: "POST /api/v1/tts/stream-token with your API key. Save the stream_token and ws_url.",
+      },
+      step2: {
+        title: "Open WebSocket",
+        description: "Connect to ws_url with ?token=<stream_token> query parameter.",
+      },
+      step3: {
+        title: "Send \"start\" message",
+        description: "Send a JSON message with type, text, and voice parameters to begin streaming.",
+      },
+      step4: {
+        title: "Receive audio chunks",
+        description: "Binary frames contain raw PCM16 audio data. Text frames contain JSON status events.",
+      },
+      step5: {
+        title: "Handle completion",
+        description: "Server sends {type: \"done\"} with audio_url when complete, or {type: \"error\"} on failure.",
+      },
+      startMessageFormat: "Start Message Format",
+      serverEvents: "Server Events",
+      realTimePlayback: {
+        title: "Real-time Playback",
+        description: "Audio chunks are PCM16 little-endian at the sample rate specified in the start event (typically 24000 Hz). Use Web Audio API to play chunks as they arrive for low-latency playback. See the JavaScript WebSocket example in Code Examples.",
+      },
     },
+
     usage: {
       title: "Usage & Quota",
+      description: "Check your current quota usage, limits, and reset date.",
+      charging: {
+        title: "Charging",
+        subtitle: "Per-character",
+        description: "Deducted at request time based on input text length.",
+      },
+      rateLimit: {
+        title: "Rate Limit",
+        subtitle: "100 req/min per key",
+        description: "Each API key has independent rate limiting.",
+      },
+      reset: {
+        title: "Reset",
+        subtitle: "Monthly (1st)",
+        description: "Counter resets automatically on the 1st of each month.",
+      },
     },
+
     errors: {
       title: "Error Codes",
+      envelope: "All errors follow a consistent JSON envelope:",
+      table: {
+        code: "CODE",
+        http: "HTTP",
+        description: "DESCRIPTION",
+      },
+      invalidApiKey: "API key is invalid, revoked, expired, or missing a required scope",
+      voiceNotFound: "Voice profile linked to API key was deleted",
+      quotaExceeded: "Monthly character quota exceeded — check GET /api/v1/usage",
+      badRequest: "Missing or invalid parameters in request body",
+      textTooLong: "Input text exceeds 5,000 character limit",
+      backendError: "TTS inference engine failed — retry or check backend logs",
+      internalError: "Server configuration or unexpected error",
+      notFound: "Requested resource does not exist",
     },
-    examples: {
+
+    codeExamples: {
       title: "Code Examples",
+      descriptionPrefix: "All examples use a configurable base URL. Replace BASE_URL with ",
+      descriptionSuffix: ".",
+      curlGenerateSpeech: "cURL — Generate Speech",
+      curlCheckQuota: "cURL — Check Quota",
+      curlStreamToken: "cURL — Get Stream Token",
+      pythonGenerateSpeech: "Python — Generate Speech",
+      pythonWebsocket: "Python — WebSocket Streaming (Full Flow)",
+      jsGenerateSpeech: "JavaScript — Generate Speech",
+      jsWebsocket: "JavaScript — WebSocket Streaming with Real-time Playback",
     },
+
     troubleshooting: {
       title: "Troubleshooting",
+      invalidBearer: {
+        title: "401 — Missing or invalid Authorization Bearer token",
+        description: "Ensure your request includes the header: Authorization: Bearer vc_sk_live_xxx. The key must be active and not revoked.",
+      },
+      missingScope: {
+        title: "403 — Missing required scope: tts.generate",
+        description: "Your API key doesn't have the required permission. Keys created via the UI include all scopes by default. If you created the key manually, ensure it includes tts.generate, tts.stream, and usage.read.",
+      },
+      quotaExceeded: {
+        title: "403 — QUOTA_EXCEEDED",
+        description: "You've used all your monthly characters. Check GET /api/v1/usage to see remaining quota. Quota resets on the 1st of each month.",
+      },
+      noDirectory: {
+        title: "500 — TTS generation failed: No such file or directory",
+        description: "The backend's .runtime/uploads or .runtime/outputs directory is missing. Create them: mkdir -p .runtime/uploads .runtime/outputs",
+      },
+      backendFetch: {
+        title: "500 — BACKEND_ERROR / fetch failed",
+        description: "The TTS backend (port 8808) is not running or crashed. Start it with: export TTS_INTERNAL_SECRET=\"dev-internal-secret-change-me\" && python3 app.py --port 8808",
+      },
+      websocketClose: {
+        title: "WebSocket closes immediately",
+        description: "Stream token may be expired (60s TTL). Request a fresh token via POST /api/v1/tts/stream-token and connect immediately.",
+      },
+      noAudio: {
+        title: "No audio playback in browser",
+        description: "Web Audio API requires a user gesture before playing. Ensure you call audioContext.resume() after a click event. Also verify the sample rate matches the start event, typically 24000.",
+      },
     },
+
+    readyToBuild: "Ready to build?",
+    readyToBuildDesc: "Test your API keys live in the Playground, or head to the API Console to manage voices and keys.",
   },
 
   // ── History ──
@@ -380,7 +620,7 @@ const en = {
     subtitle: "Your generation history.",
     noHistory: "No generation history yet.",
   },
-} as const;
+};
 
 export default en;
 export type Translations = typeof en;

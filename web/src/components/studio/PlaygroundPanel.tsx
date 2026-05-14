@@ -138,9 +138,9 @@ export default function PlaygroundPanel() {
                         <div>
                             <label className="block text-xs font-bold text-vox-text-dim uppercase tracking-wider mb-2">{t.playground.voice}</label>
                             {loadingVoices ? (
-                                <div className="flex items-center gap-2 text-sm text-vox-text-dim"><Loader2 size={14} className="animate-spin" /> Loading voices&hellip;</div>
+                                <div className="flex items-center gap-2 text-sm text-vox-text-dim"><Loader2 size={14} className="animate-spin" /> {t.playground.loadingVoices}</div>
                             ) : voices.length === 0 ? (
-                                <p className="text-sm text-vox-text-dim">No voices with active API keys. <a href="/studio/voices" className="text-vox-primary hover:underline">Create one</a>.</p>
+                                <p className="text-sm text-vox-text-dim">{t.playground.noVoicesShort} <a href="/studio/voices" className="text-vox-primary hover:underline">{t.playground.createOne}</a>.</p>
                             ) : (
                                 <div className="relative">
                                     <button onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -167,10 +167,10 @@ export default function PlaygroundPanel() {
                         <div>
                             <label className="block text-xs font-bold text-vox-text-dim uppercase tracking-wider mb-2">{t.playground.text}</label>
                             <textarea value={text} onChange={(e) => setText(e.target.value)}
-                                placeholder="Enter text to synthesize..."
+                                placeholder={t.playground.enterText}
                                 rows={5}
                                 className="w-full bg-vox-surface-low border border-vox-outline/20 rounded-xl px-4 py-3 text-sm text-vox-heading placeholder-vox-text-dim outline-none focus:border-vox-primary resize-none leading-relaxed" />
-                            <p className="text-xs text-vox-text-dim mt-1 text-right">{text.length} characters</p>
+                            <p className="text-xs text-vox-text-dim mt-1 text-right">{text.length} {t.common.characters}</p>
                         </div>
 
                         {/* Mode */}
@@ -215,7 +215,7 @@ export default function PlaygroundPanel() {
                         {loading && (
                             <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12">
                                 <Loader2 size={24} className="animate-spin text-vox-primary" />
-                                <p className="text-sm text-vox-text-dim">Calling API&hellip;</p>
+                                <p className="text-sm text-vox-text-dim">{t.playground.callingApi}</p>
                             </div>
                         )}
 
@@ -237,11 +237,11 @@ export default function PlaygroundPanel() {
                         {audioUrl && (
                             <div className="bg-vox-surface-low border border-vox-outline/10 rounded-xl p-4 space-y-3">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-vox-heading">
-                                    <Volume2 size={16} className="text-vox-secondary" /> Audio Output
+                                    <Volume2 size={16} className="text-vox-secondary" /> {t.playground.audioOutput}
                                 </div>
                                 <audio ref={audioRef} controls src={audioUrl} className="w-full h-10" />
                                 <a href={audioUrl} download className="inline-flex items-center gap-1.5 text-xs text-vox-primary hover:underline">
-                                    Download audio file
+                                    {t.playground.downloadAudio}
                                 </a>
                             </div>
                         )}

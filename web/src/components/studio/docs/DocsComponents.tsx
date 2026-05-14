@@ -1,8 +1,10 @@
 "use client";
 import { useState } from "react";
 import { Copy, Check, ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 export function CopyBlock({ code, language = "bash" }: { code: string; language?: string }) {
+    const { t } = useI18n();
     const [copied, setCopied] = useState(false);
     const handleCopy = () => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000); };
     return (
@@ -10,7 +12,7 @@ export function CopyBlock({ code, language = "bash" }: { code: string; language?
             <div className="flex items-center justify-between px-4 py-2 bg-[#13141c] border-b border-vox-outline/10 text-xs text-gray-400 font-mono">
                 <span>{language}</span>
                 <button onClick={handleCopy} className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors">
-                    {copied ? <><Check size={14} className="text-green-400" /> Copied</> : <><Copy size={14} /> Copy</>}
+                    {copied ? <><Check size={14} className="text-green-400" /> {t.common.copied}</> : <><Copy size={14} /> {t.apiDocs.copy}</>}
                 </button>
             </div>
             <pre className="p-4 overflow-x-auto text-sm font-mono text-gray-300 leading-relaxed whitespace-pre">{code}</pre>
@@ -19,12 +21,13 @@ export function CopyBlock({ code, language = "bash" }: { code: string; language?
 }
 
 export function ParamRow({ name, type, required, desc, def }: { name: string; type: string; required?: boolean; desc: string; def?: string }) {
+    const { t } = useI18n();
     return (
         <tr className="border-b border-vox-outline/10 last:border-0">
             <td className="py-3 pr-3 align-top"><code className="text-sm font-mono text-vox-primary bg-vox-primary/10 px-1.5 py-0.5 rounded">{name}</code></td>
             <td className="py-3 pr-3 align-top text-sm text-vox-text-dim font-mono">{type}</td>
             <td className="py-3 pr-3 align-top text-sm">
-                {required ? <span className="text-red-400 font-semibold text-xs">Required</span> : <span className="text-vox-text-dim text-xs">Optional</span>}
+                {required ? <span className="text-red-400 font-semibold text-xs">{t.apiDocs.required}</span> : <span className="text-vox-text-dim text-xs">{t.apiDocs.optional}</span>}
             </td>
             <td className="py-3 align-top text-sm text-vox-text">
                 {desc}
@@ -120,11 +123,12 @@ export function StepList({ steps }: { steps: { title: string; desc: string }[] }
 }
 
 export function ParamTable({ children }: { children: React.ReactNode }) {
+    const { t } = useI18n();
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left">
                 <thead><tr className="border-b border-vox-outline/20 text-xs text-vox-text-dim uppercase">
-                    <th className="py-2 pr-3">Param</th><th className="py-2 pr-3">Type</th><th className="py-2 pr-3">Required</th><th className="py-2">Description</th>
+                    <th className="py-2 pr-3">{t.apiDocs.generateSpeech.table.param}</th><th className="py-2 pr-3">{t.apiDocs.generateSpeech.table.type}</th><th className="py-2 pr-3">{t.apiDocs.generateSpeech.table.required}</th><th className="py-2">{t.apiDocs.generateSpeech.table.description}</th>
                 </tr></thead>
                 <tbody>{children}</tbody>
             </table>
@@ -133,21 +137,22 @@ export function ParamTable({ children }: { children: React.ReactNode }) {
 }
 
 export function ErrorTable() {
+    const { t } = useI18n();
     const errors = [
-        ["INVALID_API_KEY", "401/403", "API key is invalid, revoked, expired, or missing a required scope"],
-        ["VOICE_NOT_FOUND", "404", "Voice profile linked to API key was deleted"],
-        ["QUOTA_EXCEEDED", "403", "Monthly character quota exceeded — check GET /api/v1/usage"],
-        ["BAD_REQUEST", "400", "Missing or invalid parameters in request body"],
-        ["TEXT_TOO_LONG", "400", "Input text exceeds 5,000 character limit"],
-        ["BACKEND_ERROR", "500", "TTS inference engine failed — retry or check backend logs"],
-        ["INTERNAL_ERROR", "500", "Server configuration or unexpected error"],
-        ["NOT_FOUND", "404", "Requested resource does not exist"],
+        ["INVALID_API_KEY", "401/403", t.apiDocs.errors.invalidApiKey],
+        ["VOICE_NOT_FOUND", "404", t.apiDocs.errors.voiceNotFound],
+        ["QUOTA_EXCEEDED", "403", t.apiDocs.errors.quotaExceeded],
+        ["BAD_REQUEST", "400", t.apiDocs.errors.badRequest],
+        ["TEXT_TOO_LONG", "400", t.apiDocs.errors.textTooLong],
+        ["BACKEND_ERROR", "500", t.apiDocs.errors.backendError],
+        ["INTERNAL_ERROR", "500", t.apiDocs.errors.internalError],
+        ["NOT_FOUND", "404", t.apiDocs.errors.notFound],
     ];
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
                 <thead><tr className="border-b border-vox-outline/20 text-xs text-vox-text-dim uppercase">
-                    <th className="py-2 pr-3">Code</th><th className="py-2 pr-3">HTTP</th><th className="py-2">Description</th>
+                    <th className="py-2 pr-3">{t.apiDocs.errors.table.code}</th><th className="py-2 pr-3">{t.apiDocs.errors.table.http}</th><th className="py-2">{t.apiDocs.errors.table.description}</th>
                 </tr></thead>
                 <tbody className="text-vox-text">
                     {errors.map(([code, http, desc]) => (

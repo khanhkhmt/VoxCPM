@@ -40,7 +40,7 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
     };
 
     const handleRevokeKey = async (id: string) => {
-        if (!confirm("Revoke this API key? It will stop working immediately.")) return;
+        if (!confirm(t.api.console.confirmRevoke)) return;
         setActionLoading(id);
         try {
             const res = await fetch(`/api/keys/${id}`, { method: "PATCH" });
@@ -51,7 +51,7 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
     };
 
     const handleRegenerateKey = async (id: string) => {
-        if (!confirm("Regenerate will invalidate the current key and create a new one. Continue?")) return;
+        if (!confirm(t.api.console.confirmRegenerate)) return;
         setActionLoading(id);
         try {
             const res = await fetch(`/api/keys/${id}`, { method: "PUT" });
@@ -65,7 +65,7 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
     };
 
     const handleDeleteKey = async (id: string) => {
-        if (!confirm("Permanently delete this API key? This cannot be undone.")) return;
+        if (!confirm(t.api.console.confirmDelete)) return;
         setActionLoading(id);
         try {
             const res = await fetch(`/api/keys/${id}`, { method: "DELETE" });
@@ -196,10 +196,10 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
             <section className="bg-vox-surface border border-vox-outline/20 rounded-2xl overflow-hidden">
                 <div className="flex items-center gap-3 px-6 py-4 border-b border-vox-outline/10">
                     <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center"><Zap size={16} className="text-emerald-400" /></div>
-                    <h2 className="text-base font-semibold text-vox-heading">Quick Start</h2>
+                    <h2 className="text-base font-semibold text-vox-heading">{t.api.console.quickStart}</h2>
                 </div>
                 <div className="px-6 py-5">
-                    <p className="text-sm text-vox-text-dim mb-4">Generate speech with a single cURL command. Replace the API key with your own from a voice card above.</p>
+                    <p className="text-sm text-vox-text-dim mb-4">{t.api.console.quickStartDesc}</p>
                     <div className="relative rounded-xl overflow-hidden border border-vox-outline/20 bg-[#1a1b26]">
                         <div className="flex items-center justify-between px-4 py-2 bg-[#13141c] border-b border-vox-outline/10 text-xs text-gray-400 font-mono">
                             <span>bash</span>
@@ -216,26 +216,26 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
             <section>
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold text-vox-heading flex items-center gap-2">
-                        <Key size={20} className="text-vox-secondary" /> Voice API Access
+                        <Key size={20} className="text-vox-secondary" /> {t.api.console.voiceApiAccess}
                     </h2>
                     <Link href="/studio/api-docs" className="flex items-center gap-1.5 text-sm text-vox-primary hover:text-vox-primary/80 transition-colors">
-                        <ExternalLink size={14} /> API Docs
+                        <ExternalLink size={14} /> {t.api.console.apiDocs}
                     </Link>
                 </div>
 
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-12 gap-3">
                         <Loader2 size={24} className="animate-spin text-vox-primary" />
-                        <p className="text-sm text-vox-text-dim">Loading API keys&hellip;</p>
+                        <p className="text-sm text-vox-text-dim">{t.api.console.loadingKeys}</p>
                     </div>
                 ) : activeKeys.length === 0 ? (
                     <div className="bg-vox-surface border border-vox-outline/20 rounded-2xl p-12 text-center">
                         <div className="w-16 h-16 rounded-full bg-vox-surface-low flex items-center justify-center mx-auto mb-4">
                             <Mic size={28} className="text-vox-text-dim opacity-30" />
                         </div>
-                        <p className="text-vox-text-dim mb-4">No active API keys. Upload a voice and generate an API key to get started.</p>
+                        <p className="text-vox-text-dim mb-4">{t.api.console.noActiveKeysDesc}</p>
                         <Link href="/studio/voices" className="inline-flex items-center gap-2 px-4 py-2.5 bg-vox-primary text-white rounded-xl text-sm font-semibold hover:bg-vox-primary/90 transition-colors">
-                            <Mic size={16} /> Go to Voice Library
+                            <Mic size={16} /> {t.api.console.goToVoiceLibrary}
                         </Link>
                     </div>
                 ) : (
@@ -248,7 +248,7 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
                                             <Mic size={16} className="text-vox-secondary" />
                                             <h3 className="text-sm font-bold text-vox-heading">{key.voiceProfile?.name || "Unknown Voice"}</h3>
                                         </div>
-                                        <span className="text-[10px] uppercase font-bold px-2 py-1 rounded-md border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Active</span>
+                                        <span className="text-[10px] uppercase font-bold px-2 py-1 rounded-md border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">{t.voiceLibrary.active}</span>
                                     </div>
 
                                     <div className="bg-vox-surface-low/60 border border-vox-outline/10 rounded-xl p-3 mb-3">
@@ -263,19 +263,19 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
 
                                     <div className="grid grid-cols-2 gap-3 text-xs">
                                         <div>
-                                            <span className="text-vox-text-dim">Usage</span>
-                                            <p className="text-vox-heading font-semibold flex items-center gap-1"><BarChart3 size={12} /> {key.usageCount} requests</p>
+                                            <span className="text-vox-text-dim">{t.api.console.usage}</span>
+                                            <p className="text-vox-heading font-semibold flex items-center gap-1"><BarChart3 size={12} /> {key.usageCount} {t.voiceLibrary.requests}</p>
                                         </div>
                                         <div>
-                                            <span className="text-vox-text-dim">Last Used</span>
+                                            <span className="text-vox-text-dim">{t.voiceLibrary.lastUsed}</span>
                                             <p className="text-vox-heading font-semibold flex items-center gap-1"><Clock size={12} /> {formatRelativeDate(key.lastUsedAt)}</p>
                                         </div>
                                         <div>
-                                            <span className="text-vox-text-dim">Created</span>
+                                            <span className="text-vox-text-dim">{t.api.console.created}</span>
                                             <p className="text-vox-heading font-semibold">{formatDate(key.createdAt)}</p>
                                         </div>
                                         <div>
-                                            <span className="text-vox-text-dim">Rate Limit</span>
+                                            <span className="text-vox-text-dim">{t.api.console.rateLimit}</span>
                                             <p className="text-vox-heading font-semibold">{key.rateLimit} req/min</p>
                                         </div>
                                     </div>
@@ -284,10 +284,10 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
                                 <div className="px-4 py-3 border-t border-vox-outline/10 bg-vox-surface-low/30 flex items-center justify-between">
                                     <div className="flex items-center gap-1">
                                         <Link href="/studio/playground" className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-vox-secondary hover:bg-vox-secondary/10 transition-colors font-medium">
-                                            <TerminalSquare size={12} /> Playground
+                                            <TerminalSquare size={12} /> {t.api.console.playground}
                                         </Link>
                                         <Link href="/studio/api-docs" className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-vox-text-dim hover:text-vox-heading hover:bg-vox-surface transition-colors font-medium">
-                                            <BookOpen size={12} /> Docs
+                                            <BookOpen size={12} /> {t.api.console.docs}
                                         </Link>
                                     </div>
                                     <div className="flex items-center gap-0.5">
@@ -314,7 +314,7 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
             {/* Revoked Keys */}
             {revokedKeys.length > 0 && (
                 <section>
-                    <h2 className="text-lg font-bold text-vox-heading mb-4 flex items-center gap-2 opacity-60"><Ban size={18} /> Revoked Keys</h2>
+                    <h2 className="text-lg font-bold text-vox-heading mb-4 flex items-center gap-2 opacity-60"><Ban size={18} /> {t.api.console.revokedKeys}</h2>
                     <div className="bg-vox-surface border border-vox-outline/20 rounded-2xl overflow-hidden opacity-70">
                         <div className="divide-y divide-vox-outline/10">
                             {revokedKeys.map((key) => (
@@ -322,7 +322,7 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
                                     <div className="flex items-center gap-3">
                                         <Mic size={14} className="text-vox-text-dim" />
                                         <span className="text-sm text-vox-text-dim">{key.voiceProfile?.name || "Unknown"}</span>
-                                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border bg-red-500/10 text-red-400 border-red-500/20">Revoked</span>
+                                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border bg-red-500/10 text-red-400 border-red-500/20">{t.api.console.revoked}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs text-vox-text-dim">{key.revokedAt ? formatDate(key.revokedAt) : ""}</span>

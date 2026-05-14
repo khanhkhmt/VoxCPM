@@ -12,10 +12,12 @@ import CaptchaField from "@/components/auth/CaptchaField";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { AlertTriangle, UserPlus } from "lucide-react";
 import { generateId } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 
 export default function RegisterPage() {
     const { register: authRegister } = useAuth();
     const router = useRouter();
+    const { t } = useI18n();
 
     const [serverError, setServerError] = useState<string | null>(null);
     const [serverSuccess, setServerSuccess] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export default function RegisterPage() {
 
     const onSubmit = async (data: RegisterInput) => {
         if (!agreedTerms) {
-            setServerError("Please agree to the Terms of Service to continue.");
+            setServerError(t.auth.register.agreeError);
             return;
         }
 
@@ -74,7 +76,7 @@ export default function RegisterPage() {
                 captchaText,
             });
 
-            setServerSuccess("Account created successfully! Redirecting...");
+            setServerSuccess(t.auth.register.accountCreated);
             router.push("/studio");
         } catch (err: unknown) {
             const error = err as Error & { code?: string };
@@ -92,10 +94,10 @@ export default function RegisterPage() {
             <div className="glass-panel rounded-2xl p-8">
                 <div className="text-center mb-8">
                     <h1 className="text-2xl font-bold text-vox-heading mb-2">
-                        Create your account
+                        {t.auth.register.title}
                     </h1>
                     <p className="text-sm text-vox-text-dim">
-                        Sign up to start generating lifelike speech
+                        {t.auth.register.subtitle}
                     </p>
                 </div>
 
@@ -116,29 +118,29 @@ export default function RegisterPage() {
 
 
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-                    <FormField label="Name" error={errors.name?.message}>
+                    <FormField label={t.auth.name} error={errors.name?.message}>
                         <TextInput
                             type="text"
-                            placeholder="Your name"
+                            placeholder={t.auth.yourName}
                             autoComplete="name"
                             hasError={!!errors.name}
                             {...registerField("name")}
                         />
                     </FormField>
 
-                    <FormField label="Username" error={errors.username?.message}>
+                    <FormField label={t.auth.username} error={errors.username?.message}>
                         <TextInput
                             type="text"
-                            placeholder="Choose a username"
+                            placeholder={t.auth.chooseUsername}
                             autoComplete="username"
                             hasError={!!errors.username}
                             {...registerField("username")}
                         />
                     </FormField>
 
-                    <FormField label="Password" error={errors.password?.message}>
+                    <FormField label={t.auth.password} error={errors.password?.message}>
                         <PasswordInput
-                            placeholder="Min 8 chars, 1 upper, 1 lower, 1 digit"
+                            placeholder={t.auth.passwordHint}
                             autoComplete="new-password"
                             hasError={!!errors.password}
                             {...registerField("password")}
@@ -146,11 +148,11 @@ export default function RegisterPage() {
                     </FormField>
 
                     <FormField
-                        label="Confirm Password"
+                        label={t.auth.confirmPassword}
                         error={errors.confirmPassword?.message}
                     >
                         <PasswordInput
-                            placeholder="Re-enter your password"
+                            placeholder={t.auth.reenterPassword}
                             autoComplete="new-password"
                             hasError={!!errors.confirmPassword}
                             {...registerField("confirmPassword")}
@@ -174,39 +176,39 @@ export default function RegisterPage() {
                             className="mt-1 accent-vox-primary"
                         />
                         <span className="text-xs text-vox-text-dim group-hover:text-vox-text transition-colors">
-                            I agree to the{" "}
+                            {t.auth.register.agreeToTerms}{" "}
                             <Link href="#" className="text-vox-secondary underline underline-offset-2">
-                                Terms of Service
+                                {t.auth.register.termsOfService}
                             </Link>{" "}
-                            and{" "}
+                            {t.auth.register.and}{" "}
                             <Link href="#" className="text-vox-secondary underline underline-offset-2">
-                                Privacy Policy
+                                {t.auth.register.privacyPolicy}
                             </Link>
                         </span>
                     </label>
 
                     <SubmitButton loading={loading}>
                         <UserPlus size={18} />
-                        Create account
+                        {t.auth.createAccount}
                     </SubmitButton>
                 </form>
 
                 <div className="mt-6 flex flex-col gap-3">
                     <div className="flex items-center gap-3 text-xs text-vox-text-dim">
                         <div className="flex-1 h-px bg-vox-outline/30" />
-                        <span>or continue with</span>
+                        <span>{t.common.orContinueWith}</span>
                         <div className="flex-1 h-px bg-vox-outline/30" />
                     </div>
-                    <GoogleSignInButton label="Sign up with Google" />
+                    <GoogleSignInButton label={t.common.signUpWithGoogle} />
                 </div>
 
                 <div className="mt-6 text-center text-sm text-vox-text-dim">
-                    Already have an account?{" "}
+                    {t.auth.haveAccount}{" "}
                     <Link
                         href="/login"
                         className="text-vox-secondary hover:text-vox-heading transition-colors font-medium"
                     >
-                        Sign in
+                        {t.common.signIn}
                     </Link>
                 </div>
             </div>

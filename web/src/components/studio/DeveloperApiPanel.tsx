@@ -8,6 +8,7 @@ import {
     TerminalSquare, ArrowRight, Clock, Loader2,
 } from "lucide-react";
 import ApiKeyCreatedModal from "@/components/studio/ApiKeyCreatedModal";
+import { useI18n } from "@/i18n";
 
 interface VoiceInfo { id: string; name: string; fileName?: string; audioUrl?: string; }
 interface ApiKeyData {
@@ -19,6 +20,7 @@ interface ApiKeyData {
 interface QuotaStatus { limit: number; used: number; remaining: number; resetDate: string; }
 
 export default function DeveloperApiPanel({ initialQuota }: { initialQuota: QuotaStatus }) {
+    const { t } = useI18n();
     const [keys, setKeys] = useState<ApiKeyData[]>([]);
     const [quota] = useState<QuotaStatus>(initialQuota);
     const [loading, setLoading] = useState(true);
@@ -102,8 +104,8 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
 
             {/* Page Header */}
             <div>
-                <h1 className="text-2xl font-bold text-vox-heading tracking-tight">API Console</h1>
-                <p className="text-sm text-vox-text-dim mt-1">Manage your voice API keys, monitor usage, and access documentation.</p>
+                <h1 className="text-2xl font-bold text-vox-heading tracking-tight">{t.api.console.title}</h1>
+                <p className="text-sm text-vox-text-dim mt-1">{t.api.console.subtitle}</p>
             </div>
 
             {/* Quick Links */}
@@ -111,24 +113,24 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
                 <Link href="/studio/voices" className="flex items-center gap-3 bg-vox-surface border border-vox-outline/15 rounded-xl p-4 hover:border-vox-primary/30 transition-all group">
                     <div className="w-10 h-10 rounded-lg bg-vox-primary/10 flex items-center justify-center"><Mic size={18} className="text-vox-primary" /></div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-vox-heading">Voice Library</p>
-                        <p className="text-xs text-vox-text-dim">Upload voices & create keys</p>
+                        <p className="text-sm font-semibold text-vox-heading">{t.api.console.voiceLibrary}</p>
+                        <p className="text-xs text-vox-text-dim">{t.api.console.uploadVoicesKeys}</p>
                     </div>
                     <ArrowRight size={16} className="text-vox-text-dim group-hover:text-vox-primary transition-colors" />
                 </Link>
                 <Link href="/studio/playground" className="flex items-center gap-3 bg-vox-surface border border-vox-outline/15 rounded-xl p-4 hover:border-vox-secondary/30 transition-all group">
                     <div className="w-10 h-10 rounded-lg bg-vox-secondary/10 flex items-center justify-center"><TerminalSquare size={18} className="text-vox-secondary" /></div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-vox-heading">Playground</p>
-                        <p className="text-xs text-vox-text-dim">Test your API keys live</p>
+                        <p className="text-sm font-semibold text-vox-heading">{t.api.console.playground}</p>
+                        <p className="text-xs text-vox-text-dim">{t.api.console.testKeysLive}</p>
                     </div>
                     <ArrowRight size={16} className="text-vox-text-dim group-hover:text-vox-secondary transition-colors" />
                 </Link>
                 <Link href="/studio/api-docs" className="flex items-center gap-3 bg-vox-surface border border-vox-outline/15 rounded-xl p-4 hover:border-amber-500/30 transition-all group">
                     <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center"><BookOpen size={18} className="text-amber-400" /></div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-vox-heading">API Docs</p>
-                        <p className="text-xs text-vox-text-dim">Endpoints & code examples</p>
+                        <p className="text-sm font-semibold text-vox-heading">{t.api.console.apiDocs}</p>
+                        <p className="text-xs text-vox-text-dim">{t.api.console.endpointsExamples}</p>
                     </div>
                     <ArrowRight size={16} className="text-vox-text-dim group-hover:text-amber-400 transition-colors" />
                 </Link>
@@ -140,18 +142,18 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-vox-primary/10 flex items-center justify-center"><Zap size={20} className="text-vox-primary" /></div>
                         <div>
-                            <h2 className="text-lg font-semibold text-vox-heading">Account Usage &amp; Quota</h2>
-                            <p className="text-sm text-vox-text-dim">Your monthly character allowance</p>
+                            <h2 className="text-lg font-semibold text-vox-heading">{t.api.console.usageQuota}</h2>
+                            <p className="text-sm text-vox-text-dim">{t.api.console.monthlyAllowance}</p>
                         </div>
                     </div>
                     <div className="text-right">
-                        <p className="text-sm text-vox-text-dim">Resets on</p>
+                        <p className="text-sm text-vox-text-dim">{t.api.console.resetsOn}</p>
                         <p className="text-sm font-medium text-vox-heading">{new Date(quota.resetDate).toLocaleDateString()}</p>
                     </div>
                 </div>
                 <div className="space-y-4">
                     <div className="flex justify-between text-sm mb-1">
-                        <span className="text-vox-text-dim font-medium">Monthly Progress</span>
+                        <span className="text-vox-text-dim font-medium">{t.api.console.monthlyProgress}</span>
                         <span className="text-vox-heading font-bold">{quota.used.toLocaleString()} / {quota.limit.toLocaleString()} chars</span>
                     </div>
                     <div className="w-full h-3 bg-vox-surface-low rounded-full overflow-hidden border border-vox-outline/10">
@@ -160,15 +162,15 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                         <div className="bg-vox-surface-low p-4 rounded-xl border border-vox-outline/10">
-                            <p className="text-xs text-vox-text-dim uppercase tracking-wider font-bold mb-1">Used</p>
+                            <p className="text-xs text-vox-text-dim uppercase tracking-wider font-bold mb-1">{t.api.console.used}</p>
                             <p className="text-xl font-bold text-vox-heading">{quota.used.toLocaleString()}</p>
                         </div>
                         <div className="bg-vox-surface-low p-4 rounded-xl border border-vox-outline/10">
-                            <p className="text-xs text-vox-text-dim uppercase tracking-wider font-bold mb-1">Remaining</p>
+                            <p className="text-xs text-vox-text-dim uppercase tracking-wider font-bold mb-1">{t.api.console.remaining}</p>
                             <p className="text-xl font-bold text-vox-heading">{quota.remaining.toLocaleString()}</p>
                         </div>
                         <div className="bg-vox-surface-low p-4 rounded-xl border border-vox-outline/10">
-                            <p className="text-xs text-vox-text-dim uppercase tracking-wider font-bold mb-1">Active Keys</p>
+                            <p className="text-xs text-vox-text-dim uppercase tracking-wider font-bold mb-1">{t.api.console.activeKeys}</p>
                             <p className="text-xl font-bold text-vox-primary">{activeKeys.length}</p>
                         </div>
                     </div>
@@ -180,7 +182,7 @@ export default function DeveloperApiPanel({ initialQuota }: { initialQuota: Quot
                 <div className="flex items-start gap-3">
                     <Shield className="text-vox-primary shrink-0 mt-0.5" size={20} />
                     <div>
-                        <h3 className="text-sm font-bold text-vox-heading mb-1">Per-Voice API Keys</h3>
+                        <h3 className="text-sm font-bold text-vox-heading mb-1">{t.api.console.perVoiceKeys}</h3>
                         <p className="text-sm text-vox-text-dim leading-relaxed">
                             Each voice clone has its own unique API key. You do not need to pass <code className="text-xs bg-vox-surface px-1 py-0.5 rounded font-mono">voice_id</code> in
                             your requests &mdash; the server automatically detects the voice from the API key. Go to your{" "}

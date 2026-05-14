@@ -4,11 +4,14 @@ import Link from "next/link";
 import { LogIn, LogOut, User, Menu, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
+import { useI18n } from "@/i18n";
 import Logo from "@/components/Logo";
+import LanguageSelector from "@/components/LanguageSelector";
 
 export default function Header() {
     const { user, isLoggedIn, logout, status } = useAuth();
     const { theme, toggleTheme } = useTheme();
+    const { t } = useI18n();
 
     // Prevent hydration mismatch by not rendering auth buttons until status is known
     const isAuthReady = status !== "loading";
@@ -23,9 +26,9 @@ export default function Header() {
 
                     <nav className="hidden md:block">
                         <ul className="flex space-x-8">
-                            <li><Link href="#features" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">Features</Link></li>
-                            <li><Link href="#pricing" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">Pricing</Link></li>
-                            <li><Link href="#docs" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">Docs</Link></li>
+                            <li><Link href="#features" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.features}</Link></li>
+                            <li><Link href="#pricing" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.pricing}</Link></li>
+                            <li><Link href="#docs" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.docs}</Link></li>
                         </ul>
                     </nav>
 
@@ -40,13 +43,16 @@ export default function Header() {
                             {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
                         </button>
 
+                        {/* Language Selector */}
+                        <LanguageSelector variant="compact" />
+
                         {isLoggedIn && user ? (
                             <div className="flex items-center gap-4">
                                 <Link
                                     href="/studio"
                                     className="hidden md:inline-flex px-4 py-2 text-sm font-medium rounded-lg text-vox-bg bg-vox-secondary hover:bg-vox-secondary/90 transition-all duration-300 shadow-[0_0_15px_rgba(76,215,246,0.3)]"
                                 >
-                                    Go to Studio
+                                    {t.common.goToStudio}
                                 </Link>
                                 <div className="relative group">
                                     <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-vox-surface transition-colors border border-transparent hover:border-white/5">
@@ -63,7 +69,7 @@ export default function Header() {
                                             <User size={16} className="text-vox-secondary" /> Studio
                                         </Link>
                                         <button onClick={logout} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-vox-surface-highest transition-colors">
-                                            <LogOut size={16} /> Sign out
+                                            <LogOut size={16} /> {t.common.signOut}
                                         </button>
                                     </div>
                                 </div>
@@ -74,14 +80,14 @@ export default function Header() {
                                     href="/login"
                                     className="px-4 py-2 text-sm font-medium text-vox-text-dim hover:text-vox-heading transition-colors"
                                 >
-                                    Sign in
+                                    {t.common.signIn}
                                 </Link>
                                 <Link
                                     href="/register"
                                     className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-vox-heading bg-transparent border border-vox-outline hover:border-vox-primary hover:bg-vox-surface-high transition-all duration-300"
                                 >
-                                    <span className="hidden sm:inline">Sign up</span>
-                                    <span className="sm:hidden">Join</span>
+                                    <span className="hidden sm:inline">{t.common.signUp}</span>
+                                    <span className="sm:hidden">{t.common.join}</span>
                                 </Link>
                             </div>
                         ) : null}

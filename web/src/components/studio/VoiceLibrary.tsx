@@ -10,6 +10,7 @@ import {
 import { GlassCard } from "@/components/GlassCard";
 import { useVoiceSelection } from "@/lib/stores/voice-selection";
 import ApiKeyCreatedModal from "@/components/studio/ApiKeyCreatedModal";
+import { useI18n } from "@/i18n";
 
 // ---------------------------------------------------------------------------
 // WAV encoder
@@ -75,6 +76,7 @@ function getVoiceStatus(voice: VoiceProfile, keyInfo: ApiKeyInfo | undefined) {
 // ---------------------------------------------------------------------------
 export default function VoiceLibrary() {
   const router = useRouter();
+  const { t } = useI18n();
   const setSelected = useVoiceSelection((s) => s.setSelected);
   const selectedVoice = useVoiceSelection((s) => s.selected);
   const [data, setData] = useState<PaginatedResponse | null>(null);
@@ -268,7 +270,7 @@ export default function VoiceLibrary() {
 
       {data && data.total > 0 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-vox-text-dim">{data.total} voice{data.total !== 1 ? "s" : ""} in your library</p>
+          <p className="text-sm text-vox-text-dim">{t.voiceLibrary.voiceCount(data.total)}</p>
           <p className="text-xs text-vox-text-dim hidden sm:block">One Voice = One Product &middot; Each voice gets its own API key</p>
         </div>
       )}
@@ -323,7 +325,7 @@ export default function VoiceLibrary() {
                       <p className="font-mono text-xs text-vox-heading">vc_sk_live_&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;{keyInfo.lastFour}</p>
                       <div className="flex items-center gap-4 text-[10px] text-vox-text-dim">
                         <span>{keyInfo.usageCount} request{keyInfo.usageCount !== 1 ? "s" : ""}</span>
-                        <span>Last used: {formatRelativeDate(keyInfo.lastUsedAt)}</span>
+                        <span>{t.voiceLibrary.lastUsed}: {formatRelativeDate(keyInfo.lastUsedAt)}</span>
                       </div>
                     </div>
                   ) : editingId !== item.id ? (
@@ -331,7 +333,7 @@ export default function VoiceLibrary() {
                       <button onClick={() => handleGenerateApiKey(item.id, item.name)} disabled={generatingKeyForId === item.id}
                         className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-vox-outline/25 text-sm text-vox-text-dim hover:text-vox-primary hover:border-vox-primary/40 hover:bg-vox-primary/5 transition-all disabled:opacity-50">
                         {generatingKeyForId === item.id ? <Loader2 size={14} className="animate-spin" /> : <Key size={14} />}
-                        Create API Key
+                        {t.voiceLibrary.createApiKey}
                       </button>
                     </div>
                   ) : null}
@@ -349,11 +351,11 @@ export default function VoiceLibrary() {
                       <>
                         {keyInfo && keyInfo.isActive && (
                           <button onClick={() => router.push("/studio/playground")} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-vox-secondary hover:bg-vox-secondary/10 transition-colors" title="Open Playground">
-                            <TerminalSquare size={12} /><span className="hidden sm:inline">Playground</span>
+                            <TerminalSquare size={12} /><span className="hidden sm:inline">{t.voiceLibrary.playground}</span>
                           </button>
                         )}
                         <button onClick={() => handleUseVoice(item)} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-vox-primary hover:bg-vox-primary/10 transition-colors" title="Use this voice in Studio">
-                          <Mic size={12} /><span className="hidden sm:inline">Use Voice</span>
+                          <Mic size={12} /><span className="hidden sm:inline">{t.voiceLibrary.useVoice}</span>
                         </button>
                         {item.featureUrl && <span className="text-amber-400 p-1" title="Feature cached"><Zap size={12} /></span>}
                         <a href={item.audioUrl} download className="p-1.5 rounded-lg text-vox-text-dim hover:text-vox-secondary hover:bg-vox-surface transition-colors" title="Download audio"><Download size={14} /></a>

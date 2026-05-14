@@ -15,11 +15,13 @@ import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { AlertTriangle, LogIn } from "lucide-react";
 import { generateId } from "@/lib/utils";
 import { getGoogleAuthErrorMessage } from "@/lib/auth/google-errors";
+import { useI18n } from "@/i18n";
 
 function LoginForm() {
     const { login } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { t } = useI18n();
     const next = searchParams.get("next") ?? "/studio";
     const oauthErrorCode = searchParams.get("error");
     const oauthErrorMessage = getGoogleAuthErrorMessage(oauthErrorCode);
@@ -82,9 +84,9 @@ function LoginForm() {
         <div className="w-full max-w-md">
             <div className="glass-panel rounded-2xl p-8">
                 <div className="text-center mb-8">
-                    <h1 className="text-2xl font-bold text-vox-heading mb-2">Welcome back</h1>
+                    <h1 className="text-2xl font-bold text-vox-heading mb-2">{t.auth.login.title}</h1>
                     <p className="text-sm text-vox-text-dim">
-                        Sign in to your account to continue
+                        {t.auth.login.subtitle}
                     </p>
                 </div>
 
@@ -98,17 +100,17 @@ function LoginForm() {
 
 
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-                    <FormField label="Username" error={errors.username?.message}>
+                    <FormField label={t.auth.username} error={errors.username?.message}>
                         <TextInput
                             type="text"
-                            placeholder="Enter your username"
+                            placeholder={t.auth.enterUsername}
                             autoComplete="username"
                             hasError={!!errors.username}
                             {...registerField("username")}
                         />
                     </FormField>
 
-                    <FormField label="Password" error={errors.password?.message}>
+                    <FormField label={t.auth.password} error={errors.password?.message}>
                         <PasswordInput
                             placeholder="••••••••"
                             autoComplete="current-password"
@@ -127,26 +129,26 @@ function LoginForm() {
 
                     <SubmitButton loading={loading}>
                         <LogIn size={18} />
-                        Sign in
+                        {t.common.signIn}
                     </SubmitButton>
                 </form>
 
                 <div className="mt-6 flex flex-col gap-3">
                     <div className="flex items-center gap-3 text-xs text-vox-text-dim">
                         <div className="flex-1 h-px bg-vox-outline/30" />
-                        <span>or continue with</span>
+                        <span>{t.common.orContinueWith}</span>
                         <div className="flex-1 h-px bg-vox-outline/30" />
                     </div>
                     <GoogleSignInButton next={next === "/studio" ? null : next} />
                 </div>
 
                 <div className="mt-6 text-center text-sm text-vox-text-dim">
-                    Don&apos;t have an account?{" "}
+                    {t.auth.noAccount}{" "}
                     <Link
                         href="/register"
                         className="text-vox-secondary hover:text-vox-heading transition-colors font-medium"
                     >
-                        Create account
+                        {t.auth.createAccount}
                     </Link>
                 </div>
             </div>

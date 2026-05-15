@@ -29,7 +29,6 @@ export default function CaptchaField({
     }, [onRegenerate, onChange]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTimestamp(Date.now());
     }, [captchaId]);
 
@@ -38,7 +37,7 @@ export default function CaptchaField({
         if (captchaId) {
             refresh();
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [theme]);
 
     const imgSrc = captchaId
@@ -46,13 +45,13 @@ export default function CaptchaField({
         : "";
 
     return (
-        <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-vox-text">
+        <div className="flex flex-col gap-1.5">
+            <label className="block text-[11.5px] font-medium tracking-[0.02em] text-vox-text-dim mb-0.5">
                 Security Code
             </label>
-            <div className="flex items-center gap-3 w-full min-w-0">
+            <div className="flex items-center gap-2.5 w-full min-w-0">
                 {/* Captcha image */}
-                <div className="relative h-[44px] w-[140px] min-w-[140px] rounded-lg overflow-hidden bg-vox-surface-highest border border-vox-outline/30 shrink-0">
+                <div className="relative h-[42px] w-[124px] min-w-[124px] rounded-lg overflow-hidden bg-vox-surface-high border border-vox-outline/60 shrink-0">
                     {imgSrc ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
@@ -61,7 +60,7 @@ export default function CaptchaField({
                             className="w-full h-full object-contain"
                         />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-vox-text-dim">
+                        <div className="w-full h-full flex items-center justify-center text-[11px] text-vox-text-dim">
                             Loading…
                         </div>
                     )}
@@ -71,10 +70,11 @@ export default function CaptchaField({
                 <button
                     type="button"
                     onClick={refresh}
-                    className="p-2 rounded-lg bg-vox-surface hover:bg-vox-surface-high text-vox-text-dim hover:text-vox-secondary transition-colors border border-vox-outline/20 shrink-0"
+                    className="p-2 rounded-lg bg-vox-surface hover:bg-vox-surface-high text-vox-text-dim hover:text-vox-text transition-colors border border-vox-outline/60 shrink-0"
                     title="Refresh captcha"
+                    aria-label="Refresh captcha"
                 >
-                    <RotateCw size={16} />
+                    <RotateCw size={15} />
                 </button>
 
                 {/* Text input */}
@@ -84,12 +84,12 @@ export default function CaptchaField({
                     placeholder="Enter code"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="flex-1 min-w-0 bg-vox-surface-lowest border border-vox-outline/30 rounded-lg px-4 py-2.5 text-sm text-vox-text outline-none focus:border-vox-primary transition-colors tracking-widest"
+                    className="flex-1 min-w-0 bg-vox-bg border border-vox-outline/60 rounded-lg px-3.5 py-2.5 text-[13.5px] text-vox-text outline-none focus:border-vox-outline focus:ring-2 focus:ring-ori-accent/15 transition-all tracking-widest"
                     maxLength={5}
                 />
             </div>
             {error && (
-                <p className="text-xs text-red-400 mt-0.5">{error}</p>
+                <p className="text-[11px] text-red-500 mt-0.5">{error}</p>
             )}
         </div>
     );

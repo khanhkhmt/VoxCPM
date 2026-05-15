@@ -15,6 +15,15 @@
   --color-vox-heading: #FFFFFF;
   --color-vox-outline: #4A4455;
 
+  /* Oriagent design tokens — available in both themes as Tailwind utilities. */
+  --color-ori-accent: #f06820;
+  --color-ori-accent-dark: #c4520f;
+  --color-ori-blue: #2563eb;
+  --color-ori-green: #16a34a;
+  --color-ori-yellow: #d97706;
+  --color-ori-red: #dc2626;
+  --color-ori-ink: #1a1917;
+
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
@@ -23,25 +32,55 @@
     color-scheme: dark;
     --background: var(--color-vox-bg);
     --foreground: var(--color-vox-text);
+
+    /* Oriagent neutral scale fallbacks for dark mode (used by .ori-* utilities) */
+    --ori-bg: #14121F;
+    --ori-bg-2: #1A1826;
+    --ori-surface: #201E2C;
+    --ori-surface-2: #2B2836;
+    --ori-surface-3: #363342;
+    --ori-border: #4A4455;
+    --ori-border-md: #5A5466;
+    --ori-text: #E5E0F3;
+    --ori-text-2: #CCC3D8;
+    --ori-text-3: #8A8499;
+    --ori-text-4: #635D75;
+    --ori-radius-sm: 7px;
+    --ori-radius: 10px;
+    --ori-radius-lg: 14px;
+    --ori-sidebar-w: 220px;
   }
 
   html.light {
     color-scheme: light;
-    --color-vox-bg: #F5F3FA;
-    --color-vox-surface: #FFFFFF;
-    --color-vox-surface-high: #F0EDF5;
-    --color-vox-surface-highest: #E8E4EF;
-    --color-vox-surface-lowest: #FFFFFF;
-    --color-vox-surface-low: #F8F6FC;
-    --color-vox-primary: #7C3AED;
-    --color-vox-primary-dim: #6D28D9;
-    --color-vox-secondary: #0EA5E9;
-    --color-vox-text: #1E1B2E;
-    --color-vox-text-dim: #6B6580;
-    --color-vox-heading: #1E1B2E;
-    --color-vox-outline: #D5D0E0;
+    --color-vox-bg: #F0EDE8;
+    --color-vox-surface: #F7F5F1;
+    --color-vox-surface-high: #EDEAE4;
+    --color-vox-surface-highest: #E4E0D9;
+    --color-vox-surface-lowest: #F7F5F1;
+    --color-vox-surface-low: #E8E4DD;
+    --color-vox-primary: #F06820;
+    --color-vox-primary-dim: #C4520F;
+    --color-vox-secondary: #2563EB;
+    --color-vox-text: #1A1917;
+    --color-vox-text-dim: #5A5750;
+    --color-vox-heading: #1A1917;
+    --color-vox-outline: #DBD7D0;
     --background: var(--color-vox-bg);
     --foreground: var(--color-vox-text);
+
+    /* Oriagent neutral scale for light mode (matches mockup palette). */
+    --ori-bg: #F0EDE8;
+    --ori-bg-2: #E8E4DD;
+    --ori-surface: #F7F5F1;
+    --ori-surface-2: #EDEAE4;
+    --ori-surface-3: #E4E0D9;
+    --ori-border: #DBD7D0;
+    --ori-border-md: #CAC6BE;
+    --ori-text: #1A1917;
+    --ori-text-2: #5A5750;
+    --ori-text-3: #9E9A93;
+    --ori-text-4: #C0BBB3;
   }
 
   body {
@@ -97,5 +136,217 @@
   }
   ::-webkit-scrollbar-thumb:hover {
     background: var(--color-vox-primary);
+  }
+
+  /* ───────────────────────────────────────────────────────────
+   * Oriagent design system primitives
+   * Used by refactored Auth / Studio shell / Workspace components.
+   * Reads from --ori-* tokens which adapt per theme above.
+   * ─────────────────────────────────────────────────────────── */
+  .ori-card {
+    background: var(--ori-surface);
+    border: 1px solid var(--ori-border);
+    border-radius: var(--ori-radius-lg);
+    overflow: hidden;
+  }
+
+  .ori-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid var(--ori-border);
+  }
+
+  .ori-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ori-text);
+    flex: 1;
+  }
+
+  .ori-card-badge {
+    font-size: 10px;
+    color: var(--ori-text-3);
+    background: var(--ori-surface-2);
+    border: 1px solid var(--ori-border);
+    border-radius: 5px;
+    padding: 2px 7px;
+  }
+
+  .ori-card-body {
+    padding: 16px 18px;
+  }
+
+  .ori-input {
+    width: 100%;
+    background: var(--ori-surface-2);
+    border: 1px solid var(--ori-border);
+    border-radius: var(--ori-radius-sm);
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--ori-text);
+    outline: none;
+    transition: border-color 0.15s;
+    line-height: 1.6;
+  }
+  .ori-input:focus {
+    border-color: var(--ori-border-md);
+  }
+  .ori-input::placeholder {
+    color: var(--ori-text-4);
+  }
+
+  .ori-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: var(--ori-radius-sm);
+    padding: 7px 13px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.12s;
+    border: 1px solid transparent;
+    font-family: inherit;
+  }
+  .ori-btn-ghost {
+    background: transparent;
+    border-color: var(--ori-border-md);
+    color: var(--ori-text-2);
+  }
+  .ori-btn-ghost:hover:not(:disabled) {
+    border-color: var(--ori-text-3);
+    color: var(--ori-text);
+  }
+  .ori-btn-primary {
+    background: var(--ori-text);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  }
+  .ori-btn-primary:hover:not(:disabled) {
+    opacity: 0.87;
+  }
+  .ori-btn-primary:disabled {
+    cursor: wait;
+    opacity: 0.55;
+  }
+  .ori-btn-accent {
+    background: var(--color-ori-accent);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(240, 104, 32, 0.25);
+  }
+  .ori-btn-accent:hover:not(:disabled) {
+    background: var(--color-ori-accent-dark);
+  }
+  .ori-btn-accent:disabled {
+    cursor: wait;
+    opacity: 0.55;
+  }
+  .ori-btn-streaming {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #fff;
+    font-weight: 600;
+    border: none;
+  }
+  .ori-btn-streaming:hover:not(:disabled) {
+    opacity: 0.88;
+  }
+  .ori-btn-danger {
+    background: transparent;
+    border-color: #fca5a5;
+    color: var(--color-ori-red);
+  }
+  .ori-btn-danger:hover:not(:disabled) {
+    background: rgba(220, 38, 38, 0.08);
+  }
+
+  .ori-toggle {
+    width: 34px;
+    height: 19px;
+    background: var(--ori-border-md);
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+    border: none;
+    padding: 0;
+  }
+  .ori-toggle::after {
+    content: "";
+    position: absolute;
+    top: 2.5px;
+    left: 2.5px;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.18s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  }
+  .ori-toggle.on {
+    background: var(--ori-text);
+  }
+  .ori-toggle.on::after {
+    transform: translateX(15px);
+  }
+
+  /* Native range slider tuned for Oriagent look. */
+  input.ori-range[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--ori-border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input.ori-range[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--ori-text);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    border: none;
+  }
+  input.ori-range[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--ori-text);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    border: none;
+  }
+
+  /* Sidebar nav-item primitive used by Studio sidebar. */
+  .ori-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 8px;
+    border-radius: var(--ori-radius-sm);
+    font-size: 13px;
+    color: var(--ori-text-2);
+    cursor: pointer;
+    transition: all 0.12s;
+    margin-bottom: 1px;
+    user-select: none;
+    text-decoration: none;
+  }
+  .ori-nav-item:hover {
+    color: var(--ori-text);
+    background: var(--ori-surface-2);
+  }
+  .ori-nav-item.active {
+    color: var(--ori-text);
+    background: var(--ori-surface-2);
+    font-weight: 500;
   }
 }

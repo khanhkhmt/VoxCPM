@@ -7,13 +7,15 @@ export default function StudioPage() {
     const { t } = useI18n();
 
     return (
-        <div className="w-full h-full pb-20">
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-vox-heading tracking-tight">{t.studio.newSynthesis.title}</h1>
-                    <p className="text-sm text-vox-text-dim mt-1">{t.studio.newSynthesis.subtitle}</p>
-                </div>
-            </div>
+        <div className="w-full pb-14">
+            <header className="mb-6">
+                <h1 className="text-[20px] font-bold text-vox-text tracking-tight mb-1">
+                    {t.studio.newSynthesis.title}
+                </h1>
+                <p className="text-[13px] text-vox-text-dim leading-relaxed">
+                    {t.studio.newSynthesis.subtitle}
+                </p>
+            </header>
 
             <Workspace />
         </div>

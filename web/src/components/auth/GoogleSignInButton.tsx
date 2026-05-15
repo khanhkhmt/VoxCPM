@@ -6,13 +6,13 @@ interface GoogleSignInButtonProps {
 }
 
 /**
- * "Sign in with Google" button that triggers a top-level navigation
+ * "Continue with Google" button that triggers a top-level navigation
  * to /api/auth/google, which redirects the user to Google's OAuth flow.
  *
  * Styled as an Oriagent "social" / ghost button.
  */
 export default function GoogleSignInButton({
-    label = "Sign in with Google",
+    label = "Continue with Google",
     next,
 }: GoogleSignInButtonProps) {
     const href = next

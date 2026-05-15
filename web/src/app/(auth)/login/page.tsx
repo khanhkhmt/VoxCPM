@@ -135,7 +135,7 @@ function LoginForm() {
             )}
 
             <GoogleSignInButton
-                label={t.common.signInWithGoogle}
+                label={t.common.continueWithGoogle}
                 next={next === "/studio" ? null : next}
             />
 

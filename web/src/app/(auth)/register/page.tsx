@@ -150,7 +150,7 @@ export default function RegisterPage() {
                 </div>
             )}
 
-            <GoogleSignInButton label={t.common.signUpWithGoogle} />
+            <GoogleSignInButton label={t.common.continueWithGoogle} />
 
             <div className="flex items-center gap-2.5 my-4">
                 <div className="flex-1 h-px bg-vox-outline/50" />

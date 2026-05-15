@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Activity } from "lucide-react";
+import { ArrowRight, Activity, Languages, AudioLines, Plug } from "lucide-react";
 import { useI18n } from "@/i18n";
 import DemoTTSBox from "@/components/DemoTTSBox";
 
@@ -60,6 +60,26 @@ export default function LandingHero() {
                             >
                                 {t.landing.hero.tryDemo}
                             </Link>
+                        </div>
+
+                        <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs text-vox-text-dim">
+                            <span className="inline-flex items-center gap-2">
+                                <Languages size={14} className="text-vox-primary" />
+                                <span className="font-medium text-vox-text">{t.landing.hero.statLanguagesValue}</span>
+                                <span>{t.landing.hero.statLanguagesLabel}</span>
+                            </span>
+                            <span className="hidden sm:block w-px h-3 bg-vox-outline/60" aria-hidden />
+                            <span className="inline-flex items-center gap-2">
+                                <AudioLines size={14} className="text-vox-secondary" />
+                                <span className="font-medium text-vox-text">{t.landing.hero.statFidelityValue}</span>
+                                <span>{t.landing.hero.statFidelityLabel}</span>
+                            </span>
+                            <span className="hidden sm:block w-px h-3 bg-vox-outline/60" aria-hidden />
+                            <span className="inline-flex items-center gap-2">
+                                <Plug size={14} className="text-emerald-500" />
+                                <span className="font-medium text-vox-text">{t.landing.hero.statApiValue}</span>
+                                <span>{t.landing.hero.statApiLabel}</span>
+                            </span>
                         </div>
                     </div>
 

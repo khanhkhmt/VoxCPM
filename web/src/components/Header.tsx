@@ -28,7 +28,8 @@ export default function Header() {
                         <ul className="flex space-x-8">
                             <li><Link href="#problem" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.problem}</Link></li>
                             <li><Link href="#solution" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.solution}</Link></li>
-                            <li><Link href="#workflow" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.workflow}</Link></li>
+                            <li><Link href="#enterprise" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.enterprise}</Link></li>
+                            <li><Link href="#results" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.results}</Link></li>
                             <li><Link href="#faq" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.faq}</Link></li>
                         </ul>
                     </nav>

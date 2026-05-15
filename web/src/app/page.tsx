@@ -6,6 +6,8 @@ import LandingHero from "@/components/landing/LandingHero";
 import ProblemSection from "@/components/landing/ProblemSection";
 import SolutionSection from "@/components/landing/SolutionSection";
 import WorkflowSection from "@/components/landing/WorkflowSection";
+import EnterpriseSection from "@/components/landing/EnterpriseSection";
+import ResultsSection from "@/components/landing/ResultsSection";
 import FaqSection from "@/components/landing/FaqSection";
 import FinalCta from "@/components/landing/FinalCta";
 
@@ -29,6 +31,8 @@ export default function Home() {
                 <ProblemSection />
                 <SolutionSection />
                 <WorkflowSection />
+                <EnterpriseSection />
+                <ResultsSection />
                 <FaqSection />
                 <FinalCta />
             </main>

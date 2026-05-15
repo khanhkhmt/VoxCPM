@@ -46,6 +46,8 @@ const vi: Translations = {
       solution: "Giải pháp",
       features: "Tính năng",
       workflow: "Quy trình",
+      enterprise: "Doanh nghiệp",
+      results: "Kết quả",
       faq: "FAQ",
       pricing: "Bảng giá",
       docs: "Tài liệu",
@@ -57,6 +59,12 @@ const vi: Translations = {
       subtitle: "Thế hệ tiếp theo của công nghệ tổng hợp giọng nói AI. Tạo lồng tiếng chất lượng studio, nhân bản giọng nói hoàn hảo và thiết kế nhân vật mới với toàn quyền kiểm soát cảm xúc.",
       startFree: "Bắt đầu miễn phí",
       tryDemo: "Thử Demo",
+      statLanguagesValue: "30+",
+      statLanguagesLabel: "ngôn ngữ",
+      statFidelityValue: "48 kHz",
+      statFidelityLabel: "chuẩn studio",
+      statApiValue: "API",
+      statApiLabel: "sẵn sàng tích hợp",
     },
     demo: {
       hearItInAction: "Nghe thử ngay",
@@ -100,6 +108,8 @@ const vi: Translations = {
       problem: "Vấn đề",
       solution: "Giải pháp",
       workflow: "Quy trình",
+      enterprise: "Doanh nghiệp",
+      results: "Kết quả",
       faq: "FAQ",
       signIn: "Đăng nhập",
       getStarted: "Bắt đầu",
@@ -220,6 +230,58 @@ const vi: Translations = {
         profiles: {
           q: "Có quản lý được voice profile không?",
           a: "Có. Các giọng đã lưu nằm trong voice library kèm feature cache để những lần sinh sau nhanh và nhất quán.",
+        },
+      },
+    },
+
+    enterprise: {
+      eyebrow: "Giải pháp doanh nghiệp",
+      title: "Vì sao các đội chọn VoxCPM.",
+      subtitle: "Từ nội dung đa ngôn ngữ đến luồng API hóa, VoxCPM cho đội sản phẩm một nguồn duy nhất cho mọi giọng trong app \u2014 không phải xé lẻ giữa nhiều công cụ.",
+      cards: {
+        multilingual: {
+          title: "Sinh giọng đa ngôn ngữ",
+          desc: "Cùng một giọng dùng được cho tiếng Anh, tiếng Việt và 28+ ngôn ngữ khác với phát âm tự nhiên.",
+        },
+        profiles: {
+          title: "Voice profile tái sử dụng",
+          desc: "Lưu giọng đã thiết kế hoặc clone một lần, dùng lại trên nhiều dự án, đồng đội và môi trường production.",
+        },
+        api: {
+          title: "Luồng Studio sang API",
+          desc: "Mọi giọng bạn tạo trong studio gọi được từ REST API có type với cùng key và voice profile.",
+        },
+        proxy: {
+          title: "Kiến trúc proxy bảo mật",
+          desc: "Lưu lượng inference đi qua proxy Next.js đã xác thực, nên API key không bao giờ xuất hiện ở client.",
+        },
+      },
+    },
+
+    results: {
+      eyebrow: "Sẵn sàng cho production",
+      title: "Mở rộng tốt cho luồng giọng nói của bạn.",
+      subtitle: "Những con số có ý nghĩa khi bạn đưa giọng nói tới người dùng thật \u2014 không phải benchmark trong slide.",
+      items: {
+        modes: {
+          value: "3",
+          label: "Chế độ giọng",
+          desc: "Thiết kế từ prompt, clone từ reference clip hoặc continue từ reference transcript.",
+        },
+        fidelity: {
+          value: "48 kHz",
+          label: "Chất lượng studio",
+          desc: "Âm thanh PCM mono 48 kHz, sẵn sàng đưa vào DAW, video editor hoặc pipeline production.",
+        },
+        api: {
+          value: "API",
+          label: "Web và production cùng giọng",
+          desc: "Sinh trong studio, gọi cùng giọng đó qua REST API có type \u2014 không cần train lại.",
+        },
+        profiles: {
+          value: "\u221e",
+          label: "Profile tái sử dụng",
+          desc: "Lưu giọng vào library và chia sẻ cho đồng đội, dự án và môi trường runtime khác nhau.",
         },
       },
     },

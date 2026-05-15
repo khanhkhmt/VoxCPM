@@ -24,6 +24,8 @@ export default function Footer() {
                             <li><Link href="#problem" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.problem}</Link></li>
                             <li><Link href="#solution" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.solution}</Link></li>
                             <li><Link href="#workflow" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.workflow}</Link></li>
+                            <li><Link href="#enterprise" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.enterprise}</Link></li>
+                            <li><Link href="#results" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.results}</Link></li>
                             <li><Link href="#faq" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.faq}</Link></li>
                         </ul>
                     </div>

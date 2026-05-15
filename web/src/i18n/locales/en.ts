@@ -40,10 +40,12 @@ const en = {
   // ── Landing ──
   landing: {
     nav: {
-      problem: "Problem",
+      problem: "The Problem",
       solution: "Solution",
       features: "Features",
       workflow: "Workflow",
+      enterprise: "Enterprise",
+      results: "Results",
       faq: "FAQ",
       pricing: "Pricing",
       docs: "Docs",
@@ -55,6 +57,12 @@ const en = {
       subtitle: "The next generation of AI voice synthesis. Generate studio-quality voiceovers, clone voices perfectly, and design entirely new personas with complete emotional control.",
       startFree: "Start creating for free",
       tryDemo: "Try Demo",
+      statLanguagesValue: "30+",
+      statLanguagesLabel: "languages",
+      statFidelityValue: "48 kHz",
+      statFidelityLabel: "studio audio",
+      statApiValue: "API",
+      statApiLabel: "ready out of the box",
     },
     demo: {
       hearItInAction: "Hear it in action",
@@ -98,6 +106,8 @@ const en = {
       problem: "Problem",
       solution: "Solution",
       workflow: "Workflow",
+      enterprise: "Enterprise",
+      results: "Results",
       faq: "FAQ",
       signIn: "Sign in",
       getStarted: "Get started",
@@ -218,6 +228,58 @@ const en = {
         profiles: {
           q: "Can I manage voice profiles?",
           a: "Yes. Saved voices live in your voice library with feature caches so future generations are fast and consistent.",
+        },
+      },
+    },
+
+    enterprise: {
+      eyebrow: "Enterprise Solution",
+      title: "Why teams choose VoxCPM.",
+      subtitle: "From multilingual content to API-driven workflows, VoxCPM gives product teams a single source of truth for every voice in the product \u2014 without splitting between tools.",
+      cards: {
+        multilingual: {
+          title: "Multilingual voice generation",
+          desc: "Ship the same voice in English, Vietnamese, and 28+ other languages with native-feeling pronunciation.",
+        },
+        profiles: {
+          title: "Reusable voice profiles",
+          desc: "Save designed and cloned voices once, then reuse them across projects, teammates, and production routes.",
+        },
+        api: {
+          title: "Studio-to-API workflow",
+          desc: "Every voice you design in the studio is callable from the typed REST API with the same keys and profiles.",
+        },
+        proxy: {
+          title: "Secure proxy architecture",
+          desc: "Inference traffic flows through an authenticated Next.js proxy, so API keys never live on the client.",
+        },
+      },
+    },
+
+    results: {
+      eyebrow: "Built for production",
+      title: "Built to scale your voice workflows.",
+      subtitle: "Numbers that matter when you ship voices to real users \u2014 not benchmarks from a deck.",
+      items: {
+        modes: {
+          value: "3",
+          label: "Voice modes",
+          desc: "Design from a prompt, clone from a reference clip, or continue from a reference transcript.",
+        },
+        fidelity: {
+          value: "48 kHz",
+          label: "Studio-grade output",
+          desc: "Mono PCM audio at 48 kHz, ready to drop into your DAW, video editor, or production pipeline.",
+        },
+        api: {
+          value: "API",
+          label: "Same voices, web & prod",
+          desc: "Generate in the studio, then call the same voice through a typed REST API \u2014 no re-training needed.",
+        },
+        profiles: {
+          value: "\u221e",
+          label: "Reusable profiles",
+          desc: "Save voices to your library and share them across teammates, projects, and runtime environments.",
         },
       },
     },

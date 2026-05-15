@@ -26,9 +26,11 @@ export default function Header() {
 
                     <nav className="hidden md:block">
                         <ul className="flex space-x-8">
-                            <li><Link href="#features" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.features}</Link></li>
-                            <li><Link href="#pricing" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.pricing}</Link></li>
-                            <li><Link href="#docs" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.docs}</Link></li>
+                            <li><Link href="#problem" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.problem}</Link></li>
+                            <li><Link href="#solution" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.solution}</Link></li>
+                            <li><Link href="#enterprise" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.enterprise}</Link></li>
+                            <li><Link href="#results" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.results}</Link></li>
+                            <li><Link href="#faq" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.nav.faq}</Link></li>
                         </ul>
                     </nav>
 

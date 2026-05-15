@@ -21,20 +21,22 @@ export default function Footer() {
                     <div>
                         <h4 className="font-semibold mb-4 text-vox-text">{t.landing.footer.product}</h4>
                         <ul className="space-y-3">
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.features}</Link></li>
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.voices}</Link></li>
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.pricing}</Link></li>
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.apiDetails}</Link></li>
+                            <li><Link href="#problem" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.problem}</Link></li>
+                            <li><Link href="#solution" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.solution}</Link></li>
+                            <li><Link href="#workflow" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.workflow}</Link></li>
+                            <li><Link href="#enterprise" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.enterprise}</Link></li>
+                            <li><Link href="#results" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.results}</Link></li>
+                            <li><Link href="#faq" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.faq}</Link></li>
                         </ul>
                     </div>
 
                     <div>
                         <h4 className="font-semibold mb-4 text-vox-text">{t.landing.footer.resources}</h4>
                         <ul className="space-y-3">
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.documentation}</Link></li>
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.tutorials}</Link></li>
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.blog}</Link></li>
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.community}</Link></li>
+                            <li><Link href="/studio" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.voices}</Link></li>
+                            <li><Link href="/studio" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.apiDetails}</Link></li>
+                            <li><Link href="/login" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.signIn}</Link></li>
+                            <li><Link href="/register" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.getStarted}</Link></li>
                         </ul>
                     </div>
 

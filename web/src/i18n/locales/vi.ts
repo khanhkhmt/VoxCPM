@@ -42,7 +42,11 @@ const vi: Translations = {
   // ── Landing ──
   landing: {
     nav: {
+      problem: "Vấn đề",
+      solution: "Giải pháp",
       features: "Tính năng",
+      workflow: "Quy trình",
+      faq: "FAQ",
       pricing: "Bảng giá",
       docs: "Tài liệu",
     },
@@ -93,6 +97,138 @@ const vi: Translations = {
       termsOfService: "Điều khoản dịch vụ",
       cookiePolicy: "Chính sách Cookie",
       copyright: "Oriagent. Mọi quyền được bảo lưu.",
+      problem: "Vấn đề",
+      solution: "Giải pháp",
+      workflow: "Quy trình",
+      faq: "FAQ",
+      signIn: "Đăng nhập",
+      getStarted: "Bắt đầu",
+    },
+
+    problem: {
+      eyebrow: "Vấn đề về giọng nói",
+      title: "Tạo ra giọng nói tự nhiên vẫn còn là việc khó.",
+      subtitle: "Phần lớn đội ngũ phải gộp nửa tá công cụ để thiết kế giọng, clone mẫu, kiểm tra rồi đưa lên production. Kết quả nghe rời rạc \u2014 và thường rất máy móc.",
+      cards: {
+        flat: {
+          title: "TTS phổ thông nghe đều đều",
+          desc: "Giọng máy móc làm giảm độ tin cậy, mức độ tương tác và chất lượng cảm nhận của sản phẩm.",
+        },
+        fragmented: {
+          title: "Quy trình clone giọng rời rạc",
+          desc: "Việc thu, clone, kiểm tra và xuất file bị xé lẻ qua nhiều công cụ và script tạm.",
+        },
+        api: {
+          title: "Developer cần API ổn định",
+          desc: "Ứng dụng production cần giọng lặp lại được, truy cập an toàn và luồng tạo dự đoán được \u2014 không phải ảnh chụp demo.",
+        },
+      },
+    },
+
+    solution: {
+      eyebrow: "Một studio, nhiều giọng",
+      title: "Một quy trình duy nhất từ ý tưởng đến production.",
+      subtitle: "VoxCPM Studio gom thiết kế giọng, clone, đa ngôn ngữ và API developer vào cùng một nơi \u2014 để đội của bạn đi từ ý tưởng thô đến giọng đã deploy chỉ trong vài phút.",
+      steps: {
+        design: {
+          number: "01",
+          title: "Voice Design",
+          desc: "Mô tả giọng bằng ngôn ngữ tự nhiên \u2014 tuổi, tông, năng lượng, cảm xúc \u2014 mô hình sẽ tạo ra một nhân vật giọng nói mới.",
+        },
+        controllable: {
+          number: "02",
+          title: "Controllable Cloning",
+          desc: "Clone giọng từ một đoạn mẫu ngắn, rồi điều khiển phong cách, tiết tấu và cảm xúc mà không mất đi âm sắc gốc.",
+        },
+        ultimate: {
+          number: "03",
+          title: "Ultimate Cloning",
+          desc: "Tiếp nối từ audio tham chiếu kèm transcript để giữ trọn mọi sắc thái \u2014 lý tưởng cho tái tạo độ trung thực cao.",
+        },
+        api: {
+          number: "04",
+          title: "Developer API",
+          desc: "Đưa voice profile đã lưu lên production qua REST API có kiểu dữ liệu rõ ràng và voice profile dùng lại được.",
+        },
+      },
+    },
+
+    workflow: {
+      eyebrow: "Xem trước Studio",
+      title: "Thiết kế để thử nghiệm giọng cực nhanh.",
+      subtitle: "Một không gian làm việc tập trung với reference audio, control instruction, target text và synthesis settings có thể tinh chỉnh \u2014 tất cả trên cùng một canvas.",
+      mockup: {
+        referenceLabel: "Reference audio",
+        referenceValue: "narrator_warm.wav",
+        referenceMeta: "đã cache \u00b7 12.4s",
+        controlLabel: "Control instruction",
+        controlValue: "Một người dẫn truyện ấm, trung niên, tiết tấu thư thái.",
+        textLabel: "Target text",
+        textValue: "Chào mừng bạn đến với studio. Hôm nay chúng ta sẽ thiết kế một giọng mới hoàn toàn.",
+        counter: "82 / 4096",
+        settingsLabel: "Synthesis settings",
+        settingLanguage: "Ngôn ngữ",
+        settingLanguageValue: "Tiếng Việt",
+        settingCfg: "CFG strength",
+        settingCfgValue: "2.0",
+        settingSteps: "DiT steps",
+        settingStepsValue: "24",
+        outputLabel: "Output",
+        outputMeta: "48 kHz \u00b7 mono \u00b7 sẵn sàng export",
+        generate: "Generate",
+      },
+      pillars: {
+        canvas: {
+          title: "Một canvas duy nhất",
+          desc: "Reference, instruction, target text và settings nằm cùng một chỗ \u2014 không cần nhảy tab.",
+        },
+        control: {
+          title: "Tinh chỉnh sâu",
+          desc: "Điều chỉnh CFG strength, DiT steps và normalize để ra đúng kiểu thoại bạn cần.",
+        },
+        export: {
+          title: "Sẵn sàng cho production",
+          desc: "Audio 48 kHz mono, lịch sử mọi lần render, và lưu vào voice library bằng một cú click.",
+        },
+      },
+    },
+
+    faq: {
+      eyebrow: "Câu hỏi thường gặp",
+      title: "Đội ngũ thường hỏi gì trước khi dùng VoxCPM.",
+      items: {
+        what: {
+          q: "VoxCPM Studio là gì?",
+          a: "Là studio web để thiết kế, clone và tạo ra các giọng nói có biểu cảm dựa trên mô hình diffusion VoxCPM2. Kèm theo API developer để dùng lại cùng giọng đó trên production.",
+        },
+        clone: {
+          q: "Có thể clone giọng từ audio tham chiếu không?",
+          a: "Có. Tải lên một đoạn mẫu ngắn và mô hình sẽ clone âm sắc. Bạn có thể cung cấp thêm transcript và control instruction để điều khiển phong cách.",
+        },
+        multilingual: {
+          q: "Có hỗ trợ tiếng Việt và ngôn ngữ khác không?",
+          a: "VoxCPM2 hỗ trợ tổng hợp đa ngôn ngữ trên 30 ngôn ngữ, bao gồm tiếng Việt, với giọng và phát âm tự nhiên.",
+        },
+        api: {
+          q: "Developer có dùng được qua API không?",
+          a: "Có. Mỗi user có thể tạo API key và gọi các endpoint TTS công khai bằng đúng voice profile đã tạo trong studio.",
+        },
+        backend: {
+          q: "Có cần backend chạy mới tạo audio được không?",
+          a: "Giao diện studio vẫn chạy được khi không có backend, nhưng việc sinh audio thật cần FastAPI inference server bật và cấu hình đúng trong môi trường.",
+        },
+        profiles: {
+          q: "Có quản lý được voice profile không?",
+          a: "Có. Các giọng đã lưu nằm trong voice library kèm feature cache để những lần sinh sau nhanh và nhất quán.",
+        },
+      },
+    },
+
+    finalCta: {
+      title: "Bắt đầu đưa giọng nói tự nhiên ra production hôm nay.",
+      subtitle: "Mở studio, thiết kế một giọng mới hoặc kết nối ứng dụng qua API \u2014 reference clip, lịch sử và voice library của bạn đi cùng với bạn.",
+      primary: "Tạo tài khoản",
+      secondary: "Mở Studio",
     },
   },
 

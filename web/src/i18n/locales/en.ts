@@ -40,7 +40,11 @@ const en = {
   // ── Landing ──
   landing: {
     nav: {
+      problem: "Problem",
+      solution: "Solution",
       features: "Features",
+      workflow: "Workflow",
+      faq: "FAQ",
       pricing: "Pricing",
       docs: "Docs",
     },
@@ -91,6 +95,138 @@ const en = {
       termsOfService: "Terms of Service",
       cookiePolicy: "Cookie Policy",
       copyright: "Oriagent. All rights reserved.",
+      problem: "Problem",
+      solution: "Solution",
+      workflow: "Workflow",
+      faq: "FAQ",
+      signIn: "Sign in",
+      getStarted: "Get started",
+    },
+
+    problem: {
+      eyebrow: "The voice problem",
+      title: "Building natural-sounding voices is still hard.",
+      subtitle: "Most teams stitch together half a dozen tools to design a voice, clone a sample, run a test, and ship it to production. The result feels fragmented \u2014 and often robotic.",
+      cards: {
+        flat: {
+          title: "Generic TTS sounds flat",
+          desc: "Robotic delivery erodes trust, engagement, and the perceived quality of every product it touches.",
+        },
+        fragmented: {
+          title: "Voice cloning is fragmented",
+          desc: "Recording, cloning, evaluating, and exporting are scattered across separate tools and ad-hoc scripts.",
+        },
+        api: {
+          title: "Developers need reliable APIs",
+          desc: "Production apps need repeatable voices, secure access, and predictable generation flows \u2014 not screenshots of demos.",
+        },
+      },
+    },
+
+    solution: {
+      eyebrow: "One studio. Many voices.",
+      title: "A single workflow from idea to production.",
+      subtitle: "VoxCPM Studio brings voice design, cloning, multilingual synthesis, and a developer API into one place \u2014 so your team can move from a rough idea to a deployed voice in minutes.",
+      steps: {
+        design: {
+          number: "01",
+          title: "Voice Design",
+          desc: "Describe a voice in plain language \u2014 age, tone, energy, emotion \u2014 and let the model craft a brand-new persona.",
+        },
+        controllable: {
+          number: "02",
+          title: "Controllable Cloning",
+          desc: "Clone a voice from a short reference clip, then steer style, pacing, and emotion without losing timbre.",
+        },
+        ultimate: {
+          number: "03",
+          title: "Ultimate Cloning",
+          desc: "Continue from a reference audio plus transcript to capture every nuance \u2014 ideal for high-fidelity recreations.",
+        },
+        api: {
+          number: "04",
+          title: "Developer API",
+          desc: "Ship saved voices into production through a typed REST API and reusable voice profiles.",
+        },
+      },
+    },
+
+    workflow: {
+      eyebrow: "Studio preview",
+      title: "Designed for fast voice experiments.",
+      subtitle: "A focused workspace with reference audio, control instructions, target text, and tunable synthesis settings \u2014 all on one canvas.",
+      mockup: {
+        referenceLabel: "Reference audio",
+        referenceValue: "narrator_warm.wav",
+        referenceMeta: "cached \u00b7 12.4s",
+        controlLabel: "Control instruction",
+        controlValue: "A warm, middle-aged narrator with relaxed pacing.",
+        textLabel: "Target text",
+        textValue: "Welcome to the studio. Today we'll design a brand new voice from scratch.",
+        counter: "68 / 4096",
+        settingsLabel: "Synthesis settings",
+        settingLanguage: "Language",
+        settingLanguageValue: "English",
+        settingCfg: "CFG strength",
+        settingCfgValue: "2.0",
+        settingSteps: "DiT steps",
+        settingStepsValue: "24",
+        outputLabel: "Output",
+        outputMeta: "48 kHz \u00b7 mono \u00b7 ready to export",
+        generate: "Generate",
+      },
+      pillars: {
+        canvas: {
+          title: "One canvas",
+          desc: "Reference, instruction, target text, and settings live together \u2014 no tab-hopping.",
+        },
+        control: {
+          title: "Tunable control",
+          desc: "Adjust CFG strength, DiT steps, and normalization to dial in the right delivery.",
+        },
+        export: {
+          title: "Studio-ready output",
+          desc: "48 kHz mono audio, history of every render, and one-click save to your voice library.",
+        },
+      },
+    },
+
+    faq: {
+      eyebrow: "Frequently asked",
+      title: "What teams ask before adopting VoxCPM.",
+      items: {
+        what: {
+          q: "What is VoxCPM Studio?",
+          a: "A web studio for designing, cloning, and generating expressive voices with the VoxCPM2 diffusion model. It pairs a focused UI with a developer API so the same voice can be used in production.",
+        },
+        clone: {
+          q: "Can I clone a voice from reference audio?",
+          a: "Yes. Upload a short reference clip and the model will clone its timbre. You can optionally provide a transcript and a control instruction to steer style.",
+        },
+        multilingual: {
+          q: "Does it support Vietnamese and other languages?",
+          a: "VoxCPM2 supports multilingual synthesis across 30 languages, including Vietnamese, with native-feeling accents and pronunciation.",
+        },
+        api: {
+          q: "Can developers use it through an API?",
+          a: "Yes. Each user can generate API keys and call the public TTS endpoints with the same voice profiles created in the studio.",
+        },
+        backend: {
+          q: "Do I need the backend running to generate audio?",
+          a: "The studio UI works without the backend, but real audio generation requires the FastAPI inference server to be running and configured in the environment.",
+        },
+        profiles: {
+          q: "Can I manage voice profiles?",
+          a: "Yes. Saved voices live in your voice library with feature caches so future generations are fast and consistent.",
+        },
+      },
+    },
+
+    finalCta: {
+      title: "Start shipping natural voices today.",
+      subtitle: "Open the studio, design a new voice, or wire your app into the API \u2014 your reference clips, history, and voice library travel with you.",
+      primary: "Create your account",
+      secondary: "Open Studio",
     },
   },
 

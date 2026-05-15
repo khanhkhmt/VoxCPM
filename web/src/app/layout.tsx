@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/lib/theme";
+import { I18nProvider } from "@/i18n";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -41,11 +42,13 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} antialiased`}>
-        <ThemeProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </ThemeProvider>
+        <I18nProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </ThemeProvider>
+        </I18nProvider>
       </body>
     </html>
   );

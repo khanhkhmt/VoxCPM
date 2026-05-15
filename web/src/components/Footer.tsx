@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import { useI18n } from "@/i18n";
 
 export default function Footer() {
+    const { t } = useI18n();
+
     return (
         <footer className="bg-vox-bg pt-20 pb-10 border-t border-vox-outline/20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -9,43 +14,43 @@ export default function Footer() {
                     <div className="col-span-2 md:col-span-1">
                         <Logo className="mb-4" />
                         <p className="text-sm text-vox-text-dim mb-6 max-w-xs">
-                            Transforming the way software speaks, from prototype to production. Powered by Oriagent AI technology.
+                            {t.landing.footer.description}
                         </p>
                     </div>
 
                     <div>
-                        <h4 className="font-semibold mb-4 text-vox-text">Product</h4>
+                        <h4 className="font-semibold mb-4 text-vox-text">{t.landing.footer.product}</h4>
                         <ul className="space-y-3">
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">Features</Link></li>
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">Voices</Link></li>
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">Pricing</Link></li>
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">API Details</Link></li>
+                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.features}</Link></li>
+                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.voices}</Link></li>
+                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.pricing}</Link></li>
+                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.apiDetails}</Link></li>
                         </ul>
                     </div>
 
                     <div>
-                        <h4 className="font-semibold mb-4 text-vox-text">Resources</h4>
+                        <h4 className="font-semibold mb-4 text-vox-text">{t.landing.footer.resources}</h4>
                         <ul className="space-y-3">
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">Documentation</Link></li>
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">Tutorials</Link></li>
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">Blog</Link></li>
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">Community</Link></li>
+                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.documentation}</Link></li>
+                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.tutorials}</Link></li>
+                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.blog}</Link></li>
+                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.community}</Link></li>
                         </ul>
                     </div>
 
                     <div>
-                        <h4 className="font-semibold mb-4 text-vox-text">Legal</h4>
+                        <h4 className="font-semibold mb-4 text-vox-text">{t.landing.footer.legal}</h4>
                         <ul className="space-y-3">
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">Privacy Policy</Link></li>
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">Terms of Service</Link></li>
-                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">Cookie Policy</Link></li>
+                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.privacyPolicy}</Link></li>
+                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.termsOfService}</Link></li>
+                            <li><Link href="#" className="text-sm text-vox-text-dim hover:text-vox-secondary transition-colors">{t.landing.footer.cookiePolicy}</Link></li>
                         </ul>
                     </div>
                 </div>
 
                 <div className="border-t border-vox-outline/20 pt-8 flex flex-col md:flex-row items-center justify-between">
                     <p className="text-xs text-vox-text-dim">
-                        &copy; {new Date().getFullYear()} Oriagent. All rights reserved.
+                        &copy; {new Date().getFullYear()} {t.landing.footer.copyright}
                     </p>
                     <div className="flex gap-4 mt-4 md:mt-0">
                         {/* Social links placeholder */}

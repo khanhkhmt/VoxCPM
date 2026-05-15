@@ -15,8 +15,18 @@ const prisma = new PrismaClient({ adapter } as any);
 
 async function main() {
     try {
-        const count = await prisma.user.count();
-        console.log("Success! Users count:", count);
+        const users = await prisma.user.findMany({
+            select: {
+                id: true,
+                username: true,
+                name: true,
+                email: true,
+                role: true,
+                createdAt: true
+            }
+        });
+        console.log("Success! Users list:");
+        console.table(users);
     } catch (e) {
         console.error("Failed:", e);
     } finally {

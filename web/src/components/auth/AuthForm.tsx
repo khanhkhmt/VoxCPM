@@ -15,12 +15,20 @@ interface FormFieldProps {
 export function FormField({ label, error, children }: FormFieldProps) {
     return (
         <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-vox-text">{label}</label>
+            <label className="block text-[11.5px] font-medium tracking-[0.02em] text-vox-text-dim mb-0.5">
+                {label}
+            </label>
             {children}
-            {error && <p className="text-xs text-red-400">{error}</p>}
+            {error && <p className="text-[11px] text-red-500 mt-0.5">{error}</p>}
         </div>
     );
 }
+
+// ---------------------------------------------------------------------------
+// Shared input class
+// ---------------------------------------------------------------------------
+const baseInputCls =
+    "w-full bg-vox-bg border rounded-lg px-3.5 py-2.5 text-[13.5px] text-vox-text outline-none transition-all placeholder:text-vox-text-dim/60";
 
 // ---------------------------------------------------------------------------
 // TextInput
@@ -34,10 +42,11 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
         return (
             <input
                 ref={ref}
-                className={`w-full bg-vox-surface-lowest border rounded-lg px-4 py-2.5 text-sm text-vox-text outline-none transition-colors ${hasError
-                        ? "border-red-500/50 focus:border-red-500"
-                        : "border-vox-outline/30 focus:border-vox-primary"
-                    } ${className ?? ""}`}
+                className={`${baseInputCls} ${
+                    hasError
+                        ? "border-red-500/50 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                        : "border-vox-outline/60 focus:border-vox-outline focus:ring-2 focus:ring-ori-accent/15"
+                } ${className ?? ""}`}
                 {...props}
             />
         );
@@ -61,10 +70,11 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
                 <input
                     ref={ref}
                     type={show ? "text" : "password"}
-                    className={`w-full bg-vox-surface-lowest border rounded-lg px-4 py-2.5 pr-10 text-sm text-vox-text outline-none transition-colors ${hasError
-                            ? "border-red-500/50 focus:border-red-500"
-                            : "border-vox-outline/30 focus:border-vox-primary"
-                        } ${className ?? ""}`}
+                    className={`${baseInputCls} pr-10 ${
+                        hasError
+                            ? "border-red-500/50 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                            : "border-vox-outline/60 focus:border-vox-outline focus:ring-2 focus:ring-ori-accent/15"
+                    } ${className ?? ""}`}
                     {...props}
                 />
                 <button
@@ -72,8 +82,9 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
                     onClick={() => setShow(!show)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-vox-text-dim hover:text-vox-text transition-colors"
                     tabIndex={-1}
+                    aria-label={show ? "Hide password" : "Show password"}
                 >
-                    {show ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {show ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
             </div>
         );
@@ -81,7 +92,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
 );
 
 // ---------------------------------------------------------------------------
-// SubmitButton
+// SubmitButton — primary near-black action button (Oriagent style)
 // ---------------------------------------------------------------------------
 interface SubmitButtonProps {
     loading?: boolean;
@@ -93,18 +104,14 @@ export function SubmitButton({ loading, children }: SubmitButtonProps) {
         <button
             type="submit"
             disabled={loading}
-            className={`w-full relative group overflow-hidden rounded-xl font-semibold px-6 py-3 transition-all shadow-[0_0_20px_rgba(124,58,237,0.3)] ${loading
+            className={`w-full flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-[13.5px] font-semibold tracking-[0.01em] transition-all shadow-[0_1px_4px_rgba(0,0,0,0.12)] ${
+                loading
                     ? "bg-vox-surface-high text-vox-text-dim cursor-wait"
-                    : "bg-vox-primary text-white hover:shadow-[0_0_30px_rgba(124,58,237,0.6)]"
-                }`}
+                    : "bg-ori-ink text-white hover:opacity-90 hover:-translate-y-px active:translate-y-0 active:scale-[0.995]"
+            }`}
         >
-            <span className="relative z-10 flex items-center justify-center gap-2">
-                {loading && <Loader2 size={18} className="animate-spin" />}
-                {children}
-            </span>
-            {!loading && (
-                <div className="absolute inset-0 bg-gradient-to-r from-vox-primary to-vox-secondary opacity-0 group-hover:opacity-100 transition-opacity z-0" />
-            )}
+            {loading && <Loader2 size={16} className="animate-spin" />}
+            {children}
         </button>
     );
 }

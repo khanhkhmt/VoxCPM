@@ -58,6 +58,20 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Google-only accounts have no password hash — direct them to OAuth login.
+        if (!user.passwordHash) {
+            return NextResponse.json(
+                {
+                    ok: false,
+                    error: {
+                        code: "OAUTH_ONLY_ACCOUNT",
+                        message: "Tài khoản này được tạo bằng Google. Vui lòng đăng nhập bằng Google.",
+                    },
+                },
+                { status: 401 },
+            );
+        }
+
         const valid = await verifyPassword(password, user.passwordHash);
         if (!valid) {
             return NextResponse.json(

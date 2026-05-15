@@ -60,7 +60,8 @@ async function verify() {
 
     // 3. Create API Key
     console.log("Creating API Key...");
-    const keyRes = await fetch("http://localhost:3000/api/keys", {
+    const baseUrl = process.env.API_BASE_URL || "http://localhost:3000";
+    const keyRes = await fetch(`${baseUrl}/api/keys`, {
         method: "POST",
         headers,
         body: JSON.stringify({ name: "Verify Key", environment: "test" })
@@ -77,13 +78,13 @@ async function verify() {
 
     // 4. Check Initial Usage
     console.log("Checking Initial Usage...");
-    const usageRes1 = await fetch("http://localhost:3000/api/v1/usage", { headers: apiHeaders });
+    const usageRes1 = await fetch(`${baseUrl}/api/v1/usage`, { headers: apiHeaders });
     const usageData1 = await usageRes1.json();
     console.log("Usage before:", usageData1.data.used, "/", usageData1.data.limit);
 
     // 5. Get Stream Token (Deduct 10 chars)
     console.log("Requesting Stream Token (text_length: 10)...");
-    const streamTokenRes = await fetch("http://localhost:3000/api/v1/tts/stream-token", {
+    const streamTokenRes = await fetch(`${baseUrl}/api/v1/tts/stream-token`, {
         method: "POST",
         headers: apiHeaders,
         body: JSON.stringify({ text_length: 10 })
@@ -93,7 +94,7 @@ async function verify() {
     console.log("Stream token issued. Max length:", streamTokenData.data.max_length);
 
     // 6. Verify Usage Deduction
-    const usageRes2 = await fetch("http://localhost:3000/api/v1/usage", { headers: apiHeaders });
+    const usageRes2 = await fetch(`${baseUrl}/api/v1/usage`, { headers: apiHeaders });
     const usageData2 = await usageRes2.json();
     console.log("Usage after:", usageData2.data.used, "/", usageData2.data.limit);
     if (usageData2.data.used !== usageData1.data.used + 10) {
@@ -103,7 +104,7 @@ async function verify() {
 
     // 7. Test Batch Generate
     console.log("Testing Batch Generate (text: 'Hello world')...");
-    const genRes = await fetch("http://localhost:3000/api/v1/tts/generate", {
+    const genRes = await fetch(`${baseUrl}/api/v1/tts/generate`, {
         method: "POST",
         headers: apiHeaders,
         body: JSON.stringify({ text: "Hello world" })
@@ -113,7 +114,7 @@ async function verify() {
     console.log("✅ Batch Generate successful. Audio URL:", genData.data.audio_url);
 
     // 8. Verify Usage after Batch (11 chars)
-    const usageRes3 = await fetch("http://localhost:3000/api/v1/usage", { headers: apiHeaders });
+    const usageRes3 = await fetch(`${baseUrl}/api/v1/usage`, { headers: apiHeaders });
     const usageData3 = await usageRes3.json();
     console.log("Usage after batch:", usageData3.data.used, "/", usageData3.data.limit);
     if (usageData3.data.used !== usageData2.data.used + 11) {

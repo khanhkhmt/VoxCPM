@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { Play, Pause, Lock, Volume2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useRouter } from "next/navigation";
+import { useI18n } from "@/i18n";
 
 const SAMPLE_VOICES = [
     { id: "demo", name: "Oriagent Demo Voice", demoUrl: "/demo_voice.wav" },
@@ -14,6 +15,7 @@ const SAMPLE_TEXT = "Welcome to Oriagent. We transform your text into lifelike s
 export default function DemoTTSBox() {
     const { isLoggedIn } = useAuth();
     const router = useRouter();
+    const { t } = useI18n();
     const [isPlaying, setIsPlaying] = useState(false);
     const [activeVoice, setActiveVoice] = useState(SAMPLE_VOICES[0].id);
     const [progress, setProgress] = useState(0);
@@ -62,7 +64,7 @@ export default function DemoTTSBox() {
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-2">
                         <Volume2 className="text-vox-secondary w-5 h-5" />
-                        <h3 className="font-semibold text-vox-text">Hear it in action</h3>
+                        <h3 className="font-semibold text-vox-text">{t.landing.demo.hearItInAction}</h3>
                     </div>
 
                     <select
@@ -78,13 +80,13 @@ export default function DemoTTSBox() {
 
                 <div className="relative mb-6">
                     <div className="bg-vox-surface-lowest/50 border border-vox-outline/20 rounded-xl p-4 min-h-[120px] text-vox-text-dim text-lg leading-relaxed relative overflow-hidden group">
-                        {SAMPLE_TEXT}
+                        {t.landing.demo.sampleText}
 
                         {/* Overlay showing login prompt for custom typing */}
                         <div className="absolute inset-0 bg-vox-bg/60 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             <button onClick={() => router.push("/login")} className="flex items-center gap-2 bg-vox-surface-high border border-vox-outline/50 hover:border-vox-primary px-4 py-2 rounded-lg text-sm transition-all shadow-lg text-vox-heading">
                                 <Lock size={14} className="text-vox-secondary" />
-                                Sign in to enter custom text
+                                {t.landing.demo.signInToGenerate}
                             </button>
                         </div>
                     </div>
@@ -129,7 +131,7 @@ export default function DemoTTSBox() {
             {!isLoggedIn && (
                 <div className="bg-vox-primary/10 border-t border-vox-outline/20 p-4 text-center">
                     <p className="text-sm text-vox-text-dim">
-                        Want to try with your own text? <button onClick={() => router.push("/login")} className="text-vox-secondary hover:text-vox-heading transition-colors ml-1 font-medium underline underline-offset-4">Sign in to generate - It&apos;s Free</button>
+                        {t.landing.demo.wantToTry} <button onClick={() => router.push("/login")} className="text-vox-secondary hover:text-vox-heading transition-colors ml-1 font-medium underline underline-offset-4">{t.common.signIn}</button>
                     </p>
                 </div>
             )}

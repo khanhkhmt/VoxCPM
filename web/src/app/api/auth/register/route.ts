@@ -87,8 +87,8 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        // (Optional) We intentionally don't create the session cookie here 
-        // so the user is forced to log in manually according to standard UX flows.
+        // Auto-login: create session cookie so user is immediately authenticated
+        await createSessionAndSetCookie(user.id);
 
         return NextResponse.json({
             ok: true,

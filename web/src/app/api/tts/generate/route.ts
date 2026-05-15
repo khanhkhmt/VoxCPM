@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { BACKEND_BASE_URL } from "@/lib/config";
 import { getCurrentUser } from "@/lib/auth/server";
 import axios from "axios";
 
@@ -110,7 +111,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ detail: "Internal Server Error" }, { status: 500 });
         }
 
-        const backendUrl = "http://127.0.0.1:8808/api/tts";
+        const backendUrl = `${BACKEND_BASE_URL}/api/tts`;
         const generateUrl = backendUrl.replace(/\/$/, "") + "/generate";
 
         const res = await axios.post(generateUrl, formData, {

@@ -73,14 +73,21 @@ R2_ACCESS_KEY_ID="c1785f7092e927d595d8e66e2a939a77"
 R2_SECRET_ACCESS_KEY="6c59feadad5162ec3540c8c04707b0219433e368c781c2ebc781cc3ab43fefcd"
 R2_BUCKET_NAME="voxcpm-audio"
 R2_PUBLIC_URL="https://pub-f6e9530ed8ce419993e861523e143b35.r2.dev"
+
+# Google OAuth (tùy chọn — bỏ trống nếu không dùng "Sign in with Google")
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+GOOGLE_REDIRECT_URI="http://localhost:3000/api/auth/google/callback"
+APP_URL="http://localhost:3000"
 ```
 
 ### Bước 3.3: Khởi tạo Database (Prisma SQLite)
 Bạn phải cập nhật database schema trước khi chạy. Mở terminal tại thư mục `web/`:
 ```bash
 npx prisma generate
-npx prisma db push
+npx prisma migrate deploy   # áp dụng toàn bộ migration (bao gồm bảng OAuthAccount)
 ```
+*Lưu ý: trước đây guide dùng `prisma db push` — từ khi thêm Google OAuth, repo có migration files nên dev dùng `migrate deploy` để đồng bộ với production.*
 Lệnh này sẽ tạo ra file `dev.db` tại thư mục `web/prisma/dev.db`.
 
 ### Bước 3.4: Khởi chạy Frontend
@@ -97,6 +104,60 @@ Frontend sẽ lắng nghe tại địa chỉ: `http://localhost:3000`
 2. Đăng ký/Đăng nhập một tài khoản.
 3. Vào **Studio**, nhập văn bản và bấm **Generate Speech** (chế độ Batch Mode hoặc Streaming Mode).
 4. Quan sát log ở terminal Backend (cổng 8808) xem quá trình Inference có chạy không.
+
+---
+
+## 4.bis Bật "Sign in with Google" (tùy chọn)
+
+Nếu muốn cho user đăng nhập bằng Google thay vì username/password, thực hiện:
+
+### Bước 1: Tạo OAuth client trên Google Cloud
+1. Vào https://console.cloud.google.com/apis/credentials
+2. **Create Credentials** → **OAuth client ID** → Application type **Web application**.
+3. Ở **Authorized redirect URIs**, thêm chính xác:
+   - Dev: `http://localhost:3000/api/auth/google/callback`
+   - Production: `https://<your-domain>/api/auth/google/callback`
+4. Copy **Client ID** và **Client Secret**.
+
+### Bước 2: Điền vào `web/.env.local`
+```env
+GOOGLE_CLIENT_ID="<paste-client-id>"
+GOOGLE_CLIENT_SECRET="<paste-client-secret>"
+GOOGLE_REDIRECT_URI="http://localhost:3000/api/auth/google/callback"
+APP_URL="http://localhost:3000"
+```
+
+**`APP_URL` rất quan trọng**: Next.js dev server bind ở `0.0.0.0:3000`. Nếu không set `APP_URL`, các redirect của OAuth (`/api/auth/google` và `/callback`) có thể dùng origin `http://0.0.0.0:3000` — cookie state CSRF set trên `localhost` sẽ không đến server khi callback resolve về `0.0.0.0`, dẫn tới lỗi `google_invalid_state`. Luôn đặt `APP_URL` = origin trình duyệt thực dùng.
+
+### Bước 3: Đảm bảo migration Prisma đã apply
+```bash
+cd web && npx prisma migrate deploy
+```
+Migration `20260513045005_add_google_oauth` tạo bảng `OAuthAccount` và cho phép `User.email`/`User.passwordHash` nullable.
+
+### Bước 4: Restart Next.js và test
+```bash
+npm run dev -- -p 3000
+```
+Mở `http://localhost:3000/login` → bấm **"Sign in with Google"** → chọn tài khoản → quay về `/studio`.
+
+### Luồng bên trong (tham khảo)
+- `GET /api/auth/google` — sinh state random, set cookie `google_oauth_state` (httpOnly, SameSite=Lax), redirect tới `accounts.google.com` với scope `openid email profile`.
+- `GET /api/auth/google/callback` — verify state, đổi code lấy token, fetch userinfo, tạo hoặc link `User` + `OAuthAccount`, set cookie `voxora_session` (reuse JWT cũ), redirect về `next` (default `/studio`).
+- User OAuth-only có `passwordHash = NULL`. Route login cũ (`POST /api/auth/login`) và change-password sẽ trả `OAUTH_ONLY_ACCOUNT` cho user này thay vì crash.
+
+### Mã lỗi (URL `/login?error=...`)
+| Mã lỗi | Nguyên nhân |
+|---|---|
+| `google_not_configured` | `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` rỗng |
+| `google_invalid_state` | Cookie state mất (thường do `APP_URL` sai → origin mismatch) |
+| `google_oauth_denied` | User bấm Cancel ở màn Google consent |
+| `google_missing_code` | Google không trả `code` (lỗi flow bất thường) |
+| `google_token_exchange_failed` | Sai `GOOGLE_CLIENT_SECRET` hoặc `redirect_uri` không khớp Google Cloud |
+| `google_profile_failed` | Token hợp lệ nhưng fetch `userinfo` fail (lỗi mạng) |
+| `google_no_email` | Account Google không trả về email (hiếm) |
+| `google_email_not_verified` | Email Google chưa verify |
+| `google_login_failed` | Lỗi nội bộ khi tạo user/session |
 
 ---
 
